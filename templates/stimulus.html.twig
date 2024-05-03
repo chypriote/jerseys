@@ -18,13 +18,14 @@
 
     <p>...without the JS tooling stuff and complexity.</p>
 
-    <p>It uses the new  <a target="_blank" href="https://symfony.com/doc/current/frontend/asset_mapper.html">
+    <p>It uses the new <a target="_blank" href="https://symfony.com/doc/current/frontend/asset_mapper.html">
             Symfony 6.3 asset mapper component</a> and the
         <a target="_blank" href="https://symfony.com/bundles/StimulusBundle/current/index.html">
             Stimulus bundle.</a>
     </p>
 
-    <p>Check out the feature intruction on the <a target="_blank" href="https://symfony.com/blog/new-in-symfony-6-3-assetmapper-component">
+    <p>Check out the feature intruction on the <a target="_blank"
+                                                  href="https://symfony.com/blog/new-in-symfony-6-3-assetmapper-component">
             Symfony blog</a>.</p>
 
     <card>
@@ -35,11 +36,14 @@
             <div col="3/4">
                 <div {{ stimulus_controller('hello') }}>
                     <form {{ stimulus_target('hello', 'form') }}>
-                        <label for="name">Enter your name below and click on the <tag>Greet</tag> button
+                        <label for="name">Enter your name below and click on the
+                            <tag>Greet</tag>
+                            button
                             <input type="text" name="name" {{ stimulus_target('hello', 'name') }} />
                         </label>
 
-                        <input primary type="submit" value="Greet" {{ stimulus_action('hello', 'greet:prevent', 'click') }} />
+                        <input primary type="submit"
+                               value="Greet" {{ stimulus_action('hello', 'greet:prevent', 'click') }} />
                     </form>
 
                     <dialog {{ stimulus_target('hello', 'dialog') }}>
@@ -64,7 +68,7 @@
             </div>
 
             <div col="3/4">
-                <div {{ stimulus_controller('api', {url: path('app_slugify_action')} )}}>
+                <div {{ stimulus_controller('api', {url: path('app.slugify')} ) }}>
                     <label for="title">
                         Enter a blog post title below:
                         <input type="text" required name="title"
@@ -74,7 +78,7 @@
 
                     <label for="slug">
                         Slug (readonly):
-                        <input readonly name="slug" {{ stimulus_target('api', 'slug') }} type="text" />
+                        <input readonly name="slug" {{ stimulus_target('api', 'slug') }} type="text"/>
                     </label>
                 </div>
             </div>

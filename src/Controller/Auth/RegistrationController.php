@@ -31,8 +31,7 @@ class RegistrationController extends AbstractController
         UserPasswordHasherInterface $userPasswordHasher,
         EntityManagerInterface $entityManager,
         Security $security
-    ): Response
-    {
+    ): Response {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
@@ -61,6 +60,7 @@ class RegistrationController extends AbstractController
             // do anything else you need here, like send an email
 
             $security->login($user);
+
             return $this->redirectToRoute('app.home');
         }
 

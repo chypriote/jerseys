@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Api\Controller;
 
-use App\Controller\SlugifyAcfion;
+use App\Controller\App\SlugifyAcfion;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class SlugifyActionTest extends WebTestCase

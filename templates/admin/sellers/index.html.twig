@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Seller index{% endblock %}
+
+{% block body %}
+    <h1>Seller index</h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Slug</th>
+            <th>Url</th>
+            <th>Logo</th>
+            <th>CreatedAt</th>
+            <th>UpdatedAt</th>
+            <th>actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for seller in sellers %}
+            <tr>
+                <td>{{ seller.id }}</td>
+                <td>{{ seller.name }}</td>
+                <td>{{ seller.slug }}</td>
+                <td>{{ seller.url }}</td>
+                <td><img src="{{ seller.logo }}" alt="{{ seller.name }}"/></td>
+                <td>{{ seller.createdAt|date('Y-m-d') }}</td>
+                <td>{{ seller.updatedAt|date('Y-m-d') }}</td>
+                <td>
+                    <a href="{{ path('admin.sellers.show', {'slug': seller.slug}) }}">show</a>
+                    <a href="{{ path('admin.sellers.edit', {'slug': seller.slug}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('admin.sellers.new') }}">Create new</a>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Jersey{% endblock %}
+
+{% block body %}
+    <h1>Jersey</h1>
+
+    <table class="table">
+        <tbody>
+        <tr>
+            <th>Year</th>
+            <td>{{ jersey.year }}</td>
+        </tr>
+        <tr>
+            <th>Slug</th>
+            <td>{{ jersey.slug }}</td>
+        </tr>
+        <tr>
+            <th>Type</th>
+            <td>{{ jersey.type }}</td>
+        </tr>
+        <tr>
+            <th>Picture</th>
+            <td>{{ jersey.picture }}</td>
+        </tr>
+        <tr>
+            <th>DeletedAt</th>
+            <td>{{ jersey.deletedAt ? jersey.deletedAt|date('Y-m-d H:i:s') : '' }}</td>
+        </tr>
+        <tr>
+            <th>CreatedAt</th>
+            <td>{{ jersey.createdAt ? jersey.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+        </tr>
+        <tr>
+            <th>UpdatedAt</th>
+            <td>{{ jersey.updatedAt ? jersey.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+        </tr>
+        <tr>
+            <th>Id</th>
+            <td>{{ jersey.id }}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('admin.jerseys.list') }}">back to list</a>
+
+    <a href="{{ path('admin.jerseys.edit', {'id': jersey.id}) }}">edit</a>
+
+    <form method="post" action="{{ path('admin.jerseys.delete', {'id': jersey.id}) }}"
+          onsubmit="return confirm('Are you sure you want to delete this item?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ jersey.id) }}">
+        <button class="btn">Delete</button>
+    </form>
+{% endblock %}

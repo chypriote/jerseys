@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Jersey index{% endblock %}
+
+{% block body %}
+    <h1>Jersey index</h1>
+
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Year</th>
+            <th>Slug</th>
+            <th>Type</th>
+            <th>Picture</th>
+            <th>DeletedAt</th>
+            <th>CreatedAt</th>
+            <th>UpdatedAt</th>
+            <th>Id</th>
+            <th>actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for jersey in jerseys %}
+            <tr>
+                <td>{{ jersey.year }}</td>
+                <td>{{ jersey.slug }}</td>
+                <td>{{ jersey.type }}</td>
+                <td>{{ jersey.picture }}</td>
+                <td>{{ jersey.deletedAt ? jersey.deletedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ jersey.createdAt ? jersey.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ jersey.updatedAt ? jersey.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+                <td>{{ jersey.id }}</td>
+                <td>
+                    <a href="{{ path('admin.jerseys.show', {'id': jersey.id}) }}">show</a>
+                    <a href="{{ path('admin.jerseys.edit', {'id': jersey.id}) }}">edit</a>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="9">no records found</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ path('admin.jerseys.create') }}">Create new</a>
+{% endblock %}

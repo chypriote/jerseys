@@ -141,7 +141,7 @@ function fix_php(): void
 function lint_php(): void
 {
     title(__FUNCTION__, task());
-    run('php vendor/bin/php-cs-fixer fix --allow-risky=yes --dry-run',
+    run('php vendor/bin/php-cs-fixer fix --allow-risky=yes',
         environment: [
             'PHP_CS_FIXER_IGNORE_ENV' => 1,
         ],

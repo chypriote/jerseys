@@ -8,29 +8,30 @@
     <table class="table">
         <thead>
         <tr>
+            <th>Id</th>
             <th>Name</th>
             <th>Slug</th>
             <th>Logo</th>
-            <th>DeletedAt</th>
             <th>CreatedAt</th>
             <th>UpdatedAt</th>
-            <th>Id</th>
             <th>actions</th>
         </tr>
         </thead>
         <tbody>
         {% for league in leagues %}
             <tr>
+                <td>{{ league.id }}</td>
                 <td>{{ league.name }}</td>
                 <td>{{ league.slug }}</td>
-                <td>{{ league.logo }}</td>
-                <td>{{ league.deletedAt ? league.deletedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ league.createdAt ? league.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ league.updatedAt ? league.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
-                <td>{{ league.id }}</td>
+                <td><img src="{{ league.logo }}" alt="{{ league.name }}"/></td>
+                <td>{{ league.createdAt|date('Y-m-d') }}</td>
+                <td>{{ league.updatedAt|date('Y-m-d') }}</td>
                 <td>
-                    <a href="{{ path('app_league_show', {'slug': league.slug}) }}">show</a>
-                    <a href="{{ path('admin.edit_league_action', {'slug': league.slug}) }}">edit</a>
+                    <a href="{{ path('admin.leagues.show', {'slug': league.slug}) }}">show</a>
+                    <a href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
+                    {% if league.clubs.count == 0 %}
+                        <a href="{{ path('admin.leagues.delete', {'slug': league.slug}) }}">delete</a>
+                    {% endif %}
                 </td>
             </tr>
         {% else %}
@@ -41,5 +42,5 @@
         </tbody>
     </table>
 
-    <a href="{{ path('admin.create_league_action') }}">Create new</a>
+    <a href="{{ path('admin.leagues.create') }}">Create new</a>
 {% endblock %}

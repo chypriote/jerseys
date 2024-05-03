@@ -5,6 +5,13 @@ app_stimulus:
     _controller: Symfony\Bundle\FrameworkBundle\Controller\TemplateController
     template: stimulus.html.twig
 
+app:
+  resource:
+    path: ../src/Controller/App
+    namespace: App\Controller\App
+  name_prefix: 'app.'
+  type: attribute
+
 admin:
   prefix: /admin
   resource:
@@ -18,10 +25,4 @@ auth:
     path: ../src/Controller/Auth
     namespace: App\Controller\Auth
   name_prefix: 'auth.'
-  type: attribute
-
-app:
-  resource:
-    path: ../src/Controller/
-    namespace: App\Controller
   type: attribute

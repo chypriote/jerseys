@@ -17,12 +17,11 @@ use Symfony\Component\Routing\Attribute\Route;
 #[AsController]
 class CreateLeagueAction extends AbstractController
 {
-    #[Route(path: '/leagues', name: 'create_league_action')]
+    #[Route(path: '/leagues/new', name: 'leagues.create', methods: ['GET', 'POST'])]
     public function __invoke(
         Request $request,
         EntityManagerInterface $entityManager,
-    ): Response
-    {
+    ): Response {
         $dto = new CreateLeagueDto();
         $form = $this->createForm(CreateLeagueForm::class, $dto)->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -31,12 +30,12 @@ class CreateLeagueAction extends AbstractController
             $league = League::fromDto($dto);
             $entityManager->persist($league);
             $entityManager->flush();
-        }
-        $leagues = $entityManager->getRepository(League::class)->findAll();
 
-        return $this->render('admin/leagues/create.html.twig', [
+            return $this->redirectToRoute('admin.leagues.show', ['slug' => $league->getSlug()]);
+        }
+
+        return $this->render('admin/leagues/new.html.twig', [
             'form' => $form->createView(),
-            'leagues' => $leagues,
             'dto' => $league ?? $dto,
         ]);
     }

@@ -16,20 +16,19 @@ use Symfony\Component\Routing\Attribute\Route;
 #[AsController]
 class EditLeagueAction extends AbstractController
 {
-    #[Route(path: '/leagues/{slug}', name: 'edit_league_action')]
+    #[Route(path: '/leagues/{slug}', name: 'leagues.edit', methods: ['GET', 'POST'])]
     public function __invoke(
         League $league,
         Request $request,
         EntityManagerInterface $entityManager,
-    ): Response
-    {
+    ): Response {
         $form = $this->createForm(CreateLeagueForm::class, $league);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            return $this->redirectToRoute('admin.create_league_action', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin.leagues.show', ['slug' => $league->getSlug()]);
         }
 
         $leagues = $entityManager->getRepository(League::class)->findAll();
