@@ -19,7 +19,7 @@ class ClubAutocompleteField extends AbstractType
             'class' => Club::class,
             'placeholder' => 'What should we eat?',
             'searchable_fields' => ['name'],
-            'choice_label' => static fn (Club $club) => "{$club->getName()}({$club->getSlug()})",
+            'choice_label' => static fn (Club $club): string => sprintf('%s(%s)', $club->getName(), $club->getSlug()),
         ]);
     }
 

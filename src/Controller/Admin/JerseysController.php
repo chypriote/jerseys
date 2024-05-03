@@ -76,7 +76,8 @@ class JerseysController extends AbstractController
     #[Route('/{id}', name: 'delete', methods: ['POST'])]
     public function delete(Request $request, Jersey $jersey, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$jersey->getId(), $request->getPayload()->get('_token'))) {
+        $token = $request->getPayload()->get('_token');
+        if ($token && $this->isCsrfTokenValid('delete'.$jersey->getId(), (string) $token)) {
             $entityManager->remove($jersey);
             $entityManager->flush();
         }

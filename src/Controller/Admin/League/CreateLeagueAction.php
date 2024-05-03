@@ -36,7 +36,7 @@ class CreateLeagueAction extends AbstractController
 
         return $this->render('admin/leagues/new.html.twig', [
             'form' => $form->createView(),
-            'dto' => $league ?? $dto,
+            'dto' => $dto,
         ]);
     }
 }

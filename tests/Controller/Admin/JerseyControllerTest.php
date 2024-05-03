@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Test\Controller;
+namespace App\Tests\Controller\Admin;
 
 use App\Entity\Jersey;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,8 +14,9 @@ class JerseyControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private EntityManagerInterface $manager;
+    /** @var EntityRepository<Jersey> */
     private EntityRepository $repository;
-    private string $path = '/jersey/';
+    private string $path = '/admin/jerseys/';
 
     protected function setUp(): void
     {
@@ -32,7 +33,7 @@ class JerseyControllerTest extends WebTestCase
 
     public function testIndex(): void
     {
-        $crawler = $this->client->request('GET', $this->path);
+        $this->client->request('GET', $this->path);
 
         self::assertResponseStatusCodeSame(200);
         self::assertPageTitleContains('Jersey index');
@@ -43,7 +44,6 @@ class JerseyControllerTest extends WebTestCase
 
     public function testNew(): void
     {
-        $this->markTestIncomplete();
         $this->client->request('GET', sprintf('%snew', $this->path));
 
         self::assertResponseStatusCodeSame(200);
@@ -53,9 +53,6 @@ class JerseyControllerTest extends WebTestCase
             'jersey[slug]' => 'Testing',
             'jersey[type]' => 'Testing',
             'jersey[picture]' => 'Testing',
-            'jersey[deletedAt]' => 'Testing',
-            'jersey[createdAt]' => 'Testing',
-            'jersey[updatedAt]' => 'Testing',
             'jersey[club]' => 'Testing',
         ]);
 
@@ -72,9 +69,6 @@ class JerseyControllerTest extends WebTestCase
         $fixture->setSlug('My Title');
         $fixture->setType('My Title');
         $fixture->setPicture('My Title');
-        $fixture->setDeletedAt('My Title');
-        $fixture->setCreatedAt('My Title');
-        $fixture->setUpdatedAt('My Title');
         $fixture->setClub('My Title');
 
         $this->manager->persist($fixture);
@@ -93,12 +87,8 @@ class JerseyControllerTest extends WebTestCase
         $this->markTestIncomplete();
         $fixture = new Jersey();
         $fixture->setYear('Value');
-        $fixture->setSlug('Value');
         $fixture->setType('Value');
         $fixture->setPicture('Value');
-        $fixture->setDeletedAt('Value');
-        $fixture->setCreatedAt('Value');
-        $fixture->setUpdatedAt('Value');
         $fixture->setClub('Value');
 
         $this->manager->persist($fixture);
@@ -111,9 +101,6 @@ class JerseyControllerTest extends WebTestCase
             'jersey[slug]' => 'Something New',
             'jersey[type]' => 'Something New',
             'jersey[picture]' => 'Something New',
-            'jersey[deletedAt]' => 'Something New',
-            'jersey[createdAt]' => 'Something New',
-            'jersey[updatedAt]' => 'Something New',
             'jersey[club]' => 'Something New',
         ]);
 
@@ -125,9 +112,6 @@ class JerseyControllerTest extends WebTestCase
         self::assertSame('Something New', $fixture[0]->getSlug());
         self::assertSame('Something New', $fixture[0]->getType());
         self::assertSame('Something New', $fixture[0]->getPicture());
-        self::assertSame('Something New', $fixture[0]->getDeletedAt());
-        self::assertSame('Something New', $fixture[0]->getCreatedAt());
-        self::assertSame('Something New', $fixture[0]->getUpdatedAt());
         self::assertSame('Something New', $fixture[0]->getClub());
     }
 
@@ -136,12 +120,8 @@ class JerseyControllerTest extends WebTestCase
         $this->markTestIncomplete();
         $fixture = new Jersey();
         $fixture->setYear('Value');
-        $fixture->setSlug('Value');
         $fixture->setType('Value');
         $fixture->setPicture('Value');
-        $fixture->setDeletedAt('Value');
-        $fixture->setCreatedAt('Value');
-        $fixture->setUpdatedAt('Value');
         $fixture->setClub('Value');
 
         $this->manager->persist($fixture);

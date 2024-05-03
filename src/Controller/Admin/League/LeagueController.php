@@ -37,7 +37,8 @@ class LeagueController extends AbstractController
     #[Route('/{slug}', name: 'delete', methods: ['POST'])]
     public function delete(Request $request, League $league, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete'.$league->getId(), $request->getPayload()->get('_token'))) {
+        $token = $request->getPayload()->get('_token');
+        if ($token && $this->isCsrfTokenValid('delete'.$league->getId(), (string) $token)) {
             $entityManager->remove($league);
             $entityManager->flush();
         }

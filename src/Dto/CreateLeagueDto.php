@@ -8,7 +8,7 @@ class CreateLeagueDto
 {
     public string $name;
 
-    public ?string $slug;
+    public ?string $slug = null;
 
     public ?string $logo = null;
 }

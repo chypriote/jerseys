@@ -11,7 +11,7 @@ class CreateSellerDto
     #[Assert\NotNull]
     public string $name;
 
-    public ?string $slug;
+    public ?string $slug = null;
 
     #[Assert\NotNull]
     public string $url;

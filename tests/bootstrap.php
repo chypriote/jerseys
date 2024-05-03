@@ -18,4 +18,6 @@ if ($_SERVER['APP_DEBUG']) {
 }
 
 // @see https://github.com/symfony/symfony/issues/53812#issuecomment-1977043255
-set_exception_handler([new ErrorHandler(), 'handleException']);
+set_exception_handler(static function (Throwable $exception): void {
+    (new ErrorHandler())->handleException($exception);
+});

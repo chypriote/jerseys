@@ -26,7 +26,7 @@ final class AppControllerTest extends WebTestCase
     {
         $client = self::createClient();
         $client->request('GET', $page);
-        self::assertResponseIsSuccessful("Page $page is not successfull.");
+        self::assertResponseIsSuccessful(sprintf('Page %s is not successfull.', $page));
     }
     //
     //    private const FORM_SUBMIT_BUTTON_ID = 'register_form_save';

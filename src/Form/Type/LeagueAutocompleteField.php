@@ -19,7 +19,7 @@ class LeagueAutocompleteField extends AbstractType
             'class' => League::class,
             'placeholder' => 'League ?',
             'searchable_fields' => ['name'],
-            'choice_label' => static fn (League $league) => "{$league->getName()}({$league->getSlug()})",
+            'choice_label' => static fn (League $league): string => sprintf('%s(%s)', $league->getName(), $league->getSlug()),
         ]);
     }
 

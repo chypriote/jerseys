@@ -116,6 +116,14 @@ function cov_report(): void
     success();
 }
 
+#[AsTask(namespace: 'cs', description: 'Run Rector')]
+function rector(): void
+{
+    title(__FUNCTION__, task());
+    run('php vendor/bin/rector process --memory-limit 1G -vvv', quiet: false);
+    success();
+}
+
 #[AsTask(namespace: 'cs', description: 'Run PHPStan')]
 function stan(): void
 {
@@ -137,24 +145,12 @@ function fix_php(): void
     success();
 }
 
-#[AsTask(namespace: 'cs', description: 'Lint PHP files with php-cs-fixer (report only)')]
-function lint_php(): void
-{
-    title(__FUNCTION__, task());
-    run('php vendor/bin/php-cs-fixer fix --allow-risky=yes',
-        environment: [
-            'PHP_CS_FIXER_IGNORE_ENV' => 1,
-        ],
-        quiet: false
-    );
-    success();
-}
-
 #[AsTask(name: 'all', namespace: 'cs', description: 'Run all CS checks')]
 function cs_all(): void
 {
     title(__FUNCTION__, task());
     fix_php();
+    rector();
     stan();
 }
 
@@ -187,7 +183,6 @@ function lint_all(): void
 {
     title(__FUNCTION__, task());
     parallel(
-        fn () => lint_php(),
         fn () => lint_container(),
         fn () => lint_twig(),
         fn () => lint_yaml(),
@@ -198,9 +193,9 @@ function lint_all(): void
 function ci(): void
 {
     title(__FUNCTION__, task());
-    test();
-    cs_all();
     lint_all();
+    cs_all();
+    test();
 }
 
 #[AsTask(name: 'versions', namespace: 'helpers', description: 'Output current stack versions')]
@@ -228,6 +223,10 @@ function versions(): void
 
     io()->note('php-cs-fixer');
     run('php vendor/bin/php-cs-fixer --version', quiet: false);
+    io()->newLine();
+
+    io()->note('rector');
+    run('php vendor/bin/rector --version', quiet: false);
     io()->newLine();
 
     success();

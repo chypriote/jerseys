@@ -1,52 +1,16 @@
-<?php return array (
-  '@hotwired/stimulus' => 
-  array (
-    'version' => '3.2.2',
-    'dependencies' => 
-    array (
-    ),
-    'extraFiles' => 
-    array (
-    ),
-  ),
-  'barecss/css/bare.min.css' => 
-  array (
-    'version' => '1.1.0',
-    'dependencies' => 
-    array (
-    ),
-    'extraFiles' => 
-    array (
-    ),
-  ),
-  '@hotwired/turbo' => 
-  array (
-    'version' => '7.3.0',
-    'dependencies' => 
-    array (
-    ),
-    'extraFiles' => 
-    array (
-    ),
-  ),
-  'tom-select' => 
-  array (
-    'version' => '2.3.1',
-    'dependencies' => 
-    array (
-    ),
-    'extraFiles' => 
-    array (
-    ),
-  ),
-  'tom-select/dist/css/tom-select.default.css' => 
-  array (
-    'version' => '2.3.1',
-    'dependencies' => 
-    array (
-    ),
-    'extraFiles' => 
-    array (
-    ),
-  ),
-);
+<?php return ['@hotwired/stimulus' => 
+['version' => '3.2.2', 'dependencies' => 
+[], 'extraFiles' => 
+[]], 'barecss/css/bare.min.css' => 
+['version' => '1.1.0', 'dependencies' => 
+[], 'extraFiles' => 
+[]], '@hotwired/turbo' => 
+['version' => '7.3.0', 'dependencies' => 
+[], 'extraFiles' => 
+[]], 'tom-select' => 
+['version' => '2.3.1', 'dependencies' => 
+[], 'extraFiles' => 
+[]], 'tom-select/dist/css/tom-select.default.css' => 
+['version' => '2.3.1', 'dependencies' => 
+[], 'extraFiles' => 
+[]]];

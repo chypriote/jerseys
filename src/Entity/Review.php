@@ -14,7 +14,7 @@ class Review implements SoftDeletableEntityInterface
     use SoftDeletableEntityTrait;
 
     #[ORM\Column(type: 'ulid', unique: true)]
-    protected string $ulid;
+    protected Ulid $ulid;
 
     #[ORM\ManyToOne(targetEntity: Seller::class)]
     protected Seller $seller;
@@ -33,12 +33,12 @@ class Review implements SoftDeletableEntityInterface
         $this->ulid = new Ulid();
     }
 
-    public function getUlid(): ?string
+    public function getUlid(): Ulid
     {
         return $this->ulid;
     }
 
-    public function setUlid(string $ulid): self
+    public function setUlid(Ulid $ulid): self
     {
         $this->ulid = $ulid;
 
@@ -47,6 +47,6 @@ class Review implements SoftDeletableEntityInterface
 
     public function getIdentifier(): string
     {
-        return $this->ulid;
+        return $this->ulid->toHex();
     }
 }

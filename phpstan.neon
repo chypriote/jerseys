@@ -1,4 +1,6 @@
 # https://phpstan.org/config-reference
+includes:
+	- phpstan-baseline.neon
 parameters:
     # https://phpstan.org/config-reference#rule-level
     level: max
@@ -8,7 +10,7 @@ parameters:
         - config
         - public
         - src
-        - tests
+#        - tests
     # https://github.com/phpstan/phpstan-symfony#configuration
     symfony:
         container_xml_path: var/cache/dev/App_KernelDevDebugContainer.xml

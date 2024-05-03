@@ -14,7 +14,7 @@ final class CreateJerseyDto
     #[Assert\NotNull]
     public Club $club;
 
-    public ?string $slug;
+    public ?string $slug = null;
     #[Assert\NotBlank]
     public JerseyYears $year;
 

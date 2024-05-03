@@ -2,26 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Test\Controller;
+namespace App\Tests\Controller\Admin;
 
-use App\Entity\Seller;
+use App\Entity\League;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class SellerControllerTest extends WebTestCase
+class LeagueControllerTest extends WebTestCase
 {
     private KernelBrowser $client;
     private EntityManagerInterface $manager;
+    /** @var EntityRepository<League> */
     private EntityRepository $repository;
-    private string $path = '/seller/';
+    private string $path = '/league/';
 
     protected function setUp(): void
     {
         $this->client = static::createClient();
         $this->manager = static::getContainer()->get('doctrine')->getManager();
-        $this->repository = $this->manager->getRepository(Seller::class);
+        $this->repository = $this->manager->getRepository(League::class);
 
         foreach ($this->repository->findAll() as $object) {
             $this->manager->remove($object);
@@ -32,10 +33,10 @@ class SellerControllerTest extends WebTestCase
 
     public function testIndex(): void
     {
-        $crawler = $this->client->request('GET', $this->path);
+        $this->client->request('GET', $this->path);
 
         self::assertResponseStatusCodeSame(200);
-        self::assertPageTitleContains('Seller index');
+        self::assertPageTitleContains('League index');
 
         // Use the $crawler to perform additional assertions e.g.
         // self::assertSame('Some text on the page', $crawler->filter('.p')->first());
@@ -49,13 +50,9 @@ class SellerControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
 
         $this->client->submitForm('Save', [
-            'seller[name]' => 'Testing',
-            'seller[slug]' => 'Testing',
-            'seller[url]' => 'Testing',
-            'seller[logo]' => 'Testing',
-            'seller[deletedAt]' => 'Testing',
-            'seller[createdAt]' => 'Testing',
-            'seller[updatedAt]' => 'Testing',
+            'league[name]' => 'Testing',
+            'league[slug]' => 'Testing',
+            'league[logo]' => 'Testing',
         ]);
 
         self::assertResponseRedirects($this->path);
@@ -66,14 +63,10 @@ class SellerControllerTest extends WebTestCase
     public function testShow(): void
     {
         $this->markTestIncomplete();
-        $fixture = new Seller();
+        $fixture = new League();
         $fixture->setName('My Title');
         $fixture->setSlug('My Title');
-        $fixture->setUrl('My Title');
         $fixture->setLogo('My Title');
-        $fixture->setDeletedAt('My Title');
-        $fixture->setCreatedAt('My Title');
-        $fixture->setUpdatedAt('My Title');
 
         $this->manager->persist($fixture);
         $this->manager->flush();
@@ -81,7 +74,7 @@ class SellerControllerTest extends WebTestCase
         $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
 
         self::assertResponseStatusCodeSame(200);
-        self::assertPageTitleContains('Seller');
+        self::assertPageTitleContains('League');
 
         // Use assertions to check that the properties are properly displayed.
     }
@@ -89,14 +82,9 @@ class SellerControllerTest extends WebTestCase
     public function testEdit(): void
     {
         $this->markTestIncomplete();
-        $fixture = new Seller();
+        $fixture = new League();
         $fixture->setName('Value');
-        $fixture->setSlug('Value');
-        $fixture->setUrl('Value');
         $fixture->setLogo('Value');
-        $fixture->setDeletedAt('Value');
-        $fixture->setCreatedAt('Value');
-        $fixture->setUpdatedAt('Value');
 
         $this->manager->persist($fixture);
         $this->manager->flush();
@@ -104,39 +92,26 @@ class SellerControllerTest extends WebTestCase
         $this->client->request('GET', sprintf('%s%s/edit', $this->path, $fixture->getId()));
 
         $this->client->submitForm('Update', [
-            'seller[name]' => 'Something New',
-            'seller[slug]' => 'Something New',
-            'seller[url]' => 'Something New',
-            'seller[logo]' => 'Something New',
-            'seller[deletedAt]' => 'Something New',
-            'seller[createdAt]' => 'Something New',
-            'seller[updatedAt]' => 'Something New',
+            'league[name]' => 'Something New',
+            'league[slug]' => 'Something New',
+            'league[logo]' => 'Something New',
         ]);
 
-        self::assertResponseRedirects('/seller/');
+        self::assertResponseRedirects('/league/');
 
         $fixture = $this->repository->findAll();
 
         self::assertSame('Something New', $fixture[0]->getName());
         self::assertSame('Something New', $fixture[0]->getSlug());
-        self::assertSame('Something New', $fixture[0]->getUrl());
         self::assertSame('Something New', $fixture[0]->getLogo());
-        self::assertSame('Something New', $fixture[0]->getDeletedAt());
-        self::assertSame('Something New', $fixture[0]->getCreatedAt());
-        self::assertSame('Something New', $fixture[0]->getUpdatedAt());
     }
 
     public function testRemove(): void
     {
         $this->markTestIncomplete();
-        $fixture = new Seller();
+        $fixture = new League();
         $fixture->setName('Value');
-        $fixture->setSlug('Value');
-        $fixture->setUrl('Value');
         $fixture->setLogo('Value');
-        $fixture->setDeletedAt('Value');
-        $fixture->setCreatedAt('Value');
-        $fixture->setUpdatedAt('Value');
 
         $this->manager->persist($fixture);
         $this->manager->flush();
@@ -144,7 +119,7 @@ class SellerControllerTest extends WebTestCase
         $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
         $this->client->submitForm('Delete');
 
-        self::assertResponseRedirects('/seller/');
+        self::assertResponseRedirects('/league/');
         self::assertSame(0, $this->repository->count([]));
     }
 }
