@@ -44,7 +44,7 @@ class Club implements SoftDeletableEntityInterface
     #[Assert\Image]
     #[ORM\Column]
     //    #[ORM\OneToOne(targetEntity: UploadedFile::class)]
-        //    #[ORM\JoinColumn(nullable: true)]
+    //    #[ORM\JoinColumn(nullable: true)]
     protected ?string $logo = null;
 
     public function __construct()

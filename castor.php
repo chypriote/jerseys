@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 use Castor\Attribute\AsTask;
 use Symfony\Component\Console\Command\Command;
+
 use function Castor\io;
 use function Castor\parallel;
 use function Castor\run;
@@ -17,7 +18,7 @@ use function Castor\task;
  */
 function title(string $title, ?Command $command = null): void
 {
-    io()->title($title . ($command !== null ? ': ' . $command->getDescription() : ''));
+    io()->title($title.($command !== null ? ': '.$command->getDescription() : ''));
 }
 
 function success(): void
@@ -30,7 +31,7 @@ function aborted(): void
     io()->warning('Aborted.');
 }
 
-#[AsTask(namespace: 'symfony', description: 'Serve the application with the Symfony binary',)]
+#[AsTask(namespace: 'symfony', description: 'Serve the application with the Symfony binary', )]
 function start(): void
 {
     title(__FUNCTION__, task());
@@ -52,7 +53,7 @@ function go_prod(): void
     title(__FUNCTION__, task());
     if (io()->confirm('Are you sure you want to switch to the production environment? This will overwrite your .env.local file', false)) {
         run('cp .env.local.dist .env.local', quiet: false);
-        run('bin/console asset-map:compile', quiet: false);
+        run('php bin/console asset-map:compile', quiet: false);
         success();
 
         return;
@@ -88,7 +89,7 @@ function purge(): void
 function test(): void
 {
     title(__FUNCTION__, task());
-    run('vendor/bin/phpunit', quiet: false);
+    run('php vendor/bin/phpunit', quiet: false);
     io()->writeln('');
     success();
 }
@@ -127,7 +128,7 @@ function stan(): void
 function fix_php(): void
 {
     title(__FUNCTION__, task());
-    run('vendor/bin/php-cs-fixer fix --allow-risky=yes',
+    run('php vendor/bin/php-cs-fixer fix --allow-risky=yes',
         environment: [
             'PHP_CS_FIXER_IGNORE_ENV' => 1,
         ],
@@ -140,7 +141,7 @@ function fix_php(): void
 function lint_php(): void
 {
     title(__FUNCTION__, task());
-    run('vendor/bin/php-cs-fixer fix --allow-risky=yes --dry-run',
+    run('php vendor/bin/php-cs-fixer fix --allow-risky=yes --dry-run',
         environment: [
             'PHP_CS_FIXER_IGNORE_ENV' => 1,
         ],
@@ -161,7 +162,7 @@ function cs_all(): void
 function lint_container(): void
 {
     title(__FUNCTION__, task());
-    run('bin/console lint:container', quiet: false);
+    run('php bin/console lint:container', quiet: false);
     success();
 }
 
@@ -169,7 +170,7 @@ function lint_container(): void
 function lint_twig(): void
 {
     title(__FUNCTION__, task());
-    run('bin/console lint:twig templates/', quiet: false);
+    run('php bin/console lint:twig templates/', quiet: false);
     success();
 }
 
@@ -177,7 +178,7 @@ function lint_twig(): void
 function lint_yaml(): void
 {
     title(__FUNCTION__, task());
-    run('bin/console lint:yaml --parse-tags config/', quiet: false);
+    run('php bin/console lint:yaml --parse-tags config/', quiet: false);
     success();
 }
 
@@ -186,10 +187,10 @@ function lint_all(): void
 {
     title(__FUNCTION__, task());
     parallel(
-        fn() => lint_php(),
-        fn() => lint_container(),
-        fn() => lint_twig(),
-        fn() => lint_yaml(),
+        fn () => lint_php(),
+        fn () => lint_container(),
+        fn () => lint_twig(),
+        fn () => lint_yaml(),
     );
 }
 
@@ -215,18 +216,18 @@ function versions(): void
     io()->newLine();
 
     io()->note('Symfony');
-    run('bin/console --version', quiet: false);
+    run('php bin/console --version', quiet: false);
     io()->newLine();
 
     io()->note('PHPUnit');
-    run('vendor/bin/phpunit --version', quiet: false);
+    run('php vendor/bin/phpunit --version', quiet: false);
 
     io()->note('PHPStan');
-    run('vendor/bin/phpstan --version', quiet: false);
+    run('php vendor/bin/phpstan --version', quiet: false);
     io()->newLine();
 
     io()->note('php-cs-fixer');
-    run('vendor/bin/php-cs-fixer --version', quiet: false);
+    run('php vendor/bin/php-cs-fixer --version', quiet: false);
     io()->newLine();
 
     success();
@@ -236,6 +237,6 @@ function versions(): void
 function check_requirements(): void
 {
     title(__FUNCTION__, task());
-    run('vendor/bin/requirements-checker', quiet: false);
+    run('php vendor/bin/requirements-checker', quiet: false);
     success();
 }

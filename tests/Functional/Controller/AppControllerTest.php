@@ -9,7 +9,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AppControllerTest extends WebTestCase
 {
-
     /**
      * @return iterable<array{0: string}>
      *
