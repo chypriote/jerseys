@@ -33,7 +33,7 @@ class SellerControllerTest extends WebTestCase
 
     public function testIndex(): void
     {
-        $this->client->request('GET', $this->path);
+        $this->client->request(Method::GET, $this->path);
 
         self::assertResponseStatusCodeSame(200);
         self::assertPageTitleContains('Seller index');
@@ -44,7 +44,7 @@ class SellerControllerTest extends WebTestCase
 
     public function testNew(): void
     {
-        $this->client->request('GET', sprintf('%snew', $this->path));
+        $this->client->request(Method::GET, sprintf('%snew', $this->path));
 
         self::assertResponseStatusCodeSame(200);
 
@@ -69,7 +69,7 @@ class SellerControllerTest extends WebTestCase
         $this->manager->persist($fixture);
         $this->manager->flush();
 
-        $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
+        $this->client->request(Method::GET, sprintf('%s%s', $this->path, $fixture->getId()));
 
         self::assertResponseStatusCodeSame(200);
         self::assertPageTitleContains('Seller');
@@ -87,7 +87,7 @@ class SellerControllerTest extends WebTestCase
         $this->manager->persist($fixture);
         $this->manager->flush();
 
-        $this->client->request('GET', sprintf('%s%s/edit', $this->path, $fixture->getId()));
+        $this->client->request(Method::GET, sprintf('%s%s/edit', $this->path, $fixture->getId()));
 
         $this->client->submitForm('Update', [
             'seller[name]' => 'Something New',
@@ -114,7 +114,7 @@ class SellerControllerTest extends WebTestCase
         $this->manager->persist($fixture);
         $this->manager->flush();
 
-        $this->client->request('GET', sprintf('%s%s', $this->path, $fixture->getId()));
+        $this->client->request(Method::GET, sprintf('%s%s', $this->path, $fixture->getId()));
         $this->client->submitForm('Delete');
 
         self::assertResponseRedirects('/sellers/');

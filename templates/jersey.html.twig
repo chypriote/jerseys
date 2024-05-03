@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}
+
+{% endblock %}
+
+
+{% block body %}
+	<section>
+		<div col="1/2">
+			<img src="{{ jersey.picture }}" alt="{{ jersey.slug }}"/>
+		</div>
+		<div col="1/2">
+			<h1>{{ jersey.club.name }} {{ jersey.type.value }} Jersey {{ jersey.year.value }}</h1>
+			<ul>
+				{% for offer in jersey.offers %}
+					<li>
+						<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">
+							<img src="{{ offer.seller.logo }}" alt="{{ offer.seller.name }}">
+							{{ offer.seller.name }} {{ offer.price }}
+						</a>
+					</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</section>
+{% endblock %}

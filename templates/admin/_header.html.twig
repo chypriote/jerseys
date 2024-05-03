@@ -1,10 +1,10 @@
 <div class="sub-heading">
-    <h2>{{ h2 }} 📋</h2>
+	<h2>{% block title %}Admin {{ brand }}{% endblock %} 📋</h2>
 </div>
 
 <card>
-    <a href="{{ path('admin.leagues.list') }}">Leagues</a>
-    <a href="{{ path('admin.create_club_action') }}">Clubs</a>
-    <a href="{{ path('admin.jerseys.list') }}">Jerseys</a>
-    <a href="{{ path('admin.sellers.list') }}">Sellers</a>
+	<a href="{{ path('admin.leagues.list') }}">Leagues</a>
+	<a href="{{ path('admin.clubs.list') }}">Clubs</a>
+	<a href="{{ path('admin.jerseys.list') }}">Jerseys</a>
+	<a href="{{ path('admin.sellers.list') }}">Sellers</a>
 </card>

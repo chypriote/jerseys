@@ -11,7 +11,7 @@ final class HelloWorldTest extends WebTestCase
     public function testHelloWorld(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/hello-world');
+        $client->request(Method::GET, '/hello-world');
         self::assertResponseIsSuccessful();
     }
 }

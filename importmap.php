@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /**
  * Returns the importmap for this application.
  *
@@ -18,18 +16,22 @@ return [
         'path' => 'app.js',
         'entrypoint' => true,
     ],
-    '@hotwired/stimulus' => [
-        'version' => '3.2.2',
+    'admin' => [
+        'path' => 'admin.js',
+        'entrypoint' => true,
     ],
     '@symfony/stimulus-bundle' => [
         'path' => '@symfony/stimulus-bundle/loader.js',
     ],
+    '@hotwired/stimulus' => [
+        'version' => '3.2.2',
+    ],
     'barecss/css/bare.min.css' => [
-        'version' => '1.1.0',
+        'version' => '1.1.1',
         'type' => 'css',
     ],
     '@hotwired/turbo' => [
-        'version' => '7.3.0',
+        'version' => '8.0.4',
     ],
     'tom-select' => [
         'version' => '2.3.1',

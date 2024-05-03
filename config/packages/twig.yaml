@@ -3,6 +3,7 @@ twig:
     globals:
         brand: '%brand%'
         brand_html: '%brand_html%'
+    form_themes: [ 'form/bare.html.twig' ]
 
 when@test:
     twig:

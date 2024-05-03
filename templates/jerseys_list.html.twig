@@ -1,0 +1,24 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+	<section>
+		<h1>{{ league.name }}</h1>
+		<div class="subcategories">
+			{% for item in subCategories %}
+				<a href="{{ path(item.routeName, item.routeParams) }}">{{ item.name }}</a>
+			{% endfor %}
+		</div>
+		<div class="jerseys">
+			<ul>
+				{% for jersey in jerseys %}
+					<li>{{ jersey.slug }}</li>
+				{% endfor %}
+			</ul>
+		</div>
+	</section>
+{% endblock %}
+
+{% block title %}
+
+{% endblock %}
+

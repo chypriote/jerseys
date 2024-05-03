@@ -25,7 +25,7 @@ final class AppControllerTest extends WebTestCase
     public function testSimplePage(string $page): void
     {
         $client = self::createClient();
-        $client->request('GET', $page);
+        $client->request(Method::GET, $page);
         self::assertResponseIsSuccessful(sprintf('Page %s is not successfull.', $page));
     }
     //
@@ -36,7 +36,7 @@ final class AppControllerTest extends WebTestCase
     //    public function testFormValidationErrors(): void
     //    {
     //        $client = self::createClient();
-    //        $crawler = $client->request('GET', '/form');
+    //        $crawler = $client->request(Method::GET, '/form');
     //        self::assertResponseIsSuccessful();
     //
     //        $form = $crawler->selectButton(self::FORM_SUBMIT_BUTTON_ID)->form();
@@ -50,7 +50,7 @@ final class AppControllerTest extends WebTestCase
     //    public function testFormSuccess(): void
     //    {
     //        $client = self::createClient();
-    //        $crawler = $client->request('GET', '/form');
+    //        $crawler = $client->request(Method::GET, '/form');
     //        self::assertResponseIsSuccessful();
     //
     //        $form = $crawler->selectButton(self::FORM_SUBMIT_BUTTON_ID)->form();

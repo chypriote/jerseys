@@ -1,0 +1,39 @@
+{% use 'form_div_layout.html.twig' %}
+
+{% block radio_widget %}
+	<input
+		type="radio"
+		{{ block('widget_attributes') }}
+		{% if value is defined %}value="{{ value }}"{% endif %}
+		{% if checked %} checked="checked"{% endif %}
+	/>
+{% endblock %}
+
+{%- block choice_widget_expanded -%}
+	<div {{ block('widget_container_attributes') }} class="choice-expanded">
+		{%- for child in form %}
+			{{- form_widget(child) -}}
+			{{- form_label(child, null, {translation_domain: choice_translation_domain}) -}}
+		{% endfor -%}
+	</div>
+{%- endblock choice_widget_expanded -%}
+
+{%- block form_row -%}
+	{%- set widget_attr = {} -%}
+	{%- if help is not empty -%}
+		{%- set widget_attr = {attr: {'aria-describedby': id ~"_help"}} -%}
+	{%- endif -%}
+	<div{% with {attr: row_attr} %}{{ block('attributes') }}{% endwith %} class="form-row">
+		{{- form_label(form) -}}
+		{{- form_errors(form) -}}
+		{{- form_widget(form, widget_attr) -}}
+		{{- form_help(form) -}}
+	</div>
+{%- endblock form_row -%}
+
+{%- block button_row -%}
+	<div{% with {attr: row_attr} %}{{ block('attributes') }}{% endwith %} class="form-row">
+		{{- form_widget(form) -}}
+	</div>
+{%- endblock button_row -%}
+

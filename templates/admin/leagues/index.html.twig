@@ -1,46 +1,46 @@
-{% extends 'base.html.twig' %}
+{% extends 'admin/base.html.twig' %}
 
 {% block title %}League index{% endblock %}
 
 {% block body %}
-    <h1>League index</h1>
+	<h1>League index</h1>
 
-    <table class="table">
-        <thead>
-        <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Slug</th>
-            <th>Logo</th>
-            <th>CreatedAt</th>
-            <th>UpdatedAt</th>
-            <th>actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for league in leagues %}
-            <tr>
-                <td>{{ league.id }}</td>
-                <td>{{ league.name }}</td>
-                <td>{{ league.slug }}</td>
-                <td><img src="{{ league.logo }}" alt="{{ league.name }}"/></td>
-                <td>{{ league.createdAt|date('Y-m-d') }}</td>
-                <td>{{ league.updatedAt|date('Y-m-d') }}</td>
-                <td>
-                    <a href="{{ path('admin.leagues.show', {'slug': league.slug}) }}">show</a>
-                    <a href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
-                    {% if league.clubs.count == 0 %}
-                        <a href="{{ path('admin.leagues.delete', {'slug': league.slug}) }}">delete</a>
-                    {% endif %}
-                </td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="8">no records found</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+	<table class="table">
+		<thead>
+		<tr>
+			<th>Id</th>
+			<th>Name</th>
+			<th>Slug</th>
+			<th>Logo</th>
+			<th>CreatedAt</th>
+			<th>UpdatedAt</th>
+			<th>actions</th>
+		</tr>
+		</thead>
+		<tbody>
+		{% for league in leagues %}
+			<tr>
+				<td>{{ league.id }}</td>
+				<td>{{ league.name }}</td>
+				<td>{{ league.slug }}</td>
+				<td><img src="{{ league.logo }}" alt="{{ league.name }}"/></td>
+				<td>{{ league.createdAt|date('Y-m-d') }}</td>
+				<td>{{ league.updatedAt|date('Y-m-d') }}</td>
+				<td>
+					<a href="{{ path('admin.leagues.show', {'slug': league.slug}) }}">show</a>
+					<a href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
+					{% if league.clubs.count == 0 %}
+						<a href="{{ path('admin.leagues.delete', {'slug': league.slug}) }}">delete</a>
+					{% endif %}
+				</td>
+			</tr>
+		{% else %}
+			<tr>
+				<td colspan="8">no records found</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
 
-    <a href="{{ path('admin.leagues.create') }}">Create new</a>
+	<a href="{{ path('admin.leagues.create') }}">Create new</a>
 {% endblock %}

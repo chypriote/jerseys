@@ -6,7 +6,6 @@ namespace App\Entity;
 
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
-use App\Dto\CreateSellerDto;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -42,16 +41,6 @@ class Seller implements SoftDeletableEntityInterface
     public function __construct()
     {
         $this->offers = new ArrayCollection();
-    }
-
-    public static function fromDto(CreateSellerDto $dto): Seller
-    {
-        $seller = new self();
-        $seller->setName($dto->name);
-        $seller->setUrl($dto->url);
-        $seller->setLogo($dto->logo);
-
-        return $seller;
     }
 
     public function getName(): string

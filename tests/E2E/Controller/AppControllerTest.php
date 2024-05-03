@@ -24,7 +24,7 @@ final class AppControllerTest extends E2ETestCase
     {
         // $client = self::createPantherClient();
         $client = self::createClient();
-        $client->request('GET', '/');
+        $client->request(Method::GET, '/');
         self::assertSelectorTextContains('body', 'MicroSymfony');
     }
 }

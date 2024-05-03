@@ -1,31 +1,31 @@
 <nav>
-    <header>
-        <a href="{{ path('app.home') }}">
-            {# <img alt="{{ brand }}" src="img/your-logo.svg">{{ brand_html|raw }} #}
-            {{ brand_html|raw }}
-        </a>
-    </header>
+	<header>
+		<a href="{{ path('app.home') }}">
+			{# <img alt="{{ brand }}" src="img/your-logo.svg">{{ brand_html|raw }} #}
+			{{ brand_html|raw }}
+		</a>
+	</header>
 
-    <ul>
-        <li><a href="{{ path('app.home') }}">Home</a></li>
-        <li>
-            <a>Menu</a>
-            <menu>
-                <menuitem><a href="{{ path('app.home') }}">Home (README.md)</a></menuitem>
-                <menuitem><a href="{{ path('app_stimulus') }}">JavaScript with stimulus</a></menuitem>
-                <menuitem><a href="{{ app.environment == 'dev' ? '/_error/404.html' : '/404' }}">Custom error
-                        page</a></menuitem>
-            </menu>
-        </li>
-        {% if is_granted('IS_AUTHENTICATED_FULLY') %}
-            <li>{{ app.user.username }}</li>
-            {% if is_granted('ROLE_ADMIN') %}
-                <li><a href="{{ path('admin.index') }}">Admin</a></li>
-            {% endif %}
-            <li><a href="{{ path('auth.logout') }}">Logout</a></li>
-        {% else %}
-            <li><a href="{{ path('auth.login') }}">Login</a></li>
-            <li><a href="{{ path('auth.register') }}">Register</a></li>
-        {% endif %}
-    </ul>
+	<ul>
+		<li><a href="{{ path('app.home') }}">Home</a></li>
+		<li>
+			<a>Menu</a>
+			<menu>
+				<menuitem><a href="{{ path('app.home') }}">Home (README.md)</a></menuitem>
+				<menuitem><a href="{{ path('app_stimulus') }}">JavaScript with stimulus</a></menuitem>
+				<menuitem><a href="{{ app.environment == 'dev' ? '/_error/404.html' : '/404' }}">Custom error
+						page</a></menuitem>
+			</menu>
+		</li>
+		{% if is_granted('IS_AUTHENTICATED_FULLY') %}
+			{% if is_granted('ROLE_ADMIN') %}
+				<li><a href="{{ path('admin.index') }}">Admin</a></li>
+			{% endif %}
+			<li>{{ app.user.username }}</li>
+			<li><a href="{{ path('auth.logout') }}">Logout</a></li>
+		{% else %}
+			<li><a href="{{ path('auth.login') }}">Login</a></li>
+			<li><a href="{{ path('auth.register') }}">Register</a></li>
+		{% endif %}
+	</ul>
 </nav>

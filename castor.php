@@ -85,6 +85,15 @@ function purge(): void
     success();
 }
 
+#[AsTask(namespace: 'symfony', description: 'Cache clear and warmup')]
+function cache(): void
+{
+    title(__FUNCTION__, task());
+    run('php bin/console cache:clear', quiet: false);
+    run('php bin/console cache:warmup', quiet: false);
+    success();
+}
+
 #[AsTask(name: 'all', namespace: 'test', description: 'Run all PHPUnit tests')]
 function test(): void
 {

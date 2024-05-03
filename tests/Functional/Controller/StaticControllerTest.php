@@ -16,7 +16,7 @@ final class StaticControllerTest extends WebTestCase
     public function testStimulus(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/stimulus');
+        $client->request(Method::GET, '/stimulus');
         self::assertResponseIsSuccessful();
     }
 }

@@ -12,7 +12,7 @@ final class ErrorHandlerTest extends WebTestCase
     public function test404(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/404');
+        $client->request(Method::GET, '/404');
         self::assertResponseStatusCodeSame(Response::HTTP_NOT_FOUND);
     }
 }

@@ -6,7 +6,6 @@ namespace App\Entity;
 
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
-use App\Dto\CreateJerseyDto;
 use App\Enum\JerseyType;
 use App\Enum\JerseyYears;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -49,17 +48,6 @@ class Jersey implements SoftDeletableEntityInterface
     public function __construct()
     {
         $this->offers = new ArrayCollection();
-    }
-
-    public static function fromDto(CreateJerseyDto $dto): self
-    {
-        $jersey = new self();
-        $jersey->setClub($dto->club);
-        $jersey->setYear($dto->year);
-        $jersey->setType($dto->type);
-        $jersey->setPicture($dto->picture);
-
-        return $jersey;
     }
 
     public function getClub(): Club
@@ -122,5 +110,10 @@ class Jersey implements SoftDeletableEntityInterface
     public function setPicture(?string $picture): void
     {
         $this->picture = $picture;
+    }
+
+    public function getComputedName(): string
+    {
+        return "{$this->getClub()->getName()} {$this->getType()->value} Jersey {$this->getYear()->value}";
     }
 }

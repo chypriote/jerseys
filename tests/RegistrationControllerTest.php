@@ -36,7 +36,7 @@ class RegistrationControllerTest extends WebTestCase
     public function testRegister(): void
     {
         // Register a new user
-        $this->client->request('GET', '/register');
+        $this->client->request(Method::GET, '/register');
         self::assertResponseIsSuccessful();
         self::assertPageTitleContains('Register');
 
@@ -74,7 +74,7 @@ class RegistrationControllerTest extends WebTestCase
         preg_match('#(http://localhost/verify/email.+)">#', $messageBody, $resetLink);
 
         // "Click" the link and see if the user is verified
-        $this->client->request('GET', $resetLink[1]);
+        $this->client->request(Method::GET, $resetLink[1]);
         $this->client->followRedirect();
 
         self::assertTrue(static::getContainer()->get(UserRepository::class)->findAll()[0]->isVerified());

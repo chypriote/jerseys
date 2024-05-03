@@ -4,29 +4,71 @@
  * @see https://symfony.com/doc/current/forms.html#form-type-options
  */
 label.required:after {
-    content: " *";
+	content: " *";
 }
 
 /**
  * Form errors in red.
  */
 form > div > div > ul > li {
-    color: red;
+	color: red;
 }
 
 section:not([class]), section[xx] {
-    max-width: 1420px;
+	max-width: 1420px;
 }
 
 nav:not([class]), nav[xx] {
-    min-height: auto;
-    height: 4.4rem;
+	min-height: auto;
+	height: 4.4rem;
 }
 
 footer {
-    height: 9rem;
+	height: 9rem;
 }
 
 main {
-    min-height: calc(100vh - 4.4rem - 13rem);
+	min-height: calc(100vh - 4.4rem - 13rem);
+}
+
+.subcategories {
+	display: flex;
+	justify-content: center;
+	flex-flow: wrap;
+	margin: 10px 0;
+
+	a {
+		box-sizing: border-box;
+		padding: 10px;
+		line-height: 24px;
+		color: #666;
+		margin: 0 5px;
+		text-align: center;
+		transition: all 0.3s;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		text-decoration: underline;
+	}
+}
+
+.jerseys {
+	display: flex;
+	overflow: hidden;
+	align-items: flex-start;
+
+	ul {
+		display: flex;
+		flex-wrap: wrap;
+		margin-top: 20px;
+		width: 100%;
+		transition: all 0.3s;
+
+		li {
+			width: calc(25% - 15px);
+			margin: 0 20px;
+			position: relative;
+			text-align: center;
+		}
+	}
 }

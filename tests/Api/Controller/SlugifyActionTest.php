@@ -18,7 +18,7 @@ final class SlugifyActionTest extends WebTestCase
     public function testSlugifyAction(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/api/slugify?title=This IS the _-! Micro SYMFONY  project');
+        $client->request(Method::GET, '/api/slugify?title=This IS the _-! Micro SYMFONY  project');
         self::assertResponseIsSuccessful();
         self::isJson();
         self::assertJsonStringEqualsJsonString('{"slug":"this-is-the-micro-symfony-project"}', (string) $client->getResponse()->getContent());

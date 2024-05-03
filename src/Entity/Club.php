@@ -6,7 +6,7 @@ namespace App\Entity;
 
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
-use App\Dto\CreateClubDto;
+use App\Dto\SubCategoryDto;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -18,7 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt')]
 // #[Gedmo\Loggable]
-class Club implements SoftDeletableEntityInterface
+class Club implements SoftDeletableEntityInterface, CategorizableItem
 {
     use SoftDeletableEntityTrait;
 
@@ -35,31 +35,20 @@ class Club implements SoftDeletableEntityInterface
     protected string $country;
 
     /** @var ArrayCollection<int, Jersey> */
-    #[ORM\OneToMany(targetEntity: Jersey::class, mappedBy: 'club')]
+    #[ORM\OneToMany(mappedBy: 'club', targetEntity: Jersey::class)]
     protected Collection $jerseys;
 
     #[ORM\ManyToOne(targetEntity: League::class, inversedBy: 'clubs')]
     protected League $league;
 
-    #[Assert\Image]
     #[ORM\Column]
     //    #[ORM\OneToOne(targetEntity: UploadedFile::class)]
     //    #[ORM\JoinColumn(nullable: true)]
-    protected ?string $logo = null;
+    protected string $logo;
 
     public function __construct()
     {
         $this->jerseys = new ArrayCollection();
-    }
-
-    public static function fromDto(CreateClubDto $dto): self
-    {
-        $club = new self();
-        $club->setName($dto->name);
-        $club->setLogo($dto->logo);
-        $club->setCountry($dto->country);
-
-        return $club;
     }
 
     public function getName(): string
@@ -109,13 +98,25 @@ class Club implements SoftDeletableEntityInterface
         $this->jerseys = $jerseys;
     }
 
-    public function getLogo(): ?string
+    public function getLogo(): string
     {
         return $this->logo;
     }
 
-    public function setLogo(?string $logo): void
+    public function setLogo(string $logo): void
     {
         $this->logo = $logo;
+    }
+
+    public function toSubCategory(): SubCategoryDto
+    {
+        $dto = new SubCategoryDto();
+
+        $dto->name = $this->name;
+        $dto->routeName = 'app.jersey';
+        $dto->routeParams = ['slug' => $this->slug];
+        $dto->logo = $this->logo;
+
+        return $dto;
     }
 }

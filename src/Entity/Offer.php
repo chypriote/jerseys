@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Core\Entity\TimestampedEntityInterface;
 use App\Core\Entity\TimestampedEntityTrait;
+use App\Enum\JerseyFormat;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -19,10 +20,13 @@ class Offer implements TimestampedEntityInterface
     protected Jersey $jersey;
 
     #[ORM\Column]
-    protected string $link;
+    protected string $url;
 
     #[ORM\Column]
-    protected int $price;
+    protected string $price;
+
+    #[ORM\Column]
+    protected JerseyFormat $format;
 
     public function getSeller(): Seller
     {
@@ -44,23 +48,33 @@ class Offer implements TimestampedEntityInterface
         $this->jersey = $jersey;
     }
 
-    public function getLink(): string
+    public function getUrl(): string
     {
-        return $this->link;
+        return $this->url;
     }
 
-    public function setLink(string $link): void
+    public function setUrl(string $url): void
     {
-        $this->link = $link;
+        $this->url = $url;
     }
 
-    public function getPrice(): int
+    public function getPrice(): string
     {
         return $this->price;
     }
 
-    public function setPrice(int $price): void
+    public function setPrice(string $price): void
     {
         $this->price = $price;
+    }
+
+    public function getFormat(): JerseyFormat
+    {
+        return $this->format;
+    }
+
+    public function setFormat(JerseyFormat $format): void
+    {
+        $this->format = $format;
     }
 }
