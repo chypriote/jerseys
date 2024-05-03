@@ -1,0 +1,7 @@
+jersey:
+  type:
+    home: 'Home'
+    away: 'Away'
+    third: 'Third'
+    fourth: 'Fourth'
+    special: 'Special'

@@ -1,0 +1,32 @@
+/**
+ * Mark required fields in Symfony forms.
+ *
+ * @see https://symfony.com/doc/current/forms.html#form-type-options
+ */
+label.required:after {
+    content: " *";
+}
+
+/**
+ * Form errors in red.
+ */
+form > div > div > ul > li {
+    color: red;
+}
+
+section:not([class]), section[xx] {
+    max-width: 1420px;
+}
+
+nav:not([class]), nav[xx] {
+    min-height: auto;
+    height: 4.4rem;
+}
+
+footer {
+    height: 9rem;
+}
+
+main {
+    min-height: calc(100vh - 4.4rem - 13rem);
+}
