@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}League{% endblock %}
+
+{% block body %}
+    <h1>League</h1>
+
+    <table class="table">
+        <tbody>
+        <tr>
+            <th>Name</th>
+            <td>{{ league.name }}</td>
+        </tr>
+        <tr>
+            <th>Slug</th>
+            <td>{{ league.slug }}</td>
+        </tr>
+        <tr>
+            <th>Logo</th>
+            <td>{{ league.logo }}</td>
+        </tr>
+        <tr>
+            <th>DeletedAt</th>
+            <td>{{ league.deletedAt ? league.deletedAt|date('Y-m-d H:i:s') : '' }}</td>
+        </tr>
+        <tr>
+            <th>CreatedAt</th>
+            <td>{{ league.createdAt ? league.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+        </tr>
+        <tr>
+            <th>UpdatedAt</th>
+            <td>{{ league.updatedAt ? league.updatedAt|date('Y-m-d H:i:s') : '' }}</td>
+        </tr>
+        <tr>
+            <th>Id</th>
+            <td>{{ league.id }}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('admin.league_index') }}">back to list</a>
+
+    <a href="{{ path('admin.league_edit', {'id': league.id}) }}">edit</a>
+
+    {{ include('admin/leagues/_delete_form.html.twig') }}
+{% endblock %}

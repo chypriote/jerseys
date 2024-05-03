@@ -19,6 +19,9 @@
         </li>
         {% if is_granted('IS_AUTHENTICATED_FULLY') %}
             <li>{{ app.user.username }}</li>
+            {% if is_granted('ROLE_ADMIN') %}
+                <li><a href="{{ path('admin.create_league_action') }}">Admin</a></li>
+            {% endif %}
             <li><a href="{{ path('auth.logout') }}">Logout</a></li>
         {% else %}
             <li><a href="{{ path('auth.login') }}">Login</a></li>

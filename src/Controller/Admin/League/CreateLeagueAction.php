@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller\Admin;
+namespace App\Controller\Admin\League;
 
 use App\Dto\CreateLeagueDto;
 use App\Entity\League;

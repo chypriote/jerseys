@@ -26,7 +26,7 @@
                         <td><img src="{{ league.logo }}" alt="{{ league.name }}"/></td>
                         <td>
                             <button>add offer</button>
-                            <button>edit</button>
+                            <a href="{{ path('admin.edit_league_action', {'slug': league.slug}) }}">edit</a>
                             {% if league.clubs.count == 0 %}
                                 <button>delete</button>
                             {% endif %}
