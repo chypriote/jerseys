@@ -1,6 +1,19 @@
-td img {
-	max-width: 4rem;
-	max-height: 4rem;
+td .club {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+
+	.logo {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: 4rem;
+		height: 4rem;
+	}
+
+	.name {
+		flex-grow: 1;
+	}
 }
 
 .offers {

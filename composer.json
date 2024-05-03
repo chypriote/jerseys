@@ -20,6 +20,7 @@
     "ext-simplexml": "*",
     "ext-xml": "*",
     "ext-zend-opcache": "*",
+    "amphp/http-client": "^5.1",
     "doctrine/dbal": "^3.8",
     "doctrine/doctrine-bundle": "^2.12",
     "doctrine/doctrine-migrations-bundle": "^3.3",

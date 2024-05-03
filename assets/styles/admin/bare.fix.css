@@ -18,3 +18,7 @@ input:not([type=radio]):not([type=checkbox]):not([type=button]):not([type=submit
 input[type=radio]:not([class]) + label, input[type=radio][xx] + label {
 	cursor: pointer;
 }
+
+img:not([class]), img[xx] {
+	max-height: 100%;
+}
