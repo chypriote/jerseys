@@ -44,7 +44,7 @@ class Club implements SoftDeletableEntityInterface
     #[Assert\Image]
     #[ORM\Column]
     //    #[ORM\OneToOne(targetEntity: UploadedFile::class)]
-    //    #[ORM\JoinColumn(nullable: true)]
+        //    #[ORM\JoinColumn(nullable: true)]
     protected ?string $logo = null;
 
     public function __construct()
@@ -97,11 +97,13 @@ class Club implements SoftDeletableEntityInterface
         $this->league = $league;
     }
 
+    /** @return  ArrayCollection<int, Jersey> $jerseys */
     public function getJerseys(): Collection
     {
         return $this->jerseys;
     }
 
+    /** @param ArrayCollection<int, Jersey> $jerseys */
     public function setJerseys(Collection $jerseys): void
     {
         $this->jerseys = $jerseys;

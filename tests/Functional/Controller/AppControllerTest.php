@@ -9,7 +9,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AppControllerTest extends WebTestCase
 {
-    private const FORM_SUBMIT_BUTTON_ID = 'register_form_save';
 
     /**
      * @return iterable<array{0: string}>
@@ -30,6 +29,7 @@ final class AppControllerTest extends WebTestCase
         self::assertResponseIsSuccessful("Page $page is not successfull.");
     }
     //
+    //    private const FORM_SUBMIT_BUTTON_ID = 'register_form_save';
     //    /**
     //     * @see AppController::form()
     //     */

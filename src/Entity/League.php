@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
+use App\Dto\CreateLeagueDto;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -59,11 +60,13 @@ class League implements SoftDeletableEntityInterface
         $this->slug = $slug;
     }
 
+    /** @return  ArrayCollection<int, Club> $clubs */
     public function getClubs(): Collection
     {
         return $this->clubs;
     }
 
+    /** @param ArrayCollection<int, Club> $clubs */
     public function setClubs(Collection $clubs): void
     {
         $this->clubs = $clubs;
@@ -79,7 +82,7 @@ class League implements SoftDeletableEntityInterface
         $this->logo = $logo;
     }
 
-    public static function fromDto(CreateLeagueDto $dto): Seller
+    public static function fromDto(CreateLeagueDto $dto): self
     {
         $league = new self();
         $league->setName($dto->name);

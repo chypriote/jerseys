@@ -23,6 +23,7 @@ final class CreateClubAction extends AbstractController
         $dto = new CreateClubDto();
         $form = $this->createForm(CreateClubForm::class, $dto)->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
+            /** @var CreateClubDto $dto */
             $dto = $form->getData();
             $club = Club::fromDto($dto);
             $entityManager->persist($club);

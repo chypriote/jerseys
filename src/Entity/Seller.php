@@ -84,11 +84,13 @@ class Seller implements SoftDeletableEntityInterface
         $this->url = $url;
     }
 
+    /** @return  ArrayCollection<int, Offer> $offers */
     public function getOffers(): Collection
     {
         return $this->offers;
     }
 
+    /** @param ArrayCollection<int, Offer> $offers */
     public function setOffers(Collection $offers): void
     {
         $this->offers = $offers;

@@ -7,7 +7,6 @@ declare(strict_types=1);
 
 use Castor\Attribute\AsTask;
 use Symfony\Component\Console\Command\Command;
-
 use function Castor\io;
 use function Castor\parallel;
 use function Castor\run;
@@ -18,7 +17,7 @@ use function Castor\task;
  */
 function title(string $title, ?Command $command = null): void
 {
-    io()->title($title.($command !== null ? ': '.$command->getDescription() : ''));
+    io()->title($title . ($command !== null ? ': ' . $command->getDescription() : ''));
 }
 
 function success(): void
@@ -31,7 +30,7 @@ function aborted(): void
     io()->warning('Aborted.');
 }
 
-#[AsTask(namespace: 'symfony', description: 'Serve the application with the Symfony binary', )]
+#[AsTask(namespace: 'symfony', description: 'Serve the application with the Symfony binary',)]
 function start(): void
 {
     title(__FUNCTION__, task());
@@ -120,7 +119,7 @@ function cov_report(): void
 function stan(): void
 {
     title(__FUNCTION__, task());
-    run('vendor/bin/phpstan analyse -c phpstan.neon --memory-limit 1G -vvv', quiet: false);
+    run('php vendor/bin/phpstan analyse -c phpstan.neon --memory-limit 1G -vvv', quiet: false);
     success();
 }
 
@@ -187,10 +186,10 @@ function lint_all(): void
 {
     title(__FUNCTION__, task());
     parallel(
-        fn () => lint_php(),
-        fn () => lint_container(),
-        fn () => lint_twig(),
-        fn () => lint_yaml(),
+        fn() => lint_php(),
+        fn() => lint_container(),
+        fn() => lint_twig(),
+        fn() => lint_yaml(),
     );
 }
 
