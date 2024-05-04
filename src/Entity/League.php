@@ -30,7 +30,6 @@ class League implements SoftDeletableEntityInterface
     #[ORM\OneToMany(targetEntity: Club::class, mappedBy: 'league')]
     protected Collection $clubs;
 
-    #[Assert\Image]
     #[ORM\Column]
     protected ?string $logo = null;
 

@@ -34,7 +34,6 @@ class Seller implements SoftDeletableEntityInterface
     #[ORM\OneToMany(targetEntity: Offer::class, mappedBy: 'seller')]
     protected Collection $offers;
 
-    #[Assert\Image]
     #[ORM\Column]
     protected ?string $logo = null;
 

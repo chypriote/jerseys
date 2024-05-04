@@ -9,6 +9,7 @@ use App\Entity\Offer;
 use App\Entity\Seller;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -28,11 +29,14 @@ class OfferType extends AbstractType
             ])
             ->add('seller', EntityType::class, [
                 'class' => Seller::class,
-'choice_label' => 'id',
+                'choice_label' => 'id',
             ])
             ->add('jersey', EntityType::class, [
                 'class' => Jersey::class,
-'choice_label' => 'id',
+                'choice_label' => 'id',
+            ])
+            ->add('save', SubmitType::class, [
+                'label' => 'Save',
             ])
         ;
     }

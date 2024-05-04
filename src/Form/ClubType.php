@@ -8,6 +8,7 @@ use App\Entity\Club;
 use App\Form\Type\LeagueAutocompleteField;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CountryType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -21,6 +22,9 @@ class ClubType extends AbstractType
             ->add('country', CountryType::class)
             ->add('league', LeagueAutocompleteField::class)
             ->add('logo', TextType::class)
+            ->add('save', SubmitType::class, [
+                'label' => 'Save',
+            ])
         ;
     }
 

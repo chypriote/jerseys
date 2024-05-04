@@ -1,4 +1,4 @@
-td .club {
+td .club, td .league {
 	display: flex;
 	align-items: center;
 	gap: 1rem;

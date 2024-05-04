@@ -11,6 +11,7 @@
 			<th>Id</th>
 			<th>Name</th>
 			<th>Country</th>
+			<th>League</th>
 			<th>UpdatedAt</th>
 			<th>actions</th>
 		</tr>
@@ -28,6 +29,14 @@
 					</a>
 				</td>
 				<td>{{ club.country }}</td>
+				<td>
+					<a href="{{ path('admin.leagues.show', {slug: club.league.slug}) }}" class="league">
+						<div class="logo">
+							<img src="{{ club.league.logo }}" alt="{{ club.league.name }}"/>
+						</div>
+						<span class="name">{{ club.league.name }}</span>
+					</a>
+				</td>
 				<td>{{ club.updatedAt|date('Y-m-d') }}</td>
 				<td>
 					<div style="display: flex;gap:.5rem">

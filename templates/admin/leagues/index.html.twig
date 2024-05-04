@@ -10,10 +10,7 @@
 		<tr>
 			<th>Id</th>
 			<th>Name</th>
-			<th>Slug</th>
-			<th>Logo</th>
 			<th>CreatedAt</th>
-			<th>UpdatedAt</th>
 			<th>actions</th>
 		</tr>
 		</thead>
@@ -21,17 +18,22 @@
 		{% for league in leagues %}
 			<tr>
 				<td>{{ league.id }}</td>
-				<td>{{ league.name }}</td>
-				<td>{{ league.slug }}</td>
-				<td><img src="{{ league.logo }}" alt="{{ league.name }}"/></td>
-				<td>{{ league.createdAt|date('Y-m-d') }}</td>
-				<td>{{ league.updatedAt|date('Y-m-d') }}</td>
 				<td>
-					<a href="{{ path('admin.leagues.show', {'slug': league.slug}) }}">show</a>
-					<a href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
-					{% if league.clubs.count == 0 %}
-						<a href="{{ path('admin.leagues.delete', {'slug': league.slug}) }}">delete</a>
-					{% endif %}
+					<a href="{{ path('admin.leagues.show', {slug: league.slug}) }}" class="league">
+						<div class="logo">
+							<img src="{{ league.logo }}" alt="{{ league.name }}"/>
+						</div>
+						<span class="name">{{ league.name }}</span>
+					</a>
+				</td>
+				<td>{{ league.createdAt|date('Y-m-d') }}</td>
+				<td>
+					<div style="display: flex;gap:.5rem">
+						<a btn href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
+						{% if league.clubs.count == 0 %}
+							<a btn href="{{ path('admin.leagues.delete', {'slug': league.slug}) }}">delete</a>
+						{% endif %}
+					</div>
 				</td>
 			</tr>
 		{% else %}

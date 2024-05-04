@@ -30,6 +30,7 @@ class DisplayLeagueAction extends AbstractController
         $subCategories = $league->getClubs()->map(static fn (CategorizableItem $item): SubCategoryDto => $item->toSubCategory());
 
         return $this->render('jerseys_list.html.twig', [
+            'title' => $league->getName(),
             'league' => $league,
             'subCategories' => $subCategories,
             'jerseys' => $jerseys,

@@ -9,9 +9,10 @@
 			{% endfor %}
 		</div>
 		<div class="jerseys">
+			<twig:OfferGrid/>
 			<ul>
-				{% for jersey in jerseys %}
-					<li>{{ jersey.slug }}</li>
+				{% for offer in offers %}
+					<li>{{ offer.jersey.computedName }}</li>
 				{% endfor %}
 			</ul>
 		</div>

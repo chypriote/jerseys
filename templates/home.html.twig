@@ -1,9 +1,54 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-	<p>This page displays the <a att="" target="_blank"
-															 href="https://github.com/strangebuzz/MicroSymfony/blob/main/README.md">
-			README.md</a> file of the GitHub repository.</p>
+	<div class="bg-gray-100 dark:bg-gray-800 py-12 md:py-24 lg:py-32">
+		<div class="container grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+			<div class="space-y-4">
+				<h1 class="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">Find Your Perfect Jersey</h1>
+				<p class="text-gray-500 dark:text-gray-400 text-lg">
+					Discover the latest and greatest jerseys from top teams and brands.
+				</p>
+				<div>
+					<a href="#"
+						 class="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-gray-900/90 focus:outline-none focus:ring-1 focus:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90 dark:focus:ring-gray-300"
+					>
+						Browse Jerseys
+					</a>
+				</div>
+			</div>
+			<div>
+				<img
+					alt="Jersey"
+					class="mx-auto rounded-lg shadow-lg"
+					src="https://generated.vusercontent.net/placeholder.svg"
+					style="aspect-ratio: 600/600;object-fit: cover;width: 600px;height: 600px"
+				/>
+			</div>
+		</div>
+	</div>
+	<section class="section">
 
-	<hr/>
+		<grid>
+			<div col="2/3">
+				<card>
+					<h2>Popular Clubs</h2>
+					<div class="clubs-list">
+						{% for club in clubs %}
+							{{ component('Home:ClubDisplay', {club: club}) }}
+						{% endfor %}
+					</div>
+				</card>
+			</div>
+			<div col="1/3">
+				<card>
+					<h2>Top Sellers</h2>
+					<div class="sellers-list">
+						{% for seller in sellers %}
+							{{ component('Home:SellerDisplay', {seller: seller}) }}
+						{% endfor %}
+					</div>
+				</card>
+			</div>
+		</grid>
+	</section>
 {% endblock %}

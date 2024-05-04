@@ -1,0 +1,9 @@
+<a href="{{ path('app.club', {clubSlug: club.slug}) }}" class="display-club">
+	<div class="logo">
+		<img src="{{ club.logo }}" alt="{{ club.name }}">
+	</div>
+	<div class="details">
+		<div class="name">{{ club.name }}</div>
+		<div class="league">{{ club.league.name }}</div>
+	</div>
+</a>

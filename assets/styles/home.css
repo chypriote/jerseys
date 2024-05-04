@@ -1,0 +1,54 @@
+.clubs-list {
+	display: grid;
+	gap: 2rem;
+	grid-template-columns: repeat(2, 1fr);
+}
+
+.display-club {
+	display: flex;
+	line-height: 1.2rem;
+	gap: 1rem;
+	border-radius: .5rem;
+
+	.logo {
+		width: 4rem;
+		height: 4rem;
+	}
+
+	.details {
+		display: flex;
+		gap: .5rem;
+		flex-direction: column;
+
+		.name {
+			font-weight: bold;
+			color: var(--text-primary);
+		}
+
+		.league {
+			color: var(--text-secondary);
+		}
+	}
+}
+
+.display-seller {
+	display: flex;
+	line-height: 1.2rem;
+	gap: 1rem;
+	border-radius: .5rem;
+
+	.logo {
+		width: 4rem;
+		height: 4rem;
+	}
+
+	.name {
+		font-weight: bold;
+		color: var(--text-primary);
+		flex-grow: 1;
+	}
+
+	.rating {
+
+	}
+}

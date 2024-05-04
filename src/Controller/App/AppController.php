@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Controller\App;
 
+use App\Entity\Club;
+use App\Entity\Seller;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\HttpKernel\Attribute\Cache;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -19,10 +23,15 @@ final class AppController extends AbstractController
      * Simple page with some dynamic content.
      */
     #[Route(path: '/', name: 'home')]
-    public function home(): Response
+    #[Cache]
+    public function home(EntityManagerInterface $entityManager): Response
     {
-        $readme = file_get_contents(__DIR__.'/../../../README.md');
+        $clubs = $entityManager->getRepository(Club::class)->findBy([], ['updatedAt' => 'DESC'], 10);
+        $sellers = $entityManager->getRepository(Seller::class)->findBy([], ['updatedAt' => 'DESC'], 10);
 
-        return $this->render('home.html.twig', ['readme' => $readme]);
+        return $this->render('home.html.twig', [
+            'clubs' => $clubs,
+            'sellers' => $sellers,
+        ]);
     }
 }

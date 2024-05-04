@@ -34,13 +34,13 @@
 		</tbody>
 	</table>
 
-	<a href="{{ path('admin.leagues.list') }}">back to list</a>
+	<a btn href="{{ path('admin.leagues.list') }}">back to list</a>
 
-	<a href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
+	<a btn href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
 
 	<form method="post" action="{{ path('admin.leagues.delete', {'slug': league.slug}) }}"
 				onsubmit="return confirm('Are you sure you want to delete this item?');">
 		<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ league.id) }}">
-		<button class="btn">Delete</button>
+		<button type="button">Delete</button>
 	</form>
 {% endblock %}

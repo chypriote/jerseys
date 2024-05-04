@@ -7,6 +7,16 @@ label.required:after {
 	content: " *";
 }
 
+:root {
+	--text-primary: #14131a;
+	--text-secondary: #898a93;
+}
+
+a {
+	text-decoration: none;
+	transition: all .2s ease;
+}
+
 /**
  * Form errors in red.
  */
