@@ -10,7 +10,6 @@
 		<tr>
 			<th>Id</th>
 			<th>Name</th>
-			<th>Country</th>
 			<th>League</th>
 			<th>UpdatedAt</th>
 			<th>actions</th>
@@ -23,12 +22,11 @@
 				<td>
 					<a href="{{ path('admin.clubs.show', {slug: club.slug}) }}" class="club">
 						<div class="logo">
-							<img src="{{ club.logo }}" alt="{{ club.name }}"/>
+							<img src="{{ asset('/storage/clubs/' ~ club.logo) }}" alt="{{ club.logo }}"/>
 						</div>
 						<span class="name">{{ club.name }}</span>
 					</a>
 				</td>
-				<td>{{ club.country }}</td>
 				<td>
 					<a href="{{ path('admin.leagues.show', {slug: club.league.slug}) }}" class="league">
 						<div class="logo">

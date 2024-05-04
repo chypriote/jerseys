@@ -51,11 +51,7 @@ class ClubControllerTest extends WebTestCase
         $this->client->submitForm('Save', [
             'clubs[name]' => 'Testing',
             'clubs[slug]' => 'Testing',
-            'clubs[country]' => 'Testing',
             'clubs[logo]' => 'Testing',
-            'clubs[deletedAt]' => 'Testing',
-            'clubs[createdAt]' => 'Testing',
-            'clubs[updatedAt]' => 'Testing',
             'clubs[league]' => 'Testing',
         ]);
 
@@ -109,11 +105,7 @@ class ClubControllerTest extends WebTestCase
         $this->client->submitForm('Update', [
             'clubs[name]' => 'Something New',
             'clubs[slug]' => 'Something New',
-            'clubs[country]' => 'Something New',
             'clubs[logo]' => 'Something New',
-            'clubs[deletedAt]' => 'Something New',
-            'clubs[createdAt]' => 'Something New',
-            'clubs[updatedAt]' => 'Something New',
             'clubs[league]' => 'Something New',
         ]);
 

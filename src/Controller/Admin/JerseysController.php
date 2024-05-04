@@ -74,6 +74,7 @@ class JerseysController extends AbstractController
     {
         $offer = new Offer();
         $offer->setJersey($jersey);
+
         $form = $this->createForm(OfferFromJerseyType::class, $offer);
 
         return $this->render('admin/jerseys/show.html.twig', [

@@ -30,10 +30,6 @@ class Club implements SoftDeletableEntityInterface, CategorizableItem
     #[Gedmo\Slug(fields: ['name'])]
     protected string $slug;
 
-    #[ORM\Column]
-    #[Assert\NotBlank]
-    protected string $country;
-
     /** @var ArrayCollection<int, Jersey> */
     #[ORM\OneToMany(mappedBy: 'club', targetEntity: Jersey::class)]
     protected Collection $jerseys;
@@ -42,8 +38,6 @@ class Club implements SoftDeletableEntityInterface, CategorizableItem
     protected League $league;
 
     #[ORM\Column]
-    //    #[ORM\OneToOne(targetEntity: UploadedFile::class)]
-    //    #[ORM\JoinColumn(nullable: true)]
     protected string $logo;
 
     public function __construct()
@@ -64,16 +58,6 @@ class Club implements SoftDeletableEntityInterface, CategorizableItem
     public function getSlug(): string
     {
         return $this->slug;
-    }
-
-    public function getCountry(): string
-    {
-        return $this->country;
-    }
-
-    public function setCountry(string $country): void
-    {
-        $this->country = $country;
     }
 
     public function getLeague(): League

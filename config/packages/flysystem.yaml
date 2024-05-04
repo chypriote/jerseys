@@ -9,6 +9,10 @@ flysystem:
             adapter: 'local'
             options:
                 directory: '%kernel.project_dir%/public/storage/jerseys'
+        storage.clubs:
+            adapter: 'local'
+            options:
+                directory: '%kernel.project_dir%/public/storage/clubs'
 
 when@prod:
     services:

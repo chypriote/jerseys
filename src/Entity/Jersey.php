@@ -114,6 +114,6 @@ class Jersey implements SoftDeletableEntityInterface
 
     public function getComputedName(): string
     {
-        return "{$this->getClub()->getName()} {$this->getType()->value} Jersey {$this->getYear()->value}";
+        return sprintf('%s %s Jersey %s', $this->getClub()->getName(), $this->getType()->value, $this->getYear()->value);
     }
 }

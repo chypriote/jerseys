@@ -1,27 +1,20 @@
+
+td .logo {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 4rem;
+	height: 4rem;
+}
+
 td .club, td .league {
 	display: flex;
 	align-items: center;
 	gap: 1rem;
 
-	.logo {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 4rem;
-		height: 4rem;
-	}
-
 	.name {
 		flex-grow: 1;
 	}
-}
-
-td .jersey-img {
-	width: 4rem;
-	height: 4rem;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 }
 
 .offers {

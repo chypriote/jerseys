@@ -16,7 +16,7 @@ use IteratorAggregate;
 final class EmojiCollection implements \IteratorAggregate, \Countable
 {
     /** @var string[] */
-    private array $emojis;
+    private readonly array $emojis;
 
     /** @param  string[] $emojis */
     public function __construct(array $emojis = [])

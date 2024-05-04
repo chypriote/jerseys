@@ -7,11 +7,12 @@ namespace App\Form;
 use App\Entity\Club;
 use App\Form\Type\LeagueAutocompleteField;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\CountryType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Image;
+use Symfony\UX\Dropzone\Form\DropzoneType;
 
 class ClubType extends AbstractType
 {
@@ -19,9 +20,14 @@ class ClubType extends AbstractType
     {
         $builder
             ->add('name', TextType::class)
-            ->add('country', CountryType::class)
             ->add('league', LeagueAutocompleteField::class)
-            ->add('logo', TextType::class)
+            ->add('logo', DropzoneType::class, [
+                'mapped' => false,
+                'required' => false,
+                'constraints' => [
+                    new Image(),
+                ],
+            ])
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
             ])

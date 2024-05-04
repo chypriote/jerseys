@@ -9,10 +9,15 @@ use App\Enum\Crud;
 use App\Form\ClubType;
 use Doctrine\ORM\EntityManagerInterface;
 use Koriym\HttpConstants\Method;
+use League\Flysystem\FilesystemException;
+use League\Flysystem\FilesystemOperator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpClient\Exception\InvalidArgumentException;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/clubs', name: 'clubs.')]
 class ClubsController extends AbstractController
@@ -30,13 +35,27 @@ class ClubsController extends AbstractController
     }
 
     #[Route('/new', name: Crud::CREATE, methods: [Method::GET, Method::POST])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request, EntityManagerInterface $entityManager,
+        FilesystemOperator $storageClubs,
+        SluggerInterface $slugger
+    ): Response {
         $club = new Club();
         $form = $this->createForm(ClubType::class, $club);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $logo = $form->get('logo')->getData();
+            if (!$logo instanceof File) {
+                throw new InvalidArgumentException();
+            }
+            try {
+                $fileName = $slugger->slug($club->getName()).'-'.uniqid('', true).'.'.$logo->guessExtension();
+                $storageClubs->write($fileName, $logo->getContent());
+            } catch (FilesystemException $e) {
+                throw new InvalidArgumentException($e->getMessage());
+            }
+            $club->setLogo($fileName);
             $entityManager->persist($club);
             $entityManager->flush();
 
@@ -58,12 +77,29 @@ class ClubsController extends AbstractController
     }
 
     #[Route('/{slug}/edit', name: Crud::EDIT, methods: [Method::GET, Method::POST])]
-    public function edit(Request $request, Club $club, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(
+        Request $request,
+        Club $club,
+        EntityManagerInterface $entityManager,
+        FilesystemOperator $storageClubs
+    ): Response {
         $form = $this->createForm(ClubType::class, $club);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($logo = $form->get('logo')->getData()) {
+                if (!$logo instanceof File) {
+                    throw new InvalidArgumentException();
+                }
+                try {
+                    $fileName = $club->getSlug().'-'.uniqid('', true).'.'.$logo->guessExtension();
+                    $storageClubs->write($fileName, $logo->getContent());
+                    $storageClubs->delete($club->getLogo());
+                    $club->setLogo($fileName);
+                } catch (FilesystemException $e) {
+                    throw new InvalidArgumentException($e->getMessage());
+                }
+            }
             $entityManager->flush();
 
             return $this->redirectToRoute('admin.clubs.show', ['slug' => $club->getSlug()], Response::HTTP_SEE_OTHER);

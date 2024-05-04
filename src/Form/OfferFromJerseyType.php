@@ -31,7 +31,7 @@ class OfferFromJerseyType extends AbstractType
             ->add('seller', SellerAutocompleteField::class)
             ->add('jersey', EntityType::class, [
                 'class' => Jersey::class,
-                'choice_label' => static fn (Jersey $jersey) => $jersey->getSlug(),
+                'choice_label' => static fn (Jersey $jersey): string => $jersey->getSlug(),
                 'attr' => ['style' => 'display: none'],
                 'label_attr' => ['style' => 'display: none'],
             ])
