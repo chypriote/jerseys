@@ -37,6 +37,7 @@ class OfferType extends AbstractType
             ])
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
+                'attr' => ['primary' => true],
             ])
         ;
     }

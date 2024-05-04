@@ -32,6 +32,7 @@ class JerseyType extends AbstractType
             ->add('club', ClubAutocompleteField::class)
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
+                'attr' => ['primary' => true],
             ])
         ;
     }

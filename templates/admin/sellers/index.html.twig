@@ -5,6 +5,7 @@
 {% block body %}
 	<h1>Seller index</h1>
 
+	<a btn primary href="{{ path('admin.sellers.create') }}">Create new</a>
 	<table class="table">
 		<thead>
 		<tr>
@@ -25,12 +26,14 @@
 				<td>{{ seller.name }}</td>
 				<td>{{ seller.slug }}</td>
 				<td>{{ seller.url }}</td>
-				<td><img src="{{ seller.logo }}" alt="{{ seller.name }}"/></td>
+				<td>
+					<div class="logo"><img src="{{ seller.logo }}" alt="{{ seller.name }}"/></div>
+				</td>
 				<td>{{ seller.createdAt|date('Y-m-d') }}</td>
 				<td>{{ seller.updatedAt|date('Y-m-d') }}</td>
 				<td>
-					<a href="{{ path('admin.sellers.show', {'slug': seller.slug}) }}">show</a>
-					<a href="{{ path('admin.sellers.edit', {'slug': seller.slug}) }}">edit</a>
+					<a btn href="{{ path('admin.sellers.show', {'slug': seller.slug}) }}">show</a>
+					<a btn href="{{ path('admin.sellers.edit', {'slug': seller.slug}) }}">edit</a>
 				</td>
 			</tr>
 		{% else %}
@@ -41,5 +44,4 @@
 		</tbody>
 	</table>
 
-	<a href="{{ path('admin.sellers.create') }}">Create new</a>
 {% endblock %}

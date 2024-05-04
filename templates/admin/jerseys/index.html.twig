@@ -5,6 +5,8 @@
 {% block body %}
 	<h1>Jersey index</h1>
 
+	<a btn primary href="{{ path('admin.jerseys.create') }}">Create new</a>
+
 	<table class="table">
 		<thead>
 		<tr>
@@ -21,15 +23,15 @@
 		{% for jersey in jerseys %}
 			<tr>
 				<td>{{ jersey.year.value }}</td>
-				<td>{{ jersey.slug }}</td>
+				<td>{{ jersey.computedName }}</td>
 				<td>{{ jersey.type.value }}</td>
 				<td><a href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}" class="logo">
 						<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/></a></td>
 				<td>{{ jersey.updatedAt|date('Y-m-d') }}</td>
 				<td>{{ jersey.id }}</td>
 				<td>
-					<a href="{{ path('admin.jerseys.show', {'slug': jersey.slug}) }}">show</a>
-					<a href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}">edit</a>
+					<a btn href="{{ path('admin.jerseys.show', {'slug': jersey.slug}) }}">show</a>
+					<a btn href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}">edit</a>
 				</td>
 			</tr>
 		{% else %}
@@ -39,6 +41,4 @@
 		{% endfor %}
 		</tbody>
 	</table>
-
-	<a href="{{ path('admin.jerseys.create') }}">Create new</a>
 {% endblock %}

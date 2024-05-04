@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/jerseys', name: 'jerseys.')]
 class JerseysController extends AbstractController
@@ -39,7 +40,8 @@ class JerseysController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $entityManager,
-        FilesystemOperator $storageJerseys
+        FilesystemOperator $storageJerseys,
+        SluggerInterface $slugger
     ): Response {
         $jersey = new Jersey();
         $form = $this->createForm(JerseyType::class, $jersey);
@@ -51,7 +53,7 @@ class JerseysController extends AbstractController
                 throw new InvalidArgumentException();
             }
             try {
-                $fileName = $jersey->getSlug().'-'.uniqid('', true).'.'.$picture->guessExtension();
+                $fileName = $slugger->slug($jersey->getClub()->getName().'-'.$jersey->getYear()->value)->lower().'-'.uniqid('', true).'.'.$picture->guessExtension();
                 $storageJerseys->write($fileName, $picture->getContent());
             } catch (FilesystemException $e) {
                 throw new InvalidArgumentException($e->getMessage());

@@ -6,7 +6,7 @@
 	<h1>Edit Seller</h1>
 	<h2><img src="{{ seller.logo }}" alt="{{ seller.name }}"/> {{ seller.name }}</h2>
 
-	{{ include('admin/_form.html.twig', {'button_label': 'Update'}) }}
+	{{ form(form) }}
 
 	<a href="{{ path('admin.sellers.list') }}">back to list</a>
 

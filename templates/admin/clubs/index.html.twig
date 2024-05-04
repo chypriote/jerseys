@@ -5,6 +5,7 @@
 {% block body %}
 	<h1>Club index</h1>
 
+	<a btn primary href="{{ path('admin.clubs.create') }}">Create new</a>
 	<table class="table">
 		<thead>
 		<tr>
@@ -50,6 +51,4 @@
 		{% endfor %}
 		</tbody>
 	</table>
-
-	<a href="{{ path('admin.clubs.create') }}">Create new</a>
 {% endblock %}

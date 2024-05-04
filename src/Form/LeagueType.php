@@ -20,6 +20,7 @@ class LeagueType extends AbstractType
             ->add('logo', TextType::class)
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
+                'attr' => ['primary' => true],
             ])
         ;
     }

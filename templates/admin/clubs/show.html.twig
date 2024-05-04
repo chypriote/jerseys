@@ -47,6 +47,7 @@
 			<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ club.id) }}">
 			<button type="button">Delete</button>
 		</form>
+		<a btn primary href="{{ path('admin.clubs.create') }}">Create new</a>
 	</div>
 
 {% endblock %}

@@ -4,8 +4,7 @@
 
 {% block body %}
 	<h1>Create new Club</h1>
-
-	{{ include('admin/_form.html.twig') }}
+	{{ form(form) }}
 
 	<a href="{{ path('admin.clubs.list') }}">back to list</a>
 {% endblock %}

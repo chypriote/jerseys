@@ -50,7 +50,7 @@ class ClubsController extends AbstractController
                 throw new InvalidArgumentException();
             }
             try {
-                $fileName = $slugger->slug($club->getName()).'-'.uniqid('', true).'.'.$logo->guessExtension();
+                $fileName = $slugger->slug($club->getName())->lower().'-'.uniqid('', true).'.'.$logo->guessExtension();
                 $storageClubs->write($fileName, $logo->getContent());
             } catch (FilesystemException $e) {
                 throw new InvalidArgumentException($e->getMessage());
