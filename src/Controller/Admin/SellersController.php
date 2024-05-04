@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Entity\Offer;
 use App\Entity\Seller;
 use App\Enum\Crud;
+use App\Form\OfferFromSellerType;
 use App\Form\SellerType;
 use Doctrine\ORM\EntityManagerInterface;
 use Koriym\HttpConstants\Method;
@@ -52,8 +54,14 @@ class SellersController extends AbstractController
     #[Route('/{slug}', name: Crud::SHOW, methods: [Method::GET])]
     public function show(Seller $seller): Response
     {
+        $offer = new Offer();
+        $offer->setSeller($seller);
+
+        $form = $this->createForm(OfferFromSellerType::class, $offer);
+
         return $this->render('admin/sellers/show.html.twig', [
             'seller' => $seller,
+            'offerForm' => $form->createView(),
         ]);
     }
 

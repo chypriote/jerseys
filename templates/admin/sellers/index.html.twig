@@ -32,8 +32,17 @@
 				<td>{{ seller.createdAt|date('Y-m-d') }}</td>
 				<td>{{ seller.updatedAt|date('Y-m-d') }}</td>
 				<td>
-					<a btn href="{{ path('admin.sellers.show', {'slug': seller.slug}) }}">show</a>
-					<a btn href="{{ path('admin.sellers.edit', {'slug': seller.slug}) }}">edit</a>
+					<div style="display: flex;gap: 1rem;">
+						<a btn href="{{ path('admin.sellers.show', {'slug': seller.slug}) }}">show</a>
+						<a btn primary href="{{ path('admin.sellers.edit', {'slug': seller.slug}) }}">edit</a>
+						{% if seller.offers.count == 0 %}
+							<form method="post" action="{{ path('admin.sellers.delete', {'slug': seller.slug}) }}"
+										onsubmit="return confirm('Are you sure you want to delete this item?');">
+								<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ seller.id) }}">
+								<button type="button">Delete</button>
+							</form>
+						{% endif %}
+					</div>
 				</td>
 			</tr>
 		{% else %}
