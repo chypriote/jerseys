@@ -39,11 +39,11 @@ class Jersey implements SoftDeletableEntityInterface
     protected JerseyType $type;
 
     /** @var ArrayCollection<int, Offer> */
-    #[ORM\OneToMany(targetEntity: Offer::class, mappedBy: 'jersey')]
+    #[ORM\OneToMany(mappedBy: 'jersey', targetEntity: Offer::class)]
     protected Collection $offers;
 
     #[ORM\Column]
-    protected ?string $picture = null;
+    protected string $picture;
 
     public function __construct()
     {
@@ -102,12 +102,12 @@ class Jersey implements SoftDeletableEntityInterface
         $this->offers = $offers;
     }
 
-    public function getPicture(): ?string
+    public function getPicture(): string
     {
         return $this->picture;
     }
 
-    public function setPicture(?string $picture): void
+    public function setPicture(string $picture): void
     {
         $this->picture = $picture;
     }

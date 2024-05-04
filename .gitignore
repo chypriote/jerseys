@@ -31,3 +31,5 @@
 .phpunit.cache
 ###< phpunit/phpunit ###
 .idea
+public/storage/**/*.jpg
+public/storage/**/*.png

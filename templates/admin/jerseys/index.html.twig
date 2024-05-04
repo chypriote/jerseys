@@ -23,7 +23,8 @@
 				<td>{{ jersey.year.value }}</td>
 				<td>{{ jersey.slug }}</td>
 				<td>{{ jersey.type.value }}</td>
-				<td><img src="{{ jersey.picture }}" alt="{{ jersey.computedName }}"/></td>
+				<td><a href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}" class="jersey-img">
+						<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/></a></td>
 				<td>{{ jersey.updatedAt|date('Y-m-d') }}</td>
 				<td>{{ jersey.id }}</td>
 				<td>

@@ -11,7 +11,11 @@ use App\Form\JerseyType;
 use App\Form\OfferFromJerseyType;
 use Doctrine\ORM\EntityManagerInterface;
 use Koriym\HttpConstants\Method;
+use League\Flysystem\FilesystemException;
+use League\Flysystem\FilesystemOperator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpClient\Exception\InvalidArgumentException;
+use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -32,13 +36,27 @@ class JerseysController extends AbstractController
     }
 
     #[Route('/new', name: Crud::CREATE, methods: [Method::GET, Method::POST])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        FilesystemOperator $storageJerseys
+    ): Response {
         $jersey = new Jersey();
         $form = $this->createForm(JerseyType::class, $jersey);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $picture = $form->get('picture')->getData();
+            if (!$picture instanceof File) {
+                throw new InvalidArgumentException();
+            }
+            try {
+                $fileName = $jersey->getSlug().'-'.uniqid('', true).'.'.$picture->guessExtension();
+                $storageJerseys->write($fileName, $picture->getContent());
+            } catch (FilesystemException $e) {
+                throw new InvalidArgumentException($e->getMessage());
+            }
+            $jersey->setPicture($fileName);
             $entityManager->persist($jersey);
             $entityManager->flush();
 
@@ -65,12 +83,28 @@ class JerseysController extends AbstractController
     }
 
     #[Route('/{slug}/edit', name: Crud::EDIT, methods: [Method::GET, Method::POST])]
-    public function edit(Request $request, Jersey $jersey, EntityManagerInterface $entityManager): Response
-    {
+    public function edit(Request $request,
+        Jersey $jersey,
+        EntityManagerInterface $entityManager,
+        FilesystemOperator $storageJerseys
+    ): Response {
         $form = $this->createForm(JerseyType::class, $jersey);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            if ($picture = $form->get('picture')->getData()) {
+                if (!$picture instanceof File) {
+                    throw new InvalidArgumentException();
+                }
+                try {
+                    $fileName = $jersey->getSlug().'-'.uniqid('', true).'.'.$picture->guessExtension();
+                    $storageJerseys->write($fileName, $picture->getContent());
+                    $storageJerseys->delete($jersey->getPicture());
+                    $jersey->setPicture($fileName);
+                } catch (FilesystemException $e) {
+                    throw new InvalidArgumentException($e->getMessage());
+                }
+            }
             $entityManager->flush();
 
             return $this->redirectToRoute('admin.jerseys.show', ['slug' => $jersey->getSlug()], Response::HTTP_SEE_OTHER);
