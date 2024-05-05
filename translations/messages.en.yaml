@@ -1,7 +1,18 @@
 jersey:
-  type:
-    home: 'Home'
-    away: 'Away'
-    third: 'Third'
-    fourth: 'Fourth'
-    special: 'Special'
+    type:
+        home: 'Home'
+        away: 'Away'
+        third: 'Third'
+        fourth: 'Fourth'
+        special: 'Special'
+    year:
+        2025: 2025
+        2024-2025: 2024-2025
+        2024: 2024
+        2023-2024: 2023-2024
+        2023: 2023
+        2022-2023: 2022-2023
+    format:
+        fan: Fan Version
+        player: Player Version
+        kid: Kid

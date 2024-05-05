@@ -13,7 +13,6 @@ use Koriym\HttpConstants\Method;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/offers', name: 'offers.')]
@@ -33,7 +32,7 @@ class OffersController extends AbstractController
             return $this->redirectToRoute('admin.jerseys.show', ['slug' => $offer->getJersey()->getSlug()], Response::HTTP_SEE_OTHER);
         }
 
-        throw new NotFoundHttpException();
+        throw $this->createNotFoundException();
     }
 
     #[Route('/{id}/edit', name: Crud::EDIT, methods: [Method::POST])]
@@ -48,7 +47,7 @@ class OffersController extends AbstractController
             return $this->redirectToRoute('admin.jerseys.show', ['slug' => $offer->getJersey()->getSlug()], Response::HTTP_SEE_OTHER);
         }
 
-        throw new NotFoundHttpException();
+        throw $this->createNotFoundException();
     }
 
     #[Route('/{id}', name: Crud::DELETE, methods: [Method::POST])]

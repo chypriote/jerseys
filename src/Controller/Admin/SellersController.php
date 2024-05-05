@@ -57,7 +57,7 @@ class SellersController extends AbstractController
         $offer = new Offer();
         $offer->setSeller($seller);
 
-        $form = $this->createForm(OfferFromSellerType::class, $offer);
+        $form = $this->createForm(OfferFromSellerType::class, $offer, ['seller' => $seller->getSlug()]);
 
         return $this->render('admin/sellers/show.html.twig', [
             'seller' => $seller,
@@ -81,6 +81,23 @@ class SellersController extends AbstractController
             'seller' => $seller,
             'form' => $form->createView(),
         ]);
+    }
+
+    #[Route('/{slug}/offer', name: 'create_offer', methods: [Method::POST])]
+    public function createOffer(Request $request, Seller $seller, EntityManagerInterface $entityManager): Response
+    {
+        $offer = new Offer();
+        $form = $this->createForm(OfferFromSellerType::class, $offer, ['seller' => $seller->getSlug()]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($offer);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('admin.sellers.show', ['slug' => $offer->getSeller()->getSlug()], Response::HTTP_SEE_OTHER);
+        }
+
+        throw $this->createNotFoundException();
     }
 
     #[Route('/{slug}', name: Crud::DELETE, methods: [Method::POST])]

@@ -27,7 +27,7 @@ class OfferFromSellerType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->setAction($this->router->generate('admin.offers.create'))
+            ->setAction($this->router->generate('admin.sellers.create_offer', ['slug' => $options['seller']]))
             ->add('jersey', JerseyAutocompleteField::class)
             ->add('seller', EntityType::class, [
                 'class' => Seller::class,
@@ -53,6 +53,8 @@ class OfferFromSellerType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => Offer::class,
+            'seller' => null,
         ]);
+        $resolver->setAllowedTypes('seller', 'string');
     }
 }

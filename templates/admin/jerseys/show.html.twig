@@ -55,21 +55,23 @@
 			</card>
 		</div>
 		<div col="1/2">
+			<card>
+				<h3>Add an offer</h3>
+				{{ form(offerForm) }}
+			</card>
 			<card class="offers">
 				<h2>Offers</h2>
 				<ul>
 					{% for offer in jersey.offers %}
 						<li>
 							<img src="{{ offer.seller.logo }}" alt="{{ offer.seller.name }}">
-							<span class="name">{{ offer.seller.name }}</span><span>{{ offer.price|format_currency('EUR') }}</span>
+							<span class="name">{{ offer.seller.name }}</span>
+							<span>{{ offer.format |trans }}</span>
+							<span>{{ offer.price|format_currency('EUR') }}</span>
 							<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">View</a>
 						</li>
 					{% endfor %}
 				</ul>
-			</card>
-			<card>
-				<h3>Add an offer</h3>
-				{{ form(offerForm) }}
 			</card>
 		</div>
 
