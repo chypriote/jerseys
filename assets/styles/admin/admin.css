@@ -7,7 +7,7 @@ td .logo {
 	height: 4rem;
 }
 
-td .club, td .league {
+td .club, td .league, td .jersey, td .offer {
 	display: flex;
 	align-items: center;
 	gap: 1rem;

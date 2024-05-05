@@ -58,7 +58,7 @@ final class AppControllerTest extends WebTestCase
     //            $form->getName() . '[name]' => 'COil',
     //            $form->getName() . '[email]' => 'user@example.com',
     //            $form->getName() . '[country]' => 'FR',
-    //            $form->getName() . '[currency]' => 'EUR',
+    //            $form->getName() . '[currency]' => 'USD',
     //            $form->getName() . '[birthday]' => '2003-03-12',
     //            $form->getName() . '[fruit]' => 1,
     //        ]);

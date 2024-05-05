@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
+use App\Enum\PaymentMethod;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -31,11 +32,18 @@ class Seller implements SoftDeletableEntityInterface
     protected string $url;
 
     /** @var ArrayCollection<int, Offer> */
-    #[ORM\OneToMany(targetEntity: Offer::class, mappedBy: 'seller')]
+    #[ORM\OneToMany(mappedBy: 'seller', targetEntity: Offer::class)]
     protected Collection $offers;
 
     #[ORM\Column]
     protected ?string $logo = null;
+
+    #[ORM\Column(nullable: true)]
+    protected ?string $whatsapp = null;
+
+    /** @var PaymentMethod[] */
+    #[ORM\Column(type: 'simple_array', nullable: true, enumType: PaymentMethod::class)]
+    protected array $paymentMethods = [];
 
     public function __construct()
     {
@@ -92,5 +100,27 @@ class Seller implements SoftDeletableEntityInterface
     public function setLogo(?string $logo): void
     {
         $this->logo = $logo;
+    }
+
+    public function getWhatsapp(): ?string
+    {
+        return $this->whatsapp;
+    }
+
+    public function setWhatsapp(?string $whatsapp): void
+    {
+        $this->whatsapp = $whatsapp;
+    }
+
+    /** @return PaymentMethod[] */
+    public function getPaymentMethods(): array
+    {
+        return $this->paymentMethods;
+    }
+
+    /** @param PaymentMethod[] */
+    public function setPaymentMethods(array $paymentMethods): void
+    {
+        $this->paymentMethods = $paymentMethods;
     }
 }

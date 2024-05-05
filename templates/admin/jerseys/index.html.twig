@@ -7,28 +7,34 @@
 
 	<a btn primary href="{{ path('admin.jerseys.create') }}">Create new</a>
 
-	<table class="table">
+	<table>
 		<thead>
 		<tr>
-			<th>Year</th>
-			<th>Slug</th>
-			<th>Type</th>
-			<th>Picture</th>
-			<th>UpdatedAt</th>
 			<th>Id</th>
+			<th>Name</th>
+			<th>Year</th>
+			<th>Type</th>
+			<th>Offers</th>
+			<th>UpdatedAt</th>
 			<th>actions</th>
 		</tr>
 		</thead>
 		<tbody>
 		{% for jersey in jerseys %}
 			<tr>
-				<td>{{ jersey.year.value }}</td>
-				<td>{{ jersey.computedName }}</td>
-				<td>{{ jersey.type.value }}</td>
-				<td><a href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}" class="logo">
-						<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/></a></td>
-				<td>{{ jersey.updatedAt|date('Y-m-d') }}</td>
 				<td>{{ jersey.id }}</td>
+				<td>
+					<a href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}" class="jersey">
+						<div class="logo">
+							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+						</div>
+						{{ jersey.computedName }}
+					</a>
+				</td>
+				<td>{{ jersey.year |trans }}</td>
+				<td>{{ jersey.type |trans }}</td>
+				<td>{{ jersey.offers|length }}</td>
+				<td>{{ jersey.updatedAt|date('Y-m-d') }}</td>
 				<td>
 					<a btn href="{{ path('admin.jerseys.show', {'slug': jersey.slug}) }}">show</a>
 					<a btn href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}">edit</a>

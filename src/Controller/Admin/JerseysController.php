@@ -77,7 +77,7 @@ class JerseysController extends AbstractController
         $offer = new Offer();
         $offer->setJersey($jersey);
 
-        $form = $this->createForm(OfferFromJerseyType::class, $offer);
+        $form = $this->createForm(OfferFromJerseyType::class, $offer, ['jersey' => $jersey->getSlug()]);
 
         return $this->render('admin/jerseys/show.html.twig', [
             'jersey' => $jersey,
@@ -117,6 +117,23 @@ class JerseysController extends AbstractController
             'jersey' => $jersey,
             'form' => $form->createView(),
         ]);
+    }
+
+    #[Route('/{slug}/offer', name: 'create_offer', methods: [Method::POST])]
+    public function createOffer(Request $request, Jersey $jersey, EntityManagerInterface $entityManager): Response
+    {
+        $offer = new Offer();
+        $form = $this->createForm(OfferFromJerseyType::class, $offer, ['jersey' => $jersey->getSlug()]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($offer);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('admin.sellers.show', ['slug' => $offer->getSeller()->getSlug()], Response::HTTP_SEE_OTHER);
+        }
+
+        throw $this->createNotFoundException();
     }
 
     #[Route('/{slug}', name: Crud::DELETE, methods: [Method::POST])]

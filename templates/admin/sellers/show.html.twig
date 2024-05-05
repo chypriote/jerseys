@@ -10,7 +10,7 @@
 	<grid>
 		<div col="1/2">
 			<card>
-				<table class="table">
+				<table>
 					<tbody>
 					<tr>
 						<th>Id</th>
@@ -58,6 +58,10 @@
 		</div>
 
 		<div col="1/2">
+			<card>
+				<h3>Add an offer</h3>
+				{{ form(offerForm) }}
+			</card>
 			<card class="offers">
 				<h2>Offers</h2>
 				<ul>
@@ -65,15 +69,14 @@
 						<li>
 							<img src="{{ asset('/storage/jerseys/' ~ offer.jersey.picture) }}" alt="{{ offer.jersey.computedName }}"/>
 							<span
-								class="name">{{ offer.jersey.computedName }}</span><span>{{ offer.price|format_currency('EUR') }}</span>
+								class="name">{{ offer.jersey.computedName }}</span><span>{{ offer.price|format_currency('USD') }}</span>
+							<span>{{ offer.format |trans }}</span>
+							<span>{{ offer.price|format_currency('USD') }}</span>
+							<a href="{{ path('admin.offers.edit', {id: offer.id}) }}">Edit</a>
 							<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">View</a>
 						</li>
 					{% endfor %}
 				</ul>
-			</card>
-			<card>
-				<h3>Add an offer</h3>
-				{{ form(offerForm) }}
 			</card>
 		</div>
 	</grid>

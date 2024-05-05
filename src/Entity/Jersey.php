@@ -8,7 +8,6 @@ use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
 use App\Enum\JerseyType;
 use App\Enum\JerseyYears;
-use App\Enum\PaymentMethod;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -47,14 +46,7 @@ class Jersey implements SoftDeletableEntityInterface
     protected string $picture;
 
     #[ORM\Column(nullable: true)]
-    protected ?string $whatsapp = null;
-
-    #[ORM\Column(nullable: true)]
     protected ?string $email = null;
-
-    /** @var PaymentMethod[] */
-    #[ORM\Column(type: 'simple_array', nullable: true)]
-    protected array $paymentMethods = [];
 
     public function __construct()
     {
@@ -123,16 +115,6 @@ class Jersey implements SoftDeletableEntityInterface
         $this->picture = $picture;
     }
 
-    public function getWhatsapp(): ?string
-    {
-        return $this->whatsapp;
-    }
-
-    public function setWhatsapp(?string $whatsapp): void
-    {
-        $this->whatsapp = $whatsapp;
-    }
-
     public function getEmail(): ?string
     {
         return $this->email;
@@ -145,6 +127,11 @@ class Jersey implements SoftDeletableEntityInterface
 
     public function getComputedName(): string
     {
-        return sprintf('%s %s Jersey %s', $this->getClub()->getName(), $this->getType()->value, $this->getYear()->value);
+        return sprintf(
+            '%s %s Jersey %s',
+            $this->getClub()->getName(),
+            ucfirst($this->getType()->value),
+            $this->getYear()->value
+        );
     }
 }

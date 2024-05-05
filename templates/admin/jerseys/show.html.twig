@@ -10,35 +10,41 @@
 		<div col="1/2">
 
 			<card>
-				<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
-				<table class="table">
-					<tbody>
-					<tr>
-						<th>Id</th>
-						<td>{{ jersey.id }}</td>
-					</tr>
-					<tr>
-						<th>Computed name</th>
-						<td>{{ jersey.computedName }}</td>
-					</tr>
-					<tr>
-						<th>Year</th>
-						<td>{{ jersey.year.value }}</td>
-					</tr>
-					<tr>
-						<th>Slug</th>
-						<td>{{ jersey.slug }}</td>
-					</tr>
-					<tr>
-						<th>Type</th>
-						<td>{{ jersey.type.value }}</td>
-					</tr>
-					<tr>
-						<th>UpdatedAt</th>
-						<td>{{ jersey.updatedAt|date('Y-m-d') }}</td>
-					</tr>
-					</tbody>
-				</table>
+				<grid>
+					<div col="1/3">
+						<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+					</div>
+					<div col="2/3">
+						<table>
+							<tbody>
+							<tr>
+								<td>Id</td>
+								<td>{{ jersey.id }}</td>
+							</tr>
+							<tr>
+								<td>Computed name</td>
+								<td>{{ jersey.computedName }}</td>
+							</tr>
+							<tr>
+								<td>Year</td>
+								<td>{{ jersey.year.value }}</td>
+							</tr>
+							<tr>
+								<td>Slug</td>
+								<td>{{ jersey.slug }}</td>
+							</tr>
+							<tr>
+								<td>Type</td>
+								<td>{{ jersey.type.value }}</td>
+							</tr>
+							<tr>
+								<td>UpdatedAt</td>
+								<td>{{ jersey.updatedAt|date('Y-m-d') }}</td>
+							</tr>
+							</tbody>
+						</table>
+					</div>
+				</grid>
 
 				<hr>
 
@@ -59,19 +65,38 @@
 				<h3>Add an offer</h3>
 				{{ form(offerForm) }}
 			</card>
+		</div>
+		<div col="1/1">
 			<card class="offers">
 				<h2>Offers</h2>
-				<ul>
+				<table>
+					<thead>
+					<tr>
+						<th>Seller</th>
+						<th>Type</th>
+						<th>Price</th>
+						<th>Actions</th>
+					</tr>
+					</thead>
+					<tbody>
 					{% for offer in jersey.offers %}
-						<li>
-							<img src="{{ offer.seller.logo }}" alt="{{ offer.seller.name }}">
-							<span class="name">{{ offer.seller.name }}</span>
-							<span>{{ offer.format |trans }}</span>
-							<span>{{ offer.price|format_currency('EUR') }}</span>
-							<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">View</a>
-						</li>
+						<tr>
+							<td>
+								<div class="offer">
+									<img src="{{ offer.seller.logo }}" alt="{{ offer.seller.name }}">
+									<span class="name">{{ offer.seller.name }}</span>
+								</div>
+							</td>
+							<td><span>{{ offer.format |trans }}</span></td>
+							<td><span>{{ offer.price|format_currency('USD') }}</span></td>
+							<td>
+								<a href="{{ path('admin.offers.edit', {id: offer.id}) }}">Edit</a>
+								<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">View</a>
+							</td>
+						</tr>
 					{% endfor %}
-				</ul>
+					</tbody>
+				</table>
 			</card>
 		</div>
 

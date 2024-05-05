@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Core\Entity\TimestampedEntityInterface;
 use App\Core\Entity\TimestampedEntityTrait;
 use App\Enum\JerseyFormat;
+use App\Enum\JerseySizes;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
@@ -27,6 +28,18 @@ class Offer implements TimestampedEntityInterface
 
     #[ORM\Column]
     protected JerseyFormat $format;
+
+    /** @var JerseySizes[] */
+    #[ORM\Column(type: 'simple_array', nullable: true, enumType: JerseySizes::class)]
+    protected array $sizes = [
+        JerseySizes::SIZE_S,
+        JerseySizes::SIZE_M,
+        JerseySizes::SIZE_L,
+        JerseySizes::SIZE_XL,
+    ];
+
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    protected bool $customizable = true;
 
     public function getSeller(): Seller
     {
@@ -76,5 +89,27 @@ class Offer implements TimestampedEntityInterface
     public function setFormat(JerseyFormat $format): void
     {
         $this->format = $format;
+    }
+
+    /** @return  JerseySizes[] */
+    public function getSizes(): array
+    {
+        return $this->sizes;
+    }
+
+    /** @param  JerseySizes[] $sizes */
+    public function setSizes(array $sizes): void
+    {
+        $this->sizes = $sizes;
+    }
+
+    public function isCustomizable(): bool
+    {
+        return $this->customizable;
+    }
+
+    public function setCustomizable(bool $customizable): void
+    {
+        $this->customizable = $customizable;
     }
 }

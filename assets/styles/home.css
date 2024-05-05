@@ -4,6 +4,11 @@
 	grid-template-columns: repeat(2, 1fr);
 }
 
+.sellers-list {
+	display: grid;
+	gap: 1rem;
+}
+
 .display-club {
 	display: flex;
 	line-height: 1.2rem;
@@ -13,6 +18,9 @@
 	.logo {
 		width: 4rem;
 		height: 4rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.details {
@@ -40,6 +48,9 @@
 	.logo {
 		width: 4rem;
 		height: 4rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.name {
