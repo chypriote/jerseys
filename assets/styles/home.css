@@ -9,11 +9,18 @@
 	gap: 1rem;
 }
 
+.display-seller,
 .display-club {
 	display: flex;
 	line-height: 1.2rem;
-	gap: 1rem;
+	gap: .5rem 1rem;
 	border-radius: .5rem;
+	padding: 1rem .5rem;
+
+	&:hover {
+		cursor: pointer;
+		background-color: #f2f2f2;
+	}
 
 	.logo {
 		width: 4rem;
@@ -27,6 +34,7 @@
 		display: flex;
 		gap: .5rem;
 		flex-direction: column;
+		flex-grow: 1;
 
 		.name {
 			font-weight: bold;
@@ -36,30 +44,5 @@
 		.league {
 			color: var(--text-secondary);
 		}
-	}
-}
-
-.display-seller {
-	display: flex;
-	line-height: 1.2rem;
-	gap: 1rem;
-	border-radius: .5rem;
-
-	.logo {
-		width: 4rem;
-		height: 4rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.name {
-		font-weight: bold;
-		color: var(--text-primary);
-		flex-grow: 1;
-	}
-
-	.rating {
-
 	}
 }

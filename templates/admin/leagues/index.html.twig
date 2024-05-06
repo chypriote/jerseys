@@ -12,7 +12,7 @@
 		<tr>
 			<th>Id</th>
 			<th>Name</th>
-			<th>CreatedAt</th>
+			<th>Clubs</th>
 			<th>actions</th>
 		</tr>
 		</thead>
@@ -28,7 +28,7 @@
 						<span class="name">{{ league.name }}</span>
 					</a>
 				</td>
-				<td>{{ league.createdAt|date('Y-m-d') }}</td>
+				<td>{{ league.clubs|length }}</td>
 				<td>
 					<div style="display: flex;gap:.5rem">
 						<a btn href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
