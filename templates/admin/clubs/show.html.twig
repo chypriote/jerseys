@@ -5,49 +5,76 @@
 {% block body %}
 	<h1>Club</h1>
 
-	<table>
-		<tbody>
-		<tr>
-			<th>Name</th>
-			<td>{{ club.name }}</td>
-		</tr>
-		<tr>
-			<th>Slug</th>
-			<td>{{ club.slug }}</td>
-		</tr>
-		<tr>
-			<th>Logo</th>
-			<td>
-				<div class="logo">
-					<img src="{{ asset('/storage/clubs/' ~ club.logo) }}" alt="{{ club.logo }}"/>
+	<grid>
+		<div col="1/3">
+			<card>
+				<div class="actions">
+					<a btn href="{{ path('admin.clubs.list') }}">back to list</a>
+					<a btn primary href="{{ path('admin.clubs.create') }}">Create new</a>
 				</div>
-			</td>
-		</tr>
-		<tr>
-			<th>CreatedAt</th>
-			<td>{{ club.createdAt|date('Y-m-d') }}</td>
-		</tr>
-		<tr>
-			<th>UpdatedAt</th>
-			<td>{{ club.updatedAt|date('Y-m-d') }}</td>
-		</tr>
-		<tr>
-			<th>Id</th>
-			<td>{{ club.id }}</td>
-		</tr>
-		</tbody>
-	</table>
-	<div style="display: flex;gap:1rem;">
-		<a btn href="{{ path('admin.clubs.list') }}">back to list</a>
+				<table>
+					<tbody>
+					<tr>
+						<td>Name</td>
+						<td>{{ club.name }}</td>
+					</tr>
+					<tr>
+						<td>Slug</td>
+						<td>{{ club.slug }}</td>
+					</tr>
+					<tr>
+						<td>Logo</td>
+						<td>
+							<div class="logo">
+								<img src="{{ asset('/storage/clubs/' ~ club.logo) }}" alt="{{ club.logo }}"/>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>CreatedAt</td>
+						<td>{{ club.createdAt|date('Y-m-d') }}</td>
+					</tr>
+					<tr>
+						<td>UpdatedAt</td>
+						<td>{{ club.updatedAt|date('Y-m-d') }}</td>
+					</tr>
+					<tr>
+						<td>Id</td>
+						<td>{{ club.id }}</td>
+					</tr>
+					</tbody>
+				</table>
+				<div class="actions">
 
-		<a btn href="{{ path('admin.clubs.edit', {'slug': club.slug}) }}">edit</a>
+					<a btn href="{{ path('admin.clubs.edit', {'slug': club.slug}) }}">edit</a>
 
-		<form method="post" action="{{ path('admin.clubs.delete', {'slug': club.slug}) }}"
-					onsubmit="return confirm('Are you sure you want to delete this item?');">
-			<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ club.id) }}">
-			<button type="button">Delete</button>
-		</form>
-		<a btn primary href="{{ path('admin.clubs.create') }}">Create new</a>
-	</div>
+					<form method="post" action="{{ path('admin.clubs.delete', {'slug': club.slug}) }}">
+						<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ club.id) }}">
+						<button type="submit">Delete</button>
+					</form>
+				</div>
+			</card>
+		</div>
+		<div col="2/3">
+			<card>
+				<h3>Add jersey</h3>
+				{{ form(jerseyForm) }}
+			</card>
+			<card class="jerseys-list">
+				<h2>Jerseys</h2>
+				{% for jersey in club.jerseys %}
+					<div class="jersey">
+						<div class="logo">
+							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+						</div>
+						<div class="name">{{ jersey.computedName|default('name') }}</div>
+						<div>{{ jersey.year |trans }}</div>
+						<div>{{ jersey.type |trans }}</div>
+						<a btn href="{{ path('admin.jerseys.show', {'slug': jersey.slug}) }}">show</a>
+						<a btn href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}">edit</a>
+					</div>
+				{% endfor %}
+		</div>
+	</grid>
 
 {% endblock %}

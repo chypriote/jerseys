@@ -17,6 +17,32 @@ td .club, td .league, td .jersey, td .offer {
 	}
 }
 
+.clubs-list, .jerseys-list {
+
+	.club, .jersey {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+
+		.logo {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			width: 4rem;
+			height: 4rem;
+		}
+
+		.name {
+			flex-grow: 1;
+		}
+
+		img {
+			max-width: 4rem;
+			max-height: 4rem;
+		}
+	}
+}
+
 .offers {
 	img {
 		max-width: 4rem;

@@ -94,7 +94,7 @@ class SellersController extends AbstractController
             $entityManager->persist($offer);
             $entityManager->flush();
 
-            return $this->redirectToRoute('admin.sellers.show', ['slug' => $offer->getSeller()->getSlug()], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin.sellers.show', ['slug' => $seller->getSlug()], Response::HTTP_SEE_OTHER);
         }
 
         throw $this->createNotFoundException();

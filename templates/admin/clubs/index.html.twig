@@ -12,6 +12,7 @@
 			<th>Id</th>
 			<th>Name</th>
 			<th>League</th>
+			<th>Jerseys</th>
 			<th>UpdatedAt</th>
 			<th>actions</th>
 		</tr>
@@ -36,6 +37,7 @@
 						<span class="name">{{ club.league.name }}</span>
 					</a>
 				</td>
+				<td>{{ club.jerseys|length }}</td>
 				<td>{{ club.updatedAt|date('Y-m-d') }}</td>
 				<td>
 					<div style="display: flex;gap:.5rem">

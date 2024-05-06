@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\Club;
+use App\Entity\Jersey;
 use App\Enum\Crud;
+use App\Enum\JerseyYears;
 use App\Form\ClubType;
+use App\Form\JerseyFromClubType;
 use Doctrine\ORM\EntityManagerInterface;
 use Koriym\HttpConstants\Method;
 use League\Flysystem\FilesystemException;
@@ -71,9 +74,48 @@ class ClubsController extends AbstractController
     #[Route('/{slug}', name: Crud::SHOW, methods: [Method::GET])]
     public function show(Club $club): Response
     {
+        $jersey = new Jersey();
+        $jersey->setClub($club);
+        $jersey->setYear(JerseyYears::YEAR_2023_2024);
+        $form = $this->createForm(JerseyFromClubType::class, $jersey, ['club' => $club->getSlug()]);
+
         return $this->render('admin/clubs/show.html.twig', [
             'club' => $club,
+            'jerseyForm' => $form,
         ]);
+    }
+
+    #[Route('/{slug}/jersey', name: 'create_jersey', methods: [Method::POST])]
+    public function createJersey(
+        Club $club,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        FilesystemOperator $storageJerseys,
+        SluggerInterface $slugger
+    ): Response {
+        $jersey = new Jersey();
+        $form = $this->createForm(JerseyFromClubType::class, $jersey, ['club' => $club->getSlug()]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $picture = $form->get('picture')->getData();
+            if (!$picture instanceof File) {
+                throw new InvalidArgumentException();
+            }
+            try {
+                $fileName = $slugger->slug($jersey->getClub()->getName().'-'.$jersey->getYear()->value)->lower().'-'.uniqid('', true).'.'.$picture->guessExtension();
+                $storageJerseys->write($fileName, $picture->getContent());
+            } catch (FilesystemException $e) {
+                throw new InvalidArgumentException($e->getMessage());
+            }
+            $jersey->setPicture($fileName);
+            $entityManager->persist($jersey);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('admin.clubs.show', ['slug' => $club->getSlug()], Response::HTTP_SEE_OTHER);
+        }
+
+        throw $this->createNotFoundException();
     }
 
     #[Route('/{slug}/edit', name: Crud::EDIT, methods: [Method::GET, Method::POST])]
@@ -111,7 +153,7 @@ class ClubsController extends AbstractController
         ]);
     }
 
-    #[Route('/{slug}', name: Crud::DELETE, methods: [Method::POST])]
+    #[Route('/{slug}/delete', name: Crud::DELETE, methods: [Method::POST])]
     public function delete(Request $request, Club $club, EntityManagerInterface $entityManager): Response
     {
         $token = $request->getPayload()->get('_token');

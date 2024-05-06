@@ -7,6 +7,7 @@ namespace App\Controller\Admin;
 use App\Entity\Jersey;
 use App\Entity\Offer;
 use App\Enum\Crud;
+use App\Enum\JerseyYears;
 use App\Form\JerseyType;
 use App\Form\OfferFromJerseyType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -44,6 +45,7 @@ class JerseysController extends AbstractController
         SluggerInterface $slugger
     ): Response {
         $jersey = new Jersey();
+        $jersey->setYear(JerseyYears::YEAR_2023_2024);
         $form = $this->createForm(JerseyType::class, $jersey);
         $form->handleRequest($request);
 
@@ -130,7 +132,7 @@ class JerseysController extends AbstractController
             $entityManager->persist($offer);
             $entityManager->flush();
 
-            return $this->redirectToRoute('admin.sellers.show', ['slug' => $offer->getSeller()->getSlug()], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('admin.jerseys.show', ['slug' => $jersey->getSlug()], Response::HTTP_SEE_OTHER);
         }
 
         throw $this->createNotFoundException();

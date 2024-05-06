@@ -5,42 +5,67 @@
 {% block body %}
 	<h1>League</h1>
 
-	<table>
-		<tbody>
-		<tr>
-			<th>Id</th>
-			<td>{{ league.id }}</td>
-		</tr>
-		<tr>
-			<th>Name</th>
-			<td>{{ league.name }}</td>
-		</tr>
-		<tr>
-			<th>Slug</th>
-			<td>{{ league.slug }}</td>
-		</tr>
-		<tr>
-			<th>Logo</th>
-			<td><img src="{{ league.logo }}" alt="{{ league.name }}"/></td>
-		</tr>
-		<tr>
-			<th>CreatedAt</th>
-			<td>{{ league.createdAt|date('Y-m-d') }}</td>
-		</tr>
-		<tr>
-			<th>UpdatedAt</th>
-			<td>{{ league.updatedAt|date('Y-m-d') }}</td>
-		</tr>
-		</tbody>
-	</table>
+	<grid>
+		<div col="1/3">
+			<card>
+				<div class="actions">
 
-	<a btn href="{{ path('admin.leagues.list') }}">back to list</a>
+					<a btn href="{{ path('admin.leagues.list') }}">back to list</a>
 
-	<a btn href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
+					<a btn href="{{ path('admin.leagues.edit', {'slug': league.slug}) }}">edit</a>
 
-	<form method="post" action="{{ path('admin.leagues.delete', {'slug': league.slug}) }}"
-				onsubmit="return confirm('Are you sure you want to delete this item?');">
-		<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ league.id) }}">
-		<button type="button">Delete</button>
-	</form>
+					<form method="post" action="{{ path('admin.leagues.delete', {'slug': league.slug}) }}"
+								onsubmit="return confirm('Are you sure you want to delete this item?');">
+						<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ league.id) }}">
+						<button type="submit">Delete</button>
+					</form>
+				</div>
+				<table>
+					<tbody>
+					<tr>
+						<td>Id</td>
+						<td>{{ league.id }}</td>
+					</tr>
+					<tr>
+						<td>Name</td>
+						<td>{{ league.name }}</td>
+					</tr>
+					<tr>
+						<td>Logo</td>
+						<td>
+							<div class="logo"><img src="{{ league.logo }}" alt="{{ league.name }}"/></div>
+						</td>
+					</tr>
+					<tr>
+						<td>CreatedAt</td>
+						<td>{{ league.createdAt|date('Y-m-d') }}</td>
+					</tr>
+					<tr>
+						<td>UpdatedAt</td>
+						<td>{{ league.updatedAt|date('Y-m-d') }}</td>
+					</tr>
+					</tbody>
+				</table>
+			</card>
+		</div>
+		<div col="2/3">
+			<card class="clubs-list">
+				<h2>Clubs</h2>
+				<grid>
+					{% for club in league.clubs %}
+						<div col="1/2">
+							<div class="club">
+								<div class="logo">
+									<img src="{{ asset('/storage/clubs/' ~ club.logo) }}" alt="{{ club.logo }}"/>
+								</div>
+								<span class="name">{{ club.name }}</span>
+								<a href="{{ path('admin.clubs.show', {slug: club.slug}) }}">Show</a>
+								<a href="{{ path('admin.clubs.edit', {slug: club.slug}) }}">Edit</a>
+							</div>
+						</div>
+					{% endfor %}
+				</grid>
+			</card>
+		</div>
+	</grid>
 {% endblock %}

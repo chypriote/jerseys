@@ -27,7 +27,8 @@ class League implements SoftDeletableEntityInterface
     protected string $slug;
 
     /** @var ArrayCollection<int, Club> */
-    #[ORM\OneToMany(targetEntity: Club::class, mappedBy: 'league')]
+    #[ORM\OneToMany(mappedBy: 'league', targetEntity: Club::class)]
+    #[ORM\OrderBy(['name' => 'ASC'])]
     protected Collection $clubs;
 
     #[ORM\Column]

@@ -14,7 +14,7 @@
 					<form method="post" action="{{ path('admin.jerseys.delete', {'slug': jersey.slug}) }}"
 								onsubmit="return confirm('Are you sure you want to delete this item?');">
 						<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ jersey.id) }}">
-						<button type="button">Delete</button>
+						<button type="submit">Delete</button>
 					</form>
 				</div>
 			</card>
