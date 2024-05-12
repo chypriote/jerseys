@@ -6,6 +6,7 @@ namespace App\Controller\App;
 
 use App\Dto\SubCategoryDto;
 use App\Entity\CategorizableItem;
+use App\Entity\Jersey;
 use App\Entity\League;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -26,7 +27,7 @@ class DisplayLeagueAction extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $jerseys = [];
+        $jerseys = $entityManager->getRepository(Jersey::class)->findBy(['club.league' => $league]);
         $subCategories = $league->getClubs()->map(static fn (CategorizableItem $item): SubCategoryDto => $item->toSubCategory());
 
         return $this->render('jerseys_list.html.twig', [

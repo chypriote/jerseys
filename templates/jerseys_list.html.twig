@@ -8,13 +8,23 @@
 				<a href="{{ path(item.routeName, item.routeParams) }}">{{ item.name }}</a>
 			{% endfor %}
 		</div>
-		<div class="jerseys">
-			<ul>
-				{% for jersey in jerseys %}
-					<li>{{ jersey.slug }}</li>
-				{% endfor %}
-			</ul>
-		</div>
+		<grid class="jerseys">
+			{% for jersey in jerseys %}
+				<div col="1/4">
+					<a href="{{ path('app.jersey', {slug: jersey.slug}) }}" class="club">
+						<card>
+							<div class="logo">
+								<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+							</div>
+							<div class="split">
+								{{ jersey.type |trans }}
+								{{ jersey.event.name }}
+							</div>
+						</card>
+					</a>
+				</div>
+			{% endfor %}
+		</grid>
 	</section>
 {% endblock %}
 

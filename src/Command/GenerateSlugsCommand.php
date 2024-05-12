@@ -29,7 +29,7 @@ class GenerateSlugsCommand extends Command
 
         $jerseys = $this->entityManager->getRepository(Jersey::class)->findAll();
         foreach ($jerseys as $jersey) {
-            $jersey->setSlug(null);
+            //            $jersey->setSlug(null);
             $this->entityManager->flush();
         }
         $io->success('Slugs regenerated successfully.');

@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Enum\UserRoles;
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -36,6 +37,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     private bool $isVerified = false;
+
+    /** @var Collection<int, Jersey> */
+    #[ORM\ManyToMany(targetEntity: Jersey::class, inversedBy: 'users')]
+    protected Collection $wishlist;
 
     public function getId(): ?int
     {
@@ -115,5 +120,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->isVerified = $isVerified;
 
         return $this;
+    }
+
+    /** @return Collection<int, Jersey> */
+    public function getWishlist(): Collection
+    {
+        return $this->wishlist;
+    }
+
+    /** @param Collection<int, Jersey> */
+    public function setWishlist(Collection $wishlist): void
+    {
+        $this->wishlist = $wishlist;
+    }
+
+    public function addToWishlist(Jersey $jersey): void
+    {
+        $this->wishlist->add($jersey);
+    }
+
+    public function removeFromWishlist(Jersey $jersey): void
+    {
+        $this->wishlist->removeElement($jersey);
     }
 }

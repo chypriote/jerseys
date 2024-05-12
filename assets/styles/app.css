@@ -33,6 +33,10 @@ form > div > div > ul > li {
 	color: red;
 }
 
+card {
+	transition: all .2s ease;
+}
+
 section:not([class]), section[xx] {
 	max-width: 1420px;
 }
@@ -58,8 +62,8 @@ main {
 
 	a {
 		box-sizing: border-box;
-		padding: 10px;
-		line-height: 24px;
+		padding: 1rem;
+		line-height: 2rem;
 		color: #666;
 		margin: 0 5px;
 		text-align: center;
@@ -72,22 +76,62 @@ main {
 }
 
 .jerseys {
+	a:hover card {
+		box-shadow: 1px 2px 4px rgba(0, 0, 0, .3);
+	}
+}
+
+.offers-list {
 	display: flex;
-	overflow: hidden;
-	align-items: flex-start;
+	flex-direction: column;
+	gap: 2rem;
+	max-height: 60vh;
+	overflow: auto;
+	padding: 1rem;
+}
 
-	ul {
+.seller-link {
+	&:hover card {
+		box-shadow: 1px 2px 4px rgba(0, 0, 0, .3);
+	}
+
+	.seller-card {
+		gap: 2rem;
 		display: flex;
-		flex-wrap: wrap;
-		margin-top: 20px;
-		width: 100%;
-		transition: all 0.3s;
+		padding: 1rem;
+		align-items: center;
+	}
 
-		li {
-			width: calc(25% - 15px);
-			margin: 0 20px;
-			position: relative;
-			text-align: center;
+	.seller-logo {
+		width: 4rem;
+		height: 4rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.seller-name {
+		flex-grow: 1;
+		display: flex;
+		flex-direction: column;
+
+		.name {
+			font-weight: bold;
+			font-size: 1.75rem;
+		}
+	}
+
+	.seller-price {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+
+		.price {
+			font-size: 1.6rem;
+		}
+
+		.header {
+			color: #666;
 		}
 	}
 }

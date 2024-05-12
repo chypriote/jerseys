@@ -7,21 +7,31 @@
 
 {% block body %}
 	<section>
-		<div col="1/2">
-			<img src="{{ jersey.picture }}" alt="{{ jersey.slug }}"/>
-		</div>
-		<div col="1/2">
-			<h1>{{ jersey.club.name }} {{ jersey.type.value }} Jersey {{ jersey.event.name }}</h1>
-			<ul>
-				{% for offer in jersey.offers %}
-					<li>
-						<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer">
-							<img src="{{ offer.seller.logo }}" alt="{{ offer.seller.name }}">
-							{{ offer.seller.name }} {{ offer.price }}
+		<h1>{{ jersey.club.name }} {{ jersey.type |trans }} {{ jersey.event.name }}</h1>
+		<grid>
+			<div col="1/2">
+				<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+			</div>
+			<div col="1/2">
+				<div class="offers-list">
+					{% for offer in jersey.offers %}
+						<a href="{{ offer.url }}" target="_blank" rel="noopener noreferrer" class="seller-link">
+							<card class="seller-card">
+								<div class="seller-logo">
+									<img src="{{ offer.seller.logo }}" alt="{{ offer.seller.name }}"/>
+								</div>
+								<div class="seller-name">
+									<span class="name">{{ offer.seller.name }}</span>
+								</div>
+								<div class="seller-price">
+									<span class="header">starting at</span>
+									<span class="price">{{ offer.price|format_currency('USD') }}</span>
+								</div>
+							</card>
 						</a>
-					</li>
-				{% endfor %}
-			</ul>
-		</div>
+					{% endfor %}
+				</div>
+			</div>
+		</grid>
 	</section>
 {% endblock %}

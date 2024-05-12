@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class DisplayJerseyAction extends AbstractController
 {
     #[Route('/{slug}', name: 'jersey')]
-    public function __invoke(Jersey $jersey, EntityManagerInterface $entityManager, string $leagueSlug): Response
+    public function __invoke(Jersey $jersey, EntityManagerInterface $entityManager): Response
     {
         return $this->render('jersey.html.twig', [
             'jersey' => $jersey,

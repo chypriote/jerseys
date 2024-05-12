@@ -28,20 +28,21 @@ class Jersey implements SoftDeletableEntityInterface
     protected Event $event;
 
     #[ORM\Column]
-    #[Gedmo\Slug(fields: ['type'], updatable: true, separator: '-')]
+    #[Gedmo\Slug(fields: ['type'], separator: '-')]
     #[Gedmo\SlugHandler(class: TreeSlugHandler::class, options: [
         'parentRelationField' => 'club', 'relationSlugField' => 'name', 'separator' => '-', 'urilize' => true,
     ])]
     #[Gedmo\SlugHandler(class: RelativeSlugHandler::class, options: [
         'relationField' => 'event', 'relationSlugField' => 'name', 'separator' => '-', 'urilize' => true,
     ])]
-    protected ?string $slug;
+    protected string $slug;
 
     #[ORM\Column]
     protected JerseyType $type;
 
     /** @var Collection<int, Offer> */
     #[ORM\OneToMany(mappedBy: 'jersey', targetEntity: Offer::class)]
+    #[ORM\OrderBy(['price' => 'ASC'])]
     protected Collection $offers;
 
     #[ORM\Column]
@@ -65,11 +66,6 @@ class Jersey implements SoftDeletableEntityInterface
     public function getSlug(): string
     {
         return $this->slug;
-    }
-
-    public function setSlug(?string $slug): void
-    {
-        $this->slug = $slug;
     }
 
     public function getType(): JerseyType
