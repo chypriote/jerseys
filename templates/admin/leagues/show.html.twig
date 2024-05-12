@@ -62,6 +62,7 @@
 									<img src="{{ asset('/storage/clubs/' ~ club.logo) }}" alt="{{ club.logo }}"/>
 								</div>
 								<span class="name">{{ club.name }}</span>
+								<span>{{ club.jerseys|length }}</span>
 								<a href="{{ path('admin.clubs.show', {slug: club.slug}) }}">Show</a>
 								<a href="{{ path('admin.clubs.edit', {slug: club.slug}) }}">Edit</a>
 							</div>

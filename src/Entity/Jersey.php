@@ -7,12 +7,12 @@ namespace App\Entity;
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
 use App\Enum\JerseyType;
-use App\Enum\JerseyYears;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Sluggable\Handler\RelativeSlugHandler;
+use Gedmo\Sluggable\Handler\TreeSlugHandler;
 
 #[ORM\Entity]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt')]
@@ -24,29 +24,28 @@ class Jersey implements SoftDeletableEntityInterface
     #[ORM\ManyToOne(targetEntity: Club::class, inversedBy: 'jerseys')]
     protected Club $club;
 
-    #[ORM\Column]
-    protected JerseyYears $year;
+    #[ORM\ManyToOne(targetEntity: Event::class, inversedBy: 'jerseys')]
+    protected Event $event;
 
     #[ORM\Column]
-    #[Gedmo\Slug(fields: ['year'])]
-    #[Gedmo\SlugHandler(class: RelativeSlugHandler::class, options: [
-        'relationField' => 'club', 'relationSlugField' => 'name', 'separator' => '-',
-        'urilize' => true,
+    #[Gedmo\Slug(fields: ['type'], updatable: true, separator: '-')]
+    #[Gedmo\SlugHandler(class: TreeSlugHandler::class, options: [
+        'parentRelationField' => 'club', 'relationSlugField' => 'name', 'separator' => '-', 'urilize' => true,
     ])]
-    protected string $slug;
+    #[Gedmo\SlugHandler(class: RelativeSlugHandler::class, options: [
+        'relationField' => 'event', 'relationSlugField' => 'name', 'separator' => '-', 'urilize' => true,
+    ])]
+    protected ?string $slug;
 
     #[ORM\Column]
     protected JerseyType $type;
 
-    /** @var ArrayCollection<int, Offer> */
+    /** @var Collection<int, Offer> */
     #[ORM\OneToMany(mappedBy: 'jersey', targetEntity: Offer::class)]
     protected Collection $offers;
 
     #[ORM\Column]
     protected string $picture;
-
-    #[ORM\Column(nullable: true)]
-    protected ?string $email = null;
 
     public function __construct()
     {
@@ -63,22 +62,12 @@ class Jersey implements SoftDeletableEntityInterface
         $this->club = $club;
     }
 
-    public function getYear(): JerseyYears
-    {
-        return $this->year;
-    }
-
-    public function setYear(JerseyYears $year): void
-    {
-        $this->year = $year;
-    }
-
     public function getSlug(): string
     {
         return $this->slug;
     }
 
-    public function setSlug(string $slug): void
+    public function setSlug(?string $slug): void
     {
         $this->slug = $slug;
     }
@@ -115,14 +104,14 @@ class Jersey implements SoftDeletableEntityInterface
         $this->picture = $picture;
     }
 
-    public function getEmail(): ?string
+    public function getEvent(): Event
     {
-        return $this->email;
+        return $this->event;
     }
 
-    public function setEmail(?string $email): void
+    public function setEvent(Event $event): void
     {
-        $this->email = $email;
+        $this->event = $event;
     }
 
     public function getComputedName(): string
@@ -131,7 +120,7 @@ class Jersey implements SoftDeletableEntityInterface
             '%s %s Jersey %s',
             $this->getClub()->getName(),
             ucfirst($this->getType()->value),
-            $this->getYear()->value
+            $this->getEvent()->getName()
         );
     }
 }

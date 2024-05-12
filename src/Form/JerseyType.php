@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\Jersey;
-use App\Enum\JerseyYears;
 use App\Form\Type\ClubAutocompleteField;
+use App\Form\Type\EventAutocompleteField;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
@@ -21,7 +21,7 @@ class JerseyType extends AbstractType
     {
         $builder
             ->add('type', EnumType::class, ['class' => \App\Enum\JerseyType::class])
-            ->add('year', EnumType::class, ['class' => JerseyYears::class])
+            ->add('event', EventAutocompleteField::class)
             ->add('picture', DropzoneType::class, [
                 'mapped' => false,
                 'required' => false,

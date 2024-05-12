@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\Club;
+use App\Entity\Event;
 use App\Entity\Jersey;
-use App\Enum\JerseyYears;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -19,12 +21,13 @@ use Symfony\UX\Dropzone\Form\DropzoneType;
 
 class JerseyFromClubType extends AbstractType
 {
-    public function __construct(private readonly RouterInterface $router)
+    public function __construct(private readonly RouterInterface $router, private readonly EntityManagerInterface $entityManager)
     {
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        $events = $this->entityManager->getRepository(Event::class)->findAll();
         $builder
             ->setAction($this->router->generate('admin.clubs.create_jersey', ['slug' => $options['club']]))
             ->add('club', EntityType::class, [
@@ -34,7 +37,11 @@ class JerseyFromClubType extends AbstractType
                 'label_attr' => ['style' => 'display: none'],
             ])
             ->add('type', EnumType::class, ['class' => \App\Enum\JerseyType::class])
-            ->add('year', EnumType::class, ['class' => JerseyYears::class])
+            ->add('event', ChoiceType::class, [
+                'choices' => $events,
+                'choice_label' => static fn (Event $event) => $event->getName(),
+                'choice_value' => 'id',
+            ])
             ->add('picture', DropzoneType::class, [
                 'mapped' => false,
                 'required' => false,

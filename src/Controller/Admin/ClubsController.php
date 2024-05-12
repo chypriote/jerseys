@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\Club;
+use App\Entity\Event;
 use App\Entity\Jersey;
 use App\Enum\Crud;
-use App\Enum\JerseyYears;
 use App\Form\ClubType;
 use App\Form\JerseyFromClubType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,11 +72,11 @@ class ClubsController extends AbstractController
     }
 
     #[Route('/{slug}', name: Crud::SHOW, methods: [Method::GET])]
-    public function show(Club $club): Response
+    public function show(Club $club, EntityManagerInterface $entityManager): Response
     {
         $jersey = new Jersey();
         $jersey->setClub($club);
-        $jersey->setYear(JerseyYears::YEAR_2023_2024);
+        $jersey->setEvent($entityManager->getRepository(Event::class)->find(4));
         $form = $this->createForm(JerseyFromClubType::class, $jersey, ['club' => $club->getSlug()]);
 
         return $this->render('admin/clubs/show.html.twig', [
@@ -103,7 +103,7 @@ class ClubsController extends AbstractController
                 throw new InvalidArgumentException();
             }
             try {
-                $fileName = $slugger->slug($jersey->getClub()->getName().'-'.$jersey->getYear()->value)->lower().'-'.uniqid('', true).'.'.$picture->guessExtension();
+                $fileName = $slugger->slug($jersey->getClub()->getName().'-'.$jersey->getEvent()->getName())->lower().'-'.uniqid('', true).'.'.$picture->guessExtension();
                 $storageJerseys->write($fileName, $picture->getContent());
             } catch (FilesystemException $e) {
                 throw new InvalidArgumentException($e->getMessage());

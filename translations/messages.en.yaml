@@ -12,6 +12,10 @@ jersey:
         2023-2024: 2023-2024
         2023: 2023
         2022-2023: 2022-2023
+        euro-2024: Euro 2024
+        copa-2024: Copa 2024
+        world-cup-2022: World Cup 2022
+        euro-2020: Euro 2020
     format:
         fan: Fan Version
         player: Player Version

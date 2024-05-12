@@ -49,7 +49,6 @@ class JerseyControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
 
         $this->client->submitForm('Save', [
-            'jersey[year]' => 'Testing',
             'jersey[slug]' => 'Testing',
             'jersey[type]' => 'Testing',
             'jersey[picture]' => 'Testing',
@@ -65,7 +64,6 @@ class JerseyControllerTest extends WebTestCase
     {
         $this->markTestIncomplete();
         $fixture = new Jersey();
-        $fixture->setYear('My Title');
         $fixture->setSlug('My Title');
         $fixture->setType('My Title');
         $fixture->setPicture('My Title');
@@ -86,7 +84,6 @@ class JerseyControllerTest extends WebTestCase
     {
         $this->markTestIncomplete();
         $fixture = new Jersey();
-        $fixture->setYear('Value');
         $fixture->setType('Value');
         $fixture->setPicture('Value');
         $fixture->setClub('Value');
@@ -97,7 +94,6 @@ class JerseyControllerTest extends WebTestCase
         $this->client->request(Method::GET, sprintf('%s%s/edit', $this->path, $fixture->getId()));
 
         $this->client->submitForm('Update', [
-            'jersey[year]' => 'Something New',
             'jersey[slug]' => 'Something New',
             'jersey[type]' => 'Something New',
             'jersey[picture]' => 'Something New',
@@ -108,7 +104,6 @@ class JerseyControllerTest extends WebTestCase
 
         $fixture = $this->repository->findAll();
 
-        self::assertSame('Something New', $fixture[0]->getYear());
         self::assertSame('Something New', $fixture[0]->getSlug());
         self::assertSame('Something New', $fixture[0]->getType());
         self::assertSame('Something New', $fixture[0]->getPicture());
@@ -119,7 +114,6 @@ class JerseyControllerTest extends WebTestCase
     {
         $this->markTestIncomplete();
         $fixture = new Jersey();
-        $fixture->setYear('Value');
         $fixture->setType('Value');
         $fixture->setPicture('Value');
         $fixture->setClub('Value');

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
+use App\Entity\Event;
 use App\Entity\Jersey;
 use App\Entity\Offer;
 use App\Enum\Crud;
-use App\Enum\JerseyYears;
 use App\Form\JerseyType;
 use App\Form\OfferFromJerseyType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,7 +45,7 @@ class JerseysController extends AbstractController
         SluggerInterface $slugger
     ): Response {
         $jersey = new Jersey();
-        $jersey->setYear(JerseyYears::YEAR_2023_2024);
+        $jersey->setEvent($entityManager->getRepository(Event::class)->find(4));
         $form = $this->createForm(JerseyType::class, $jersey);
         $form->handleRequest($request);
 
@@ -55,7 +55,7 @@ class JerseysController extends AbstractController
                 throw new InvalidArgumentException();
             }
             try {
-                $fileName = $slugger->slug($jersey->getClub()->getName().'-'.$jersey->getYear()->value)->lower().'-'.uniqid('', true).'.'.$picture->guessExtension();
+                $fileName = $slugger->slug($jersey->getClub()->getName().'-'.$jersey->getEvent()->getName())->lower().'-'.uniqid('', true).'.'.$picture->guessExtension();
                 $storageJerseys->write($fileName, $picture->getContent());
             } catch (FilesystemException $e) {
                 throw new InvalidArgumentException($e->getMessage());

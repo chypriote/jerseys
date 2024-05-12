@@ -54,6 +54,7 @@
 					</form>
 				</div>
 			</card>
+			<a btn href="{{ path('admin.leagues.show', {'slug': club.league.slug}) }}">{{ club.league.name }}</a>
 		</div>
 		<div col="2/3">
 			<card>
@@ -68,7 +69,7 @@
 							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
 						</div>
 						<div class="name">{{ jersey.computedName|default('name') }}</div>
-						<div>{{ jersey.year |trans }}</div>
+						<div>{{ jersey.event.name }}</div>
 						<div>{{ jersey.type |trans }}</div>
 						<a btn href="{{ path('admin.jerseys.show', {'slug': jersey.slug}) }}">show</a>
 						<a btn href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}">edit</a>

@@ -11,7 +11,7 @@
 			<img src="{{ jersey.picture }}" alt="{{ jersey.slug }}"/>
 		</div>
 		<div col="1/2">
-			<h1>{{ jersey.club.name }} {{ jersey.type.value }} Jersey {{ jersey.year.value }}</h1>
+			<h1>{{ jersey.club.name }} {{ jersey.type.value }} Jersey {{ jersey.event.name }}</h1>
 			<ul>
 				{% for offer in jersey.offers %}
 					<li>
