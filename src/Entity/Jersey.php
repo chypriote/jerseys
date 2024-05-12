@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
 use App\Enum\JerseyType;
+use App\Repository\JerseyRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +15,7 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Sluggable\Handler\RelativeSlugHandler;
 use Gedmo\Sluggable\Handler\TreeSlugHandler;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: JerseyRepository::class)]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt')]
 // #[Gedmo\Loggable]
 class Jersey implements SoftDeletableEntityInterface
@@ -66,6 +67,11 @@ class Jersey implements SoftDeletableEntityInterface
     public function getSlug(): string
     {
         return $this->slug;
+    }
+
+    public function setSlug(string $slug): void
+    {
+        $this->slug = $slug;
     }
 
     public function getType(): JerseyType

@@ -97,7 +97,7 @@ class Club implements SoftDeletableEntityInterface, CategorizableItem
         $dto = new SubCategoryDto();
 
         $dto->name = $this->name;
-        $dto->routeName = 'app.jersey';
+        $dto->routeName = 'app.club';
         $dto->routeParams = ['slug' => $this->slug];
         $dto->logo = $this->logo;
 
