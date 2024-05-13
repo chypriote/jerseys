@@ -71,6 +71,49 @@
 			</card>
 		</div>
 		<div col="1/1">
+			<card class="offers" id="offers">
+				<h2>Offers</h2>
+				<table>
+					<thead>
+					<tr>
+						<th>Seller</th>
+						{% for type in jerseyFormats %}
+							<th>{{ type.value|trans }}</th>
+						{% endfor %}
+					</tr>
+					</thead>
+					<tbody>
+					{% for seller in sellers %}
+						<tr>
+							<td>
+								<div class="offer">
+									<img src="{{ seller.logo }}" alt="{{ seller.name }}">
+									<span class="name">{{ seller.name }}</span>
+								</div>
+							</td>
+							{% for type in jerseyFormats %}
+								<td>
+									{% if sellersOffers[seller.id][type.value] is not null %}
+										<a
+											href="{{ path('admin.offers.edit', {id: sellersOffers[seller.id][type.value].id}) }}"> {{ sellersOffers[seller.id][type.value].price|format_currency('USD') }}</a>
+									{% else %}
+										<form name="create_default_offer_{{ seller.id }}_{{ type.value }}" method="post"
+													action="{{ path('admin.offers.create_default') }}">
+											<input name="jersey" value="{{ jersey.id }}" type="hidden">
+											<input name="seller" value="{{ seller.id }}" type="hidden">
+											<input name="format" value="{{ type.value }}" type="hidden">
+											<button btn type="submit">Add</button>
+										</form>
+									{% endif %}
+								</td>
+							{% endfor %}
+						</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+			</card>
+		</div>
+		<div col="1/1">
 			<card class="offers">
 				<h2>Offers</h2>
 				<table>

@@ -8,8 +8,10 @@ use App\Entity\Event;
 use App\Entity\Jersey;
 use App\Entity\Offer;
 use App\Enum\Crud;
+use App\Enum\JerseyFormat;
 use App\Form\JerseyType;
 use App\Form\OfferFromJerseyType;
+use App\Repository\SellerRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Koriym\HttpConstants\Method;
 use League\Flysystem\FilesystemException;
@@ -74,15 +76,30 @@ class JerseysController extends AbstractController
     }
 
     #[Route('/{slug}', name: Crud::SHOW, methods: [Method::GET])]
-    public function show(Jersey $jersey): Response
+    public function show(Jersey $jersey, SellerRepository $sellerRepository): Response
     {
         $offer = new Offer();
         $offer->setJersey($jersey);
 
         $form = $this->createForm(OfferFromJerseyType::class, $offer, ['jersey' => $jersey->getSlug()]);
 
+        $sellers = $sellerRepository->findAllWithOffers($jersey);
+
+        $formattedOffers = [];
+        $jerseyId = $jersey->getId();
+        foreach ($sellers as $seller) {
+            $id = $seller->getId();
+            $formattedOffers[$id] = [];
+            foreach (JerseyFormat::cases() as $format) {
+                $formattedOffers[$id][$format->value] = $seller->getOffers()->findFirst(fn ($key, Offer $offer) => $offer->getJersey()->getId() === $jerseyId && $offer->getFormat() === $format);
+            }
+        }
+
         return $this->render('admin/jerseys/show.html.twig', [
             'jersey' => $jersey,
+            'sellers' => $sellers,
+            'sellersOffers' => $formattedOffers,
+            'jerseyFormats' => JerseyFormat::cases(),
             'offerForm' => $form->createView(),
         ]);
     }

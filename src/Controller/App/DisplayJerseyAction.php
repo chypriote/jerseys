@@ -18,10 +18,7 @@ class DisplayJerseyAction extends AbstractController
     #[Route('/{slug}', name: 'jersey')]
     public function __invoke(Jersey $jersey, EntityManagerInterface $entityManager, JerseyRepository $jerseyRepository): Response
     {
-        $clubJerseys = array_filter(
-            $jerseyRepository->findBy(['club' => $jersey->getClub()]),
-            static fn (Jersey $j) => $j->getId() !== $jersey->getId(),
-        );
+        $clubJerseys = $jerseyRepository->findByClub($jersey->getClub(), 4, $jersey);
 
         return $this->render('jersey.html.twig', [
             'jersey' => $jersey,

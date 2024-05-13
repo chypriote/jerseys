@@ -6,14 +6,16 @@ namespace App\Entity;
 
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
+use App\Enum\JerseyFormat;
 use App\Enum\PaymentMethod;
+use App\Repository\SellerRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: SellerRepository::class)]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt')]
 // #[Gedmo\Loggable]
 class Seller implements SoftDeletableEntityInterface
@@ -32,7 +34,7 @@ class Seller implements SoftDeletableEntityInterface
     protected string $url;
 
     /** @var ArrayCollection<int, Offer> */
-    #[ORM\OneToMany(mappedBy: 'seller', targetEntity: Offer::class)]
+    #[ORM\OneToMany(mappedBy: 'seller', targetEntity: Offer::class, fetch: 'EAGER')]
     protected Collection $offers;
 
     #[ORM\Column]
@@ -44,6 +46,15 @@ class Seller implements SoftDeletableEntityInterface
     /** @var PaymentMethod[] */
     #[ORM\Column(type: 'simple_array', nullable: true, enumType: PaymentMethod::class)]
     protected array $paymentMethods = [];
+
+    #[ORM\Column(nullable: true)]
+    protected string $defaultPriceFan;
+    #[ORM\Column(nullable: true)]
+    protected string $defaultPricePlayer;
+    #[ORM\Column(nullable: true)]
+    protected string $defaultPriceKid;
+    #[ORM\Column(nullable: true)]
+    protected string $defaultPriceWoman;
 
     public function __construct()
     {
@@ -122,5 +133,55 @@ class Seller implements SoftDeletableEntityInterface
     public function setPaymentMethods(array $paymentMethods): void
     {
         $this->paymentMethods = $paymentMethods;
+    }
+
+    public function getDefaultPriceFan(): string
+    {
+        return $this->defaultPriceFan;
+    }
+
+    public function setDefaultPriceFan(string $defaultPriceFan): void
+    {
+        $this->defaultPriceFan = $defaultPriceFan;
+    }
+
+    public function getDefaultPricePlayer(): string
+    {
+        return $this->defaultPricePlayer;
+    }
+
+    public function setDefaultPricePlayer(string $defaultPricePlayer): void
+    {
+        $this->defaultPricePlayer = $defaultPricePlayer;
+    }
+
+    public function getDefaultPriceKid(): string
+    {
+        return $this->defaultPriceKid;
+    }
+
+    public function setDefaultPriceKid(string $defaultPriceKid): void
+    {
+        $this->defaultPriceKid = $defaultPriceKid;
+    }
+
+    public function getDefaultPriceWoman(): string
+    {
+        return $this->defaultPriceWoman;
+    }
+
+    public function setDefaultPriceWoman(string $defaultPriceWoman): void
+    {
+        $this->defaultPriceWoman = $defaultPriceWoman;
+    }
+
+    public function getDefaultPriceByFormat(JerseyFormat $format): string
+    {
+        return match ($format) {
+            JerseyFormat::FAN => $this->getDefaultPriceFan(),
+            JerseyFormat::PLAYER => $this->getDefaultPricePlayer(),
+            JerseyFormat::KID => $this->getDefaultPriceKid(),
+            JerseyFormat::WOMAN => $this->getDefaultPriceWoman(),
+        };
     }
 }

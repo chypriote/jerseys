@@ -13,31 +13,50 @@
 				<table>
 					<tbody>
 					<tr>
-						<th>Id</th>
+						<td>Id</td>
 						<td>{{ seller.id }}</td>
 					</tr>
 					<tr>
-						<th>Name</th>
+						<td>Name</td>
 						<td>{{ seller.name }}</td>
 					</tr>
 					<tr>
-						<th>Slug</th>
+						<td>Slug</td>
 						<td>{{ seller.slug }}</td>
 					</tr>
 					<tr>
-						<th>Url</th>
+						<td>Url</td>
 						<td>{{ seller.url }}</td>
 					</tr>
 					<tr>
-						<th>Logo</th>
+						<td>Logo</td>
 						<td><img src="{{ seller.logo }}" alt="{{ seller.name }}"/></td>
 					</tr>
 					<tr>
-						<th>CreatedAt</th>
+						<td>Prices</td>
+						<td>
+							<table>
+								<tr>
+									<td>Fan</td>
+									<td>Player</td>
+									<td>Kid</td>
+									<td>Woman</td>
+								</tr>
+								<tr>
+									<td>{{ seller.defaultPriceFan |format_currency('USD') }}</td>
+									<td>{{ seller.defaultPricePlayer |format_currency('USD') }}</td>
+									<td>{{ seller.defaultPriceKid |format_currency('USD') }}</td>
+									<td>{{ seller.defaultPriceWoman |format_currency('USD') }}</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<td>CreatedAt</td>
 						<td>{{ seller.createdAt|date('Y-m-d') }}</td>
 					</tr>
 					<tr>
-						<th>UpdatedAt</th>
+						<td>UpdatedAt</td>
 						<td>{{ seller.updatedAt|date('Y-m-d') }}</td>
 					</tr>
 					</tbody>

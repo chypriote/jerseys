@@ -21,7 +21,7 @@ class Offer implements TimestampedEntityInterface
     protected Jersey $jersey;
 
     #[ORM\Column]
-    protected string $url;
+    protected string $url = '';
 
     #[ORM\Column]
     protected string $price;

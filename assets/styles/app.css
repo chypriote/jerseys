@@ -155,3 +155,17 @@ main {
 		height: 40vh;
 	}
 }
+
+.similar-jersey {
+	header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.picture {
+		display: block;
+		text-align: center;
+		height: 25vh;
+	}
+}

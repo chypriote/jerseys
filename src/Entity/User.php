@@ -40,6 +40,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     /** @var Collection<int, Jersey> */
     #[ORM\ManyToMany(targetEntity: Jersey::class, inversedBy: 'users')]
+    #[ORM\JoinTable(name: 'users_wishlisted')]
     protected Collection $wishlist;
 
     public function getId(): ?int

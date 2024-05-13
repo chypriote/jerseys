@@ -19,6 +19,10 @@ class SellerType extends AbstractType
             ->add('name', TextType::class)
             ->add('url', TextType::class)
             ->add('logo', TextType::class)
+            ->add('defaultPriceFan', TextType::class)
+            ->add('defaultPricePlayer', TextType::class)
+            ->add('defaultPriceKid', TextType::class)
+            ->add('defaultPriceWoman', TextType::class)
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
                 'attr' => ['primary' => true],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Entity\Club;
 use App\Entity\Jersey;
 use App\Entity\League;
 use Doctrine\Bundle\DoctrineBundle\Repository\LazyServiceEntityRepository;
@@ -29,9 +30,33 @@ class JerseyRepository extends LazyServiceEntityRepository
     {
         return $this->createQueryBuilder('j')
             ->join('j.club', 'c')
+            ->join('j.offers', 'o')
             ->where('c.league = :league')
+            ->andWhere('o is not null')
             ->setParameter('league', $league)
             ->getQuery()
             ->getResult();
+    }
+
+    /** @return Jersey[] */
+    public function findByClub(Club $club, ?int $limit = null, ?Jersey $current = null): array
+    {
+        $qb = $this->createQueryBuilder('j')
+            ->join('j.offers', 'o')
+            ->where('j.club = :club')
+            ->andWhere('o is not null')
+            ->groupBy('j.id')
+            ->setParameter('club', $club)
+            ->orderBy('j.createdAt', 'desc');
+
+        if ($current !== null) {
+            $qb->andWhere('j <> :jersey')
+            ->setParameter('jersey', $current);
+        }
+        if ($limit !== null) {
+            $qb->setMaxResults($limit);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

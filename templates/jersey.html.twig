@@ -36,20 +36,20 @@
 	</div>
 	<div class="similar">
 		<h2>Others from {{ jersey.club.name }}</h2>
-		<div class="similars">
+		<grid class="similars">
 			{% for jersey in clubJerseys %}
 				<div col="1/4">
-					<card class="jersey-display">
-						<a href="{{ path('app.jersey', {slug: jersey.slug}) }}" class="picture">
-							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
-						</a>
+					<card class="similar-jersey">
 						<header>
 							{{ jersey.type |trans }}
 							{{ jersey.event.name }}
 						</header>
+						<a href="{{ path('app.jersey', {slug: jersey.slug}) }}" class="picture">
+							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+						</a>
 					</card>
 				</div>
 			{% endfor %}
-		</div>
+		</grid>
 	</div>
 {% endblock %}
