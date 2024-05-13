@@ -1,7 +1,7 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-	<section>
+	<div>
 		<h1>{{ title }}</h1>
 		<div class="subcategories">
 			{% for item in subCategories %}
@@ -11,23 +11,20 @@
 		<grid class="jerseys">
 			{% for jersey in jerseys %}
 				<div col="1/4">
-					<a href="{{ path('app.jersey', {slug: jersey.slug}) }}" class="club">
-						<card>
-							<header>{{ jersey.club.name }}</header>
-							<div class="logo">
-								<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
-							</div>
-							<div class="split">
-								{{ jersey.type |trans }}
-								{{ jersey.event.name }}
-								{{ jersey.offers|length }}
-							</div>
-						</card>
-					</a>
+					<card class="jersey-display">
+						<header>
+							<a href="{{ path('app.club', {slug: jersey.club.slug}) }}" class="club">{{ jersey.club.name }}</a>
+							{{ jersey.type |trans }}
+							{{ jersey.event.name }}
+						</header>
+						<a href="{{ path('app.jersey', {slug: jersey.slug}) }}" class="picture">
+							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+						</a>
+					</card>
 				</div>
 			{% endfor %}
 		</grid>
-	</section>
+	</div>
 {% endblock %}
 
 {% block title %}

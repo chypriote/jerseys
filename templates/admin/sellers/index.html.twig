@@ -14,7 +14,7 @@
 			<th>Slug</th>
 			<th>Url</th>
 			<th>Logo</th>
-			<th>CreatedAt</th>
+			<th>Offers</th>
 			<th>UpdatedAt</th>
 			<th>actions</th>
 		</tr>
@@ -29,7 +29,7 @@
 				<td>
 					<div class="logo"><img src="{{ seller.logo }}" alt="{{ seller.name }}"/></div>
 				</td>
-				<td>{{ seller.createdAt|date('Y-m-d') }}</td>
+				<td>{{ seller.offers|length }}</td>
 				<td>{{ seller.updatedAt|date('Y-m-d') }}</td>
 				<td>
 					<div style="display: flex;gap: 1rem;">

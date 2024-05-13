@@ -6,7 +6,7 @@
 
 
 {% block body %}
-	<section>
+	<div>
 		<h1>{{ jersey.club.name }} {{ jersey.type |trans }} {{ jersey.event.name }}</h1>
 		<grid>
 			<div col="1/2">
@@ -33,5 +33,23 @@
 				</div>
 			</div>
 		</grid>
-	</section>
+	</div>
+	<div class="similar">
+		<h2>Others from {{ jersey.club.name }}</h2>
+		<div class="similars">
+			{% for jersey in clubJerseys %}
+				<div col="1/4">
+					<card class="jersey-display">
+						<a href="{{ path('app.jersey', {slug: jersey.slug}) }}" class="picture">
+							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
+						</a>
+						<header>
+							{{ jersey.type |trans }}
+							{{ jersey.event.name }}
+						</header>
+					</card>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
 {% endblock %}

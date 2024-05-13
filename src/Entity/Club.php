@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Core\Entity\SoftDeletableEntityInterface;
 use App\Core\Entity\SoftDeletableEntityTrait;
 use App\Dto\SubCategoryDto;
+use App\Repository\ClubRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -15,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 // use App\ThirdParty\Cloudinary\UploadedFile;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: ClubRepository::class)]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt')]
 // #[Gedmo\Loggable]
 class Club implements SoftDeletableEntityInterface, CategorizableItem

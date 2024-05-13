@@ -22,33 +22,36 @@
 				alt="Jersey"
 				class="mx-auto rounded-lg shadow-lg"
 				src="https://generated.vusercontent.net/placeholder.svg"
-				style="aspect-ratio: 600/600;object-fit: cover;width: 600px;height: 600px"
+				style="aspect-ratio: 600/600;object-fit: cover;width: 400px;height: 400px"
 			/>
 		</div>
+		<div col="2/3">
+			<card>
+				<h2>Popular Clubs</h2>
+				<div class="clubs-list">
+					{% for club in clubs %}
+						{{ component('Home:ClubDisplay', {club: club}) }}
+					{% endfor %}
+				</div>
+			</card>
+			<card>
+				<h2>Popular Clubs</h2>
+				<div class="clubs-list">
+					{% for club in clubs %}
+						{{ component('Home:ClubDisplay', {club: club}) }}
+					{% endfor %}
+				</div>
+			</card>
+		</div>
+		<div col="1/3">
+			<card>
+				<h2>Top Sellers</h2>
+				<div class="sellers-list">
+					{% for seller in sellers %}
+						{{ component('Home:SellerDisplay', {seller: seller}) }}
+					{% endfor %}
+				</div>
+			</card>
+		</div>
 	</grid>
-
-	<section class="section">
-		<grid>
-			<div col="2/3">
-				<card>
-					<h2>Popular Clubs</h2>
-					<div class="clubs-list">
-						{% for club in clubs %}
-							{{ component('Home:ClubDisplay', {club: club}) }}
-						{% endfor %}
-					</div>
-				</card>
-			</div>
-			<div col="1/3">
-				<card>
-					<h2>Top Sellers</h2>
-					<div class="sellers-list">
-						{% for seller in sellers %}
-							{{ component('Home:SellerDisplay', {seller: seller}) }}
-						{% endfor %}
-					</div>
-				</card>
-			</div>
-		</grid>
-	</section>
 {% endblock %}

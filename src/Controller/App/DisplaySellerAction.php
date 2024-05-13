@@ -15,15 +15,9 @@ use Symfony\Component\Routing\Attribute\Route;
 #[AsController]
 class DisplaySellerAction extends AbstractController
 {
-    #[Route('/s/{sellerSlug}', name: 'seller')]
-    public function __invoke(EntityManagerInterface $entityManager, string $sellerSlug): Response
+    #[Route('/s/{slug}', name: 'seller')]
+    public function __invoke(Seller $seller, EntityManagerInterface $entityManager): Response
     {
-        $seller = $entityManager->getRepository(Seller::class)->findOneBy(['slug' => $sellerSlug]);
-
-        if (!$seller instanceof Seller) {
-            throw $this->createNotFoundException();
-        }
-
         $offers = $entityManager->getRepository(Offer::class)->findBy(['seller' => $seller]);
 
         return $this->render('offers_list.html.twig', [
