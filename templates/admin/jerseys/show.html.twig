@@ -22,6 +22,10 @@
 								<td>{{ jersey.id }}</td>
 							</tr>
 							<tr>
+								<td>Club</td>
+								<td><a href="{{ path('admin.clubs.show', {slug: jersey.club.slug}) }}">{{ jersey.club.name }}</a></td>
+							</tr>
+							<tr>
 								<td>Computed name</td>
 								<td>{{ jersey.computedName }}</td>
 							</tr>

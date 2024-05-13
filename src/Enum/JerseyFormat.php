@@ -12,6 +12,7 @@ enum JerseyFormat: string implements TranslatableInterface
     case FAN = 'fan';
     case PLAYER = 'player';
     case KID = 'kid';
+    case WOMAN = 'woman';
 
     public function trans(TranslatorInterface $translator, ?string $locale = null): string
     {
@@ -19,6 +20,7 @@ enum JerseyFormat: string implements TranslatableInterface
             self::FAN => $translator->trans('jersey.format.'.self::FAN->value, locale: $locale),
             self::PLAYER => $translator->trans('jersey.format.'.self::PLAYER->value, locale: $locale),
             self::KID => $translator->trans('jersey.format.'.self::KID->value, locale: $locale),
+            self::WOMAN => $translator->trans('jersey.format.'.self::WOMAN->value, locale: $locale),
         };
     }
 }

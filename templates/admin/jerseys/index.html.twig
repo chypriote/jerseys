@@ -24,7 +24,7 @@
 			<tr>
 				<td>{{ jersey.id }}</td>
 				<td>
-					<a href="{{ path('admin.jerseys.edit', {'slug': jersey.slug}) }}" class="jersey">
+					<a href="{{ path('admin.jerseys.show', {'slug': jersey.slug}) }}" class="jersey">
 						<div class="logo">
 							<img src="{{ asset('/storage/jerseys/' ~ jersey.picture) }}" alt="{{ jersey.computedName }}"/>
 						</div>
