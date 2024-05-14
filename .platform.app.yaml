@@ -24,12 +24,32 @@ disk: 2048
 
 hooks:
     build: |
-        set -e
+        set -x -e
+        curl -s https://get.symfony.com/cloud/configurator | bash
+        symfony-build
+
     deploy: |
-        set -e
+        set -x -e
+        symfony-deploy
 
 web:
     locations:
         '/':
             root: "public"
             passthru: "/index.php"
+
+dependencies:
+    php:
+        composer/composer: "^2"
+
+runtime:
+    extensions:
+        - pdo_pgsql
+        - ctype
+        - dom
+        - iconv
+        - simplexml
+        - xml
+
+relationships:
+    database:
