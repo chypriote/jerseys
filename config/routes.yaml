@@ -26,3 +26,9 @@ app:
         namespace: App\Controller\App
     name_prefix: 'app.'
     type: attribute
+
+qc:
+    resource:
+        path: ../src/QualityCheck/Controller
+        namespace: App\QualityCheck\Controller
+    type: attribute
