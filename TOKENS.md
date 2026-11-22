@@ -153,6 +153,7 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | map.country.covered | icon.accent | CoverageMap |
 | map.country.empty | border.subtle | CoverageMap |
 | map.country.border | bg.surface | CoverageMap |
+| map.width.min | 900px | CoverageMap drawing |
 
 Tabs, search, selects, chips and buttons use `radius.control`. Chips and buttons use `shadow.raised`.
 
