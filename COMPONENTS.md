@@ -167,11 +167,13 @@ Same as the Vinyles CoverGrid: `grid.columns` per breakpoint, gaps `space.grid.g
 
 **Purpose:** Shows which Countries are covered. Collection page only, between the StickyBar and the TileGrid.
 
-- A surface card (`color.bg.surface`, `tile.radius`, `tile.shadow`) with an inline SVG world map, full width, height set by the map's aspect ratio.
+- A surface card (`color.bg.surface`, `tile.radius`, `tile.shadow`) with an inline SVG world map. Height follows the map's aspect ratio.
+- Size: small Countries must be easy to see (Nico, 2026-11-22). The map is cropped to 56°S–72°N (no Antarctica, no far north). It is drawn at least `map.width.min` (900px) wide. On a narrower screen the card scrolls sideways (`overflow-x: auto`) and opens centred on Europe; the page itself never scrolls sideways.
+- Small Countries: a Country less than 8px across at the drawn size also gets a dot (r 4px) at its centre, in its state colour, with a 1px `map.country.border` ring. This covers Hong Kong, Luxembourg, Malta and the like.
 - Two states per Country (jerseys-model): covered fills `map.country.covered`, empty fills `map.country.empty`. Country borders: `map.country.border`, 0.5px.
-- The UK is four Countries: England, Scotland, Wales, Northern Ireland. Hong Kong is a dot (r 3px) in its state colour, because its shape is too small to see.
+- The UK is four Countries: England, Scotland, Wales, Northern Ireland.
 - Heading above the map: "{covered} of {total} countries", `text.body`, value in extrabold. `total` is the number of Countries in the app, not in the world.
-- The SVG is `role="img"` with `aria-label` "Countries covered: {names}". No hover, no tap, no zoom in v1.
+- The SVG is `role="img"` with `aria-label` "Countries covered: {names}". No hover, no tap, no zoom in v1: sideways scroll only.
 - The map reads all Jerseys, not the filtered list.
 
 New component tokens (add to TOKENS.md):
@@ -181,6 +183,7 @@ New component tokens (add to TOKENS.md):
 | map.country.covered | color.icon.accent | CoverageMap |
 | map.country.empty | color.border.subtle | CoverageMap |
 | map.country.border | color.bg.surface | CoverageMap |
+| map.width.min | 900px | CoverageMap drawing |
 
 Contrast, covered against empty: 3.41 light, 5.81 dark (needs 3, non-text). Empty against the card is low (1.29 light, 1.36 dark), but it shows only the land shape; the covered state and the text label carry the information.
 
