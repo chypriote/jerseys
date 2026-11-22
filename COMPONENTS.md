@@ -1,0 +1,239 @@
+# Jerseys components: "Kit wall" v1
+
+Sources: [DESIGN.md](DESIGN.md) for the look, [TOKENS.md](TOKENS.md) for values, [GLOSSARY.md](GLOSSARY.md) for names. Components use only semantic or component tokens.
+
+Status: proposed, waiting for Nico's review.
+
+Stack: same as Vinyles, SvelteKit (Svelte 5) with shadcn-svelte and Tailwind CSS v4. "Snippet" is a Svelte 5 slot. Props are camelCase; callbacks start with `on`. Where a component is the same as in Vinyles, this file says so and lists only the differences.
+
+## Hierarchy
+
+| Level | Components |
+|---|---|
+| Primitive | Chip, Button, DesireDots, SearchField, Select, Field, ToggleGroup |
+| Component | Tile, Tabs, Popup, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, EmptyState |
+| Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm, ImportReview |
+
+## Shared rules
+
+- Touch target: every control is at least `control.size.min` (44px).
+- Focus: `outline.focus.width` in `color.outline.focus`, on `:focus-visible` only.
+- Motion: hover tilt and lift only under `prefers-reduced-motion: no-preference`.
+- Controls (pills) use `radius.control` and `shadow.raised`. No borders.
+- Numbers use `font.numeric`.
+- Components set no outer margin and no width. The pattern sets the layout.
+- Display face (`font.family.display`) only for the roles DESIGN.md names. Everything else is Nunito.
+
+---
+
+## Primitives
+
+### Chip
+
+Same as Vinyles. Tones: `highlight` (jersey count), `success` (total spent), `info` (wishlist count). Not interactive.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| tone | `'highlight' \| 'success' \| 'info'` | — | `color.bg.highlight`, `.success` or `.info` |
+| label | string | — | "jerseys", "spent", "wanted" |
+| value | string | — | Already formatted ("67", "4 120,00 €") |
+
+### Button
+
+Same as Vinyles. Intents `success` (Got it, Save, Log in) and `neutral` (Drop, Cancel). Also `size="icon"` for the icon pills (search toggle, filter toggle, sort order, lock, theme): a visually hidden label is required.
+
+States: default, hover (8% state layer of the text color), focus, pressed (shadow to 0, move down 3px), disabled (50% opacity, no shadow).
+
+### DesireDots
+
+Shows the Desire of a Wishlist Item. `desire.count` dots in total (5).
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| value | `1 \| 2 \| 3 \| 4 \| 5` | — | Filled dots |
+
+Filled dots: `color.icon.accent`. Visually hidden text: "Desire {value} of 5". The dots are `aria-hidden`. Same as the current Vinyles DesireDots.
+
+### SearchField
+
+Native `<input type="search">`. Searches the Team name and the Print. Label (visually hidden): "Search team or print".
+
+### Select
+
+Native `<select>`, styled as a pill. Used for sort and DesireSelect.
+
+### Field
+
+Same as Vinyles: visible label, native input, `error` text linked with `aria-describedby`. Types: `text`, `password`, `number`.
+
+Dates in this app can be a year only (GLOSSARY: Purchase). So a date Field is `type="text"`, `inputmode="numeric"`, placeholder "2024 or 2024-05-12", and the form checks the pattern `YYYY` or `YYYY-MM-DD`. Native `type="date"` cannot hold a year only.
+
+### ToggleGroup
+
+The shadcn-svelte toggle group, as radio pills, `type="single"`. Used for Version, Size, Fit, Kit kind and Acquisition. Selected: `color.bg.accent` + `color.text.on-accent`.
+
+---
+
+## Components
+
+### Tile
+
+**Purpose:** One Jersey (Collection) or one Wishlist Item (Wishlist) in the grid. It opens the Popup.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| team | string | — | Caption line 1, `text.caption.team` |
+| season | string | — | Already formatted ("2023-24", "2024") |
+| kitType | string | — | "Home", "Away"… Caption line 2 is "{season} · {kitType}", `text.caption.kit` |
+| coverUrl | string \| null | null | The Kit's Cover. Null shows the shirt outline |
+| desire | `1 \| 2 \| 3 \| 4 \| 5` | — | Wishlist only: DesireDots under the caption |
+| onSelect | `(el: HTMLElement) => void` | — | Gives the Popup the element to open over |
+
+- The whole Tile is one `<button>`. The image has `alt=""`, because the caption names the Kit.
+- Square box: `tile.bg`, `tile.radius`, `tile.shadow`. The Cover is `object-fit: contain` with padding, so a shirt photo on any background reads on the neutral tile. `loading="lazy"`.
+- No Cover, or the image fails to load: a shirt outline SVG in `tile.placeholder`, `aria-hidden`.
+- Never fill the tile with a kit colour (DESIGN.md).
+
+States: default, hover and focus (`tile.hover.lift`, `tile.hover.tilt`, motion allowed only; focus also shows the ring), no Cover.
+
+### Tabs
+
+Same as Vinyles: two links, `/` (Collection) and `/wishlist`, not an ARIA tab widget. Label text: `text.label.tab`. Current: `color.bg.accent` + `color.text.on-accent`, `aria-current="page"`.
+
+### Popup
+
+Same as Vinyles: native `<dialog>` with `showModal()`, opens over its `anchor`, clamped to the screen, centered when `anchor` is null. Focus goes back to the Tile on close. Title: `text.heading.popup`.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| open | boolean | false | Bindable |
+| anchor | HTMLElement \| null | null | The Tile |
+| title | string | — | The Team name |
+| subtitle | string | — | "{season} · {kitType}", `text.body.detail`, muted |
+| coverUrl | string \| null | null | `popup.cover.size`, contained, or the shirt outline |
+| onDismiss | `() => void` | — | X button, Esc, tap on the backdrop |
+
+Vinyles names the title prop `album`. Here it is `title`, because a Popup also holds forms.
+
+Slots:
+- `details`: a `<dl>` of rows. The page fills it (see "Popup content").
+- `actions`: optional, Owner only.
+
+### DesireSelect
+
+Same as the current Vinyles DesireSelect: a native Select with 5 to 1, "5 (most wanted)" and "1 (least wanted)". In the StickyBar it filters the Wishlist ("Any desire" placeholder = no filter). In WishlistItemForm it sets the Desire.
+
+### CountryFilter
+
+**Purpose:** Filter a list by Country.
+
+Same shape as the Vinyles ArtistFilter: a `<details>` pill with checkboxes. Summary: "All countries ({n})" or "Countries ({n})". Countries are grouped under their Continent heading. Only Countries that have at least one Tile on this page are listed. A Jersey matches its Country by Coverage rules: the National Team's Country, or the Club's League's Country.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| value | string[] | `[]` | Bindable Country ids. Empty = all |
+| groups | `{ continent: string; countries: { id: string; name: string }[] }[]` | — | |
+
+### SortDirection, ThemeToggle
+
+Same as Vinyles.
+
+### StoreSelect
+
+Same as Vinyles: native Select over the Stores and a last option "Add a store…".
+
+### EmptyState
+
+Same as Vinyles. Messages: "No jerseys yet", "Nothing on the wishlist", "No match" with a "Clear filters" Button. No illustration.
+
+---
+
+## Patterns
+
+### StickyBar
+
+Same structure as the current Vinyles StickyBar (title row; tabs row; search and filters row, behind icon toggles below `breakpoint.sm`).
+
+- Title: "Jerseys" in `text.heading.page`.
+- Collection chips: `highlight` jersey count, `success` total spent. Filters: CountryFilter. Sorts: Team, Season, Acquired (Bought date or Gift date). Default: Acquired, newest first.
+- Wishlist chips: `info` item count. Filters: CountryFilter, DesireSelect. Sorts: Desire, Team, Season. Default: Desire, highest first.
+- Search covers Team name and Print.
+
+### TileGrid
+
+Same as the Vinyles CoverGrid: `grid.columns` per breakpoint, gaps `space.grid.gap-x` and `space.grid.gap-y`, gutter `space.gutter` plus safe-area insets. Key each Tile by Jersey id or Wishlist Item id. Two Jerseys of one Kit are two Tiles with the same Cover.
+
+### CoverageMap
+
+**Purpose:** Shows which Countries are covered. Collection page only, between the StickyBar and the TileGrid.
+
+- A surface card (`color.bg.surface`, `tile.radius`, `tile.shadow`) with an inline SVG world map, full width, height set by the map's aspect ratio.
+- Two states per Country (jerseys-model): covered fills `map.country.covered`, empty fills `map.country.empty`. Country borders: `map.country.border`, 0.5px.
+- The UK is four Countries: England, Scotland, Wales, Northern Ireland. Hong Kong is a dot (r 3px) in its state colour, because its shape is too small to see.
+- Heading above the map: "{covered} of {total} countries", `text.body`, value in extrabold. `total` is the number of Countries in the app, not in the world.
+- The SVG is `role="img"` with `aria-label` "Countries covered: {names}". No hover, no tap, no zoom in v1.
+- The map reads all Jerseys, not the filtered list.
+
+New component tokens (add to TOKENS.md):
+
+| Token | → Semantic | Scope |
+|---|---|---|
+| map.country.covered | color.icon.accent | CoverageMap |
+| map.country.empty | color.border.subtle | CoverageMap |
+| map.country.border | color.bg.surface | CoverageMap |
+
+Contrast, covered against empty: 3.41 light, 5.81 dark (needs 3, non-text). Empty against the card is low (1.29 light, 1.36 dark), but it shows only the land shape; the covered state and the text label carry the information.
+
+### Popup content
+
+Rows are `<dt>` label, `<dd>` value, `text.body.detail`. A row with no value is not shown.
+
+- **Jersey:** Version, Print, Size, Fit, then the Acquisition. Purchase: Store, Price, Bought, Sent, Received. Gift: "Gift", Date, From. Dates show as stored: "2024" or "12 May 2024".
+- **Wishlist Item:** Version (or "Any version"), Desire (DesireDots). Owner `actions`: Button `success` "Got it", Button `neutral` "Drop". Drop acts at once, with no confirmation, as in Vinyles.
+- Owner on a Jersey: a `neutral` Button "Edit" in `actions`. It opens JerseyForm in the same Popup.
+
+### LoginAction, AddAction
+
+Same as Vinyles. LoginAction: lock icon Button (Viewer) or nothing extra (Owner). AddAction: `success` Button "Add" next to the Tabs, Owner only. It opens JerseyForm (Collection) or WishlistItemForm (Wishlist) in a centered Popup.
+
+### AcquisitionFields
+
+Like Vinyles, plus dates:
+
+- ToggleGroup Purchase / Gift.
+- Purchase: StoreSelect, Price (Field `number`, step 0.01, required), Bought (date Field, required), Sent (date Field, optional), Received (date Field, optional).
+- Gift: Date (date Field, required), From (Field, optional).
+
+### JerseyForm
+
+Add and edit a Jersey. Fields, in order:
+
+1. Team: Field with the known Teams as `<datalist>`. A new Team name shows: kind (ToggleGroup Club / National Team) and Country (Select). The League follows the Country.
+2. Season: Field. Placeholder from the Team's Season Format: "2024-25" (Split) or "2024" (Calendar).
+3. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
+4. Cover: file input "Cover picture", shown when the Kit has no Cover yet. One Cover per Kit.
+5. Version: ToggleGroup Fan / Player / Tracksuit.
+6. Size: ToggleGroup S / M / L.
+7. Fit: ToggleGroup Too small / Good / Too big.
+8. Print: Field, optional, any script.
+9. AcquisitionFields.
+
+Buttons: `success` "Save", `neutral` "Cancel". No delete: Jerseys never leave the Collection in v1.
+
+### WishlistItemForm
+
+Team, Season, Kit Type (as in JerseyForm), Cover (same rule), Version (ToggleGroup Any / Fan / Player / Tracksuit), Desire (DesireSelect, required). If Nico already owns a Jersey of the Kit: notice "Already owned" and a Button "Add anyway" before it saves.
+
+### GotItForm
+
+Opens from "Got it". Version (pre-set from the Wishlist Item, if any), Size, Fit, Print, AcquisitionFields. Save removes the Wishlist Item and creates the Jersey.
+
+### ImportReview
+
+Owner only, route `/import`. One `success` Button "Import from the sheet". While it runs: "Imported {n} of {total}". At the end: "Imported {jerseys} jerseys and {items} wishlist items". The route goes away when the sheet is retired.
+
+---
+
+## Governance note
+
+One owner, no Figma library, no ticket tool. Nico accepts this file, then the code follows it. Versioning starts when the first component ships.

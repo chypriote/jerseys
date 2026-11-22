@@ -150,6 +150,9 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | popup.cover.size | 150px | Popup |
 | control.size.min | 44px | All controls (touch target) |
 | grid.columns | 3; 5 from breakpoint.sm; 7 from breakpoint.md; 8 from breakpoint.lg | Tile grid |
+| map.country.covered | icon.accent | CoverageMap |
+| map.country.empty | border.subtle | CoverageMap |
+| map.country.border | bg.surface | CoverageMap |
 
 Tabs, search, selects, chips and buttons use `radius.control`. Chips and buttons use `shadow.raised`.
 
@@ -166,5 +169,6 @@ Tabs, search, selects, chips and buttons use `radius.control`. Chips and buttons
 | icon.accent on bg.page | 4.03 | 9.11 | 3 (non-text) |
 | outline.focus on bg.page | 3.04 | 6.95 | 3 (focus ring) |
 | text.on-chip on sun, mint, sky | 8.17, 6.60, 5.14 | same | 4.5 |
+| map.country.covered on map.country.empty | 3.41 | 5.81 | 3 (non-text) |
 
 green.500 on the light page is 2.2:1. Use it only as a fill under on-accent text, never for icons or thin marks: those use `color.icon.accent`.
