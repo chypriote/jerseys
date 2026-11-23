@@ -31,9 +31,6 @@ export function mapCountryNamed(name: string): MapCountry | undefined {
 /** x, y, width, height: 56°S to 72°N. */
 export const mapViewBox = [0, 35.5, 1000, 403.6] as const;
 
-/** Land of no named Country: none left, every shape is in `mapCountries`. */
-export const mapLand = '';
-
 export const mapCountries: MapCountry[] = [
 	{
 		name: 'Afghanistan',
