@@ -55,25 +55,23 @@
 	let error = $state<string | null>(null);
 	let busy = $state(false);
 
-	function show(team: TeamView) {
+	/** `team` set: edits it. Null: adds a Team. */
+	function show(team: TeamView | null) {
 		editing = team;
-		name = team.name;
-		kind = team.kind;
-		countryId = String(team.country.id);
+		name = team?.name ?? '';
+		kind = team?.kind ?? 'club';
+		countryId = String(team?.country.id ?? countries[0]?.id ?? '');
 		error = null;
 		open = true;
 	}
 
 	async function save(event: SubmitEvent) {
 		event.preventDefault();
-		if (!editing) return;
 		busy = true;
-		const outcome = await postAction('?/editTeam', {
-			teamId: editing.id,
-			name,
-			kind,
-			countryId: Number(countryId)
-		});
+		const input = { name, kind, countryId: Number(countryId) };
+		const outcome = editing
+			? await postAction('?/editTeam', { ...input, teamId: editing.id })
+			: await postAction('?/addTeam', input);
 		busy = false;
 		if (outcome.ok) open = false;
 		else error = outcome.error;
@@ -81,14 +79,17 @@
 </script>
 
 <section aria-labelledby="teams-heading" class="flex min-w-0 flex-col gap-3">
-	<h2 id="teams-heading" class="font-display text-xl font-extrabold uppercase italic">Teams</h2>
+	<div class="flex items-center justify-between gap-3">
+		<h2 id="teams-heading" class="font-display text-xl font-extrabold uppercase italic">Teams</h2>
+		<Button intent="success" size="sm" onclick={() => show(null)}>Add a team</Button>
+	</div>
 	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
 	<div class="flex">
 		<SearchField bind:value={search} label="Search teams" placeholder="Search teams" />
 	</div>
 	{#if groups.length === 0}
 		<p class="text-sm text-muted-foreground">
-			{search.trim() ? 'No team matches.' : 'No teams yet: the jersey forms add them.'}
+			{search.trim() ? 'No team matches.' : 'No teams yet.'}
 		</p>
 	{/if}
 	{#each groups as group (group.country.id)}
@@ -115,7 +116,7 @@
 	{/each}
 </section>
 
-<Popup bind:open title="Edit team">
+<Popup bind:open title={editing ? 'Edit team' : 'Add a team'}>
 	{#snippet details()}
 		<form class="flex flex-col gap-4" onsubmit={save}>
 			<Field label="Name" required bind:value={name} {error} />

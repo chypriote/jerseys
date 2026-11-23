@@ -13,6 +13,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
+	addTeam: ownerActions.addTeam,
 	editTeam: ownerActions.editTeam,
 	deleteTeam: ownerActions.deleteTeam
 };

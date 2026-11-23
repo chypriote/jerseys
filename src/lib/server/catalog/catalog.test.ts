@@ -153,6 +153,7 @@ describe('Owner login', () => {
 			() => catalog.drop(bad, 1),
 			() =>
 				catalog.addPicture(bad, { kitId: 1, body: new ArrayBuffer(1), contentType: 'image/png' }),
+			() => catalog.addTeam(bad, { name: 'Lyon', kind: 'club', countryId: 1 }),
 			() => catalog.editTeam(bad, { teamId: 1, name: 'Lyon', kind: 'club', countryId: 1 }),
 			() => catalog.editKit(bad, { kitId: 1, season: '2024', kitType: 'home' }),
 			() => catalog.importRows(bad, { countries: [], jerseys: [], wishlist: [] })
@@ -2497,6 +2498,30 @@ describe('Teams and Kits admin', () => {
 			countryId: spain.id
 		});
 		expect(national).toMatchObject({ kind: 'national', seasonFormat: 'calendar' });
+	});
+
+	it('adds a Team with no Kit and applies the Team checks', async () => {
+		const spain = await country('Spain', 'split');
+		const added = await catalog.addTeam(token, {
+			name: ' Sevilla ',
+			kind: 'club',
+			countryId: spain.id
+		});
+		expect(added).toEqual({
+			id: added.id,
+			name: 'Sevilla',
+			kind: 'club',
+			seasonFormat: 'split',
+			country: { id: spain.id, name: 'Spain', continent: 'europe' }
+		});
+		expect(await teamNamed('Sevilla')).toEqual(added);
+		await expect(
+			catalog.addTeam(token, { name: 'sevilla', kind: 'club', countryId: spain.id })
+		).rejects.toThrow('A team named “sevilla” already exists');
+		await catalog.addTeam(token, { name: 'Spain', kind: 'national', countryId: spain.id });
+		await expect(
+			catalog.addTeam(token, { name: 'La Roja', kind: 'national', countryId: spain.id })
+		).rejects.toThrow('Spain already has a National Team: Spain');
 	});
 
 	it('refuses a Team name another Team has, in any case', async () => {

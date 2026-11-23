@@ -8,7 +8,8 @@ import type {
 	JerseyInput,
 	KitEditInput,
 	MainPictureFile,
-	TeamEditInput
+	TeamEditInput,
+	TeamInput
 } from '#lib/server/catalog';
 import { ownerToken } from '#lib/server/owner';
 
@@ -62,6 +63,10 @@ export const ownerActions = {
 	editCountry: (event: RequestEvent) =>
 		run<CountryInput & { id: number }>(event, async (catalog, token, input) => {
 			await catalog.editCountry(token, { ...input, id: Number(input.id) });
+		}),
+	addTeam: (event: RequestEvent) =>
+		run<TeamInput>(event, async (catalog, token, input) => {
+			await catalog.addTeam(token, input);
 		}),
 	editTeam: (event: RequestEvent) =>
 		run<TeamEditInput>(event, async (catalog, token, input) => {
