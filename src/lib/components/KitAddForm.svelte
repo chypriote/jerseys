@@ -2,7 +2,14 @@
 	import { untrack } from 'svelte';
 	import { mainPictureUpload, postAction, teamProblem } from '#lib/forms';
 	import { newTeamName, unknownTeamMessage } from '#lib/team-name';
-	import type { Country, KitKey, KitType, TeamChoice, TeamView } from '#lib/server/catalog/types';
+	import type {
+		Country,
+		KitKey,
+		KitType,
+		KitView,
+		TeamChoice,
+		TeamView
+	} from '#lib/server/catalog/types';
 	import FormActions from './FormActions.svelte';
 	import KitFields from './KitFields.svelte';
 
@@ -10,12 +17,15 @@
 		teams,
 		countries,
 		pictured,
+		kits,
 		teamId = null,
 		onSuccess
 	}: {
 		teams: TeamView[];
 		countries: Country[];
 		pictured: KitKey[];
+		/** Every Kit: the Seasons they have are offered. */
+		kits: KitView[];
 		/** The Team the form starts with. */
 		teamId?: number | null;
 		onSuccess: () => void;
@@ -84,6 +94,7 @@
 		{teams}
 		{countries}
 		{pictured}
+		{kits}
 		{teamError}
 	/>
 	{#if error}

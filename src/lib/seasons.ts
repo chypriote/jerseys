@@ -1,8 +1,5 @@
 import type { SeasonFormat } from '#lib/server/catalog/types';
 
-/** The oldest start year offered: retro Kits stay selectable. */
-const FIRST_YEAR = 1960;
-
 const label = (format: SeasonFormat, start: number) =>
 	format === 'calendar' ? String(start) : `${start}-${String((start + 1) % 100).padStart(2, '0')}`;
 
@@ -14,19 +11,15 @@ export function fitsSeasonFormat(text: string, format: SeasonFormat) {
 }
 
 /**
- * The Seasons to choose from, newest first: from the next one down to 1960. A Season split runs
- * from July, so before July the latest started last year. `current` stays in the list even when
- * it is outside the range.
+ * The Seasons to choose from, newest first: the ones `used` by Kits, the current Season and the
+ * next one, and `current` (the Season of the Kit being edited). A split Season starts in July.
  */
-export function seasonChoices(format: SeasonFormat, now: Date, current = '') {
+export function seasonChoices(format: SeasonFormat, now: Date, used: string[] = [], current = '') {
 	const year = now.getFullYear();
-	const latest = format === 'calendar' ? year + 1 : (now.getMonth() >= 6 ? year : year - 1) + 1;
-	const seasons: string[] = [];
-	for (let start = latest; start >= FIRST_YEAR; start--) seasons.push(label(format, start));
-	const text = current.trim();
-	if (text && fitsSeasonFormat(text, format) && !seasons.includes(text)) {
-		seasons.push(text);
-		seasons.sort().reverse();
+	const start = format === 'calendar' ? year : now.getMonth() >= 6 ? year : year - 1;
+	const seasons = new Set([label(format, start), label(format, start + 1)]);
+	for (const text of [...used, current.trim()]) {
+		if (fitsSeasonFormat(text, format)) seasons.add(text);
 	}
-	return seasons;
+	return [...seasons].sort().reverse();
 }
