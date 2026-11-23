@@ -159,7 +159,7 @@
 	<div
 		class="ps-[max(1rem,env(safe-area-inset-left))] pe-[max(1rem,env(safe-area-inset-right))] pb-4"
 	>
-		<CoverageMap countries={data.coverage} />
+		<CoverageMap countries={data.coverage} jerseys={data.jerseys} />
 	</div>
 	{#if data.jerseys.length === 0}
 		<EmptyState message="No jerseys yet" />
