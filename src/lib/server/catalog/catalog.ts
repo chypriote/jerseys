@@ -1,8 +1,17 @@
-import { and, count, eq, gt, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gt, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
 import { kitTypeLabels } from '../../labels';
-import { countries, jerseys, kits, leagues, stores, teams, wishlistItems } from '../db/schema';
+import {
+	countries,
+	jerseys,
+	kits,
+	leagues,
+	pictures,
+	stores,
+	teams,
+	wishlistItems
+} from '../db/schema';
 import { kitSeasonFirst } from './matching';
 import {
 	fetchKitPicture,
@@ -621,6 +630,46 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		async drop(token, wishlistItemId) {
 			await owner(token);
 			await db.delete(wishlistItems).where(eq(wishlistItems.id, Number(wishlistItemId)));
+		},
+
+		// --- Kit Pictures ---
+
+		listPictures: (kitId) =>
+			db
+				.select({ id: pictures.id, kitId: pictures.kitId, position: pictures.position })
+				.from(pictures)
+				.where(eq(pictures.kitId, Number(kitId)))
+				.orderBy(asc(pictures.position)),
+
+		async getPicture(pictureId) {
+			const [picture] = await db
+				.select({ key: pictures.key })
+				.from(pictures)
+				.where(eq(pictures.id, Number(pictureId)));
+			if (!picture) return null;
+			const object = await env.COVERS.get(picture.key);
+			if (!object) return null;
+			return { body: object.body, contentType: object.httpMetadata?.contentType ?? 'image/jpeg' };
+		},
+
+		async addPicture(token, input) {
+			await owner(token);
+			checkImage(input.body, input.contentType);
+			const kitId = Number(input.kitId);
+			const [kit] = await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId));
+			if (!kit) throw new Error('Kit not found');
+			// R2 first: a failed put leaves no row without an image.
+			const key = `pictures/${kit.id}/${crypto.randomUUID()}`;
+			await env.COVERS.put(key, input.body, { httpMetadata: { contentType: input.contentType } });
+			const [created] = await db
+				.insert(pictures)
+				.values({
+					kitId: kit.id,
+					key,
+					position: sql`(SELECT coalesce(max(${pictures.position}), 0) + 1 FROM ${pictures} WHERE ${pictures.kitId} = ${kit.id})`
+				})
+				.returning({ id: pictures.id, kitId: pictures.kitId, position: pictures.position });
+			return created;
 		},
 
 		async addCountry(token, input) {
