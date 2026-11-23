@@ -2,6 +2,6 @@
 	<title>Jerseys</title>
 </svelte:head>
 
-<main>
+<main class="p-4">
 	<h1>Jerseys</h1>
 </main>
