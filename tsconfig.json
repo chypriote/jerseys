@@ -1,0 +1,8 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"strict": true,
+		"paths": { "#lib/*": ["./src/lib/*"] }
+	},
+	"include": ["src", "test", "worker-configuration.d.ts", "vite.config.ts", "vitest.config.ts"]
+}

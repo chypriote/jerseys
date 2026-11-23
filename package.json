@@ -1,0 +1,69 @@
+{
+	"name": "jerseys",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"types": "wrangler types",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate:local": "wrangler d1 migrations apply DB --local",
+		"db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+		"deploy": "npm run build && wrangler deploy",
+		"lint": "eslint .",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"verify": "npm run format:check && npm run lint && npm run check",
+		"ci": "npm run verify && npm test && npm run build"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.23.0",
+		"@eslint/compat": "^2.1.1",
+		"@eslint/js": "^10.0.1",
+		"@lucide/svelte": "^1.77.0",
+		"@sveltejs/adapter-cloudflare": "^9.0.0",
+		"@sveltejs/kit": "^3.2.0",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"@tailwindcss/vite": "^4.3.5",
+		"drizzle-kit": "^0.31.11",
+		"eslint": "^10.15.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.24.1",
+		"globals": "^17.14.0",
+		"prettier": "^3.10.1",
+		"prettier-plugin-svelte": "^4.2.0",
+		"shadcn-svelte": "^1.8.1",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.8",
+		"svelte-eslint-parser": "^1.10.1",
+		"tailwindcss": "^4.3.5",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.73.0",
+		"vite": "^8.3.8",
+		"vitest": "^4.1.0",
+		"wrangler": "^4.165.0"
+	},
+	"dependencies": {
+		"@internationalized/date": "^3.12.4",
+		"bits-ui": "^2.21.0",
+		"clsx": "^2.1.1",
+		"drizzle-orm": "^0.45.4",
+		"tailwind-merge": "^3.7.1",
+		"tailwind-variants": "^3.3.1"
+	},
+	"overrides": {
+		"undici": "^7.30.1",
+		"sharp": "^0.35.5",
+		"zod": "^4.6.6",
+		"@esbuild-kit/core-utils": {
+			"esbuild": "^0.28.2"
+		}
+	}
+}
