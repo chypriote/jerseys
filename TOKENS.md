@@ -160,7 +160,7 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | popup.radius | radius.xl | Popup |
 | popup.width.max | 560px | Popup |
 | popup.width.wide | 672px | Form Popup |
-| popup.picture.size | 150px | Popup |
+| popup.picture.size | 180px | Popup |
 | control.size.min | 44px | All controls (touch target) |
 | grid.columns | 3; 5 from breakpoint.sm; 7 from breakpoint.md; 8 from breakpoint.lg | Tile grid |
 | map.country.covered | icon.accent | CoverageMap |

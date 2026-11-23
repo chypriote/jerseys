@@ -64,10 +64,12 @@
 		}}
 	>
 		{#if subtitle && !wide}
-			<div class="grid grid-cols-[minmax(0,var(--popup-picture-size))_minmax(0,1fr)] gap-4">
+			<div
+				class="grid grid-cols-[minmax(0,min(var(--popup-picture-size),40%))_minmax(0,1fr)] gap-4"
+			>
 				<div class="flex min-w-0 flex-col gap-2">
 					<span
-						class="flex aspect-square items-center justify-center overflow-hidden rounded-md bg-background"
+						class="flex aspect-3/4 items-center justify-center overflow-hidden rounded-md bg-background"
 					>
 						<MainPicture url={thumbnails[shown] ?? mainPictureUrl} />
 					</span>
