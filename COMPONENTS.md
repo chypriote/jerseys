@@ -87,7 +87,7 @@ The shadcn-svelte toggle group, as radio pills, `type="single"`. Used for Versio
 | kitType | string | — | "Home", "Away"… Caption line 2 is "{season} · {kitType}", `text.caption.kit` |
 | coverUrl | string \| null | null | The Kit's Cover. Null shows the shirt outline |
 | desire | `1 \| 2 \| 3 \| 4 \| 5` | — | Wishlist only: DesireDots under the caption |
-| onSelect | `(el: HTMLElement) => void` | — | Gives the Popup the element to open over |
+| onSelect | `(el: HTMLElement) => void` | — | Gives the Popup the Tile to focus on close |
 
 - The whole Tile is one `<button>`. The image has `alt=""`, because the caption names the Kit.
 - Square box: `tile.bg`, `tile.radius`, `tile.shadow`. The Cover is `object-fit: contain` with padding, so a shirt photo on any background reads on the neutral tile. `loading="lazy"`.
@@ -102,12 +102,12 @@ Same as Vinyles: two links, `/` (Collection) and `/wishlist`, not an ARIA tab wi
 
 ### Popup
 
-Same as Vinyles: native `<dialog>` with `showModal()`, opens over its `anchor`, clamped to the screen, centered when `anchor` is null. Focus goes back to the Tile on close. Title: `text.heading.popup`.
+Same as Vinyles: native `<dialog>` with `showModal()`, centred on the screen. Focus goes back to `anchor` on close. Title: `text.heading.popup`.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | open | boolean | false | Bindable |
-| anchor | HTMLElement \| null | null | The Tile |
+| anchor | HTMLElement \| null | null | The Tile. Gets the focus back on close |
 | title | string | — | The Team name |
 | subtitle | string | — | "{season} · {kitType}", `text.body.detail`, muted |
 | coverUrl | string \| null | null | `popup.cover.size`, contained, or the shirt outline |
@@ -197,7 +197,7 @@ Rows are `<dt>` label, `<dd>` value, `text.body.detail`. A row with no value is 
 
 ### LoginAction, AddAction
 
-Same as Vinyles. LoginAction: lock icon Button (Viewer) or nothing extra (Owner). AddAction: `success` Button "Add" next to the Tabs, Owner only. It opens JerseyForm (Collection) or WishlistItemForm (Wishlist) in a centered Popup.
+Same as Vinyles. LoginAction: lock icon Button (Viewer) or nothing extra (Owner). AddAction: `success` Button "Add" next to the Tabs, Owner only. It opens JerseyForm (Collection) or WishlistItemForm (Wishlist) in the Popup.
 
 ### AcquisitionFields
 
