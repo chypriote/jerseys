@@ -30,7 +30,7 @@ export function countryFields(input: CountryInput) {
 	if (!continents.some((c) => c.value === input.continent))
 		throw new Error(`Continent must be one of ${continents.map((c) => c.label).join(', ')}`);
 	if (!seasonFormats.some((f) => f.value === input.seasonFormat))
-		throw new Error('Season Format must be Split or Calendar');
+		throw new Error('Season Format must be Season or Calendar');
 	return {
 		continent: input.continent,
 		leagueName: required(input.leagueName ?? '', 'League name'),

@@ -50,7 +50,7 @@
 			bind:value={seasonFormat}
 			options={seasonFormats.map((f) => ({
 				value: f.value,
-				label: f.value === 'split' ? 'Split (2023-24)' : 'Calendar (2024)'
+				label: f.value === 'split' ? 'Season (2023-24)' : 'Calendar (2024)'
 			}))}
 		/>
 	</div>

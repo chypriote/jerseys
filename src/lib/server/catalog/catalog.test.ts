@@ -330,7 +330,7 @@ describe('Countries', () => {
 			'Continent must be one of Europe, Asia & Oceania, Americas, Africa'
 		);
 		await expect(catalog.addCountry(token, bad({ seasonFormat: 'weekly' }))).rejects.toThrow(
-			'Season Format must be Split or Calendar'
+			'Season Format must be Season or Calendar'
 		);
 		await expect(catalog.addCountry(token, bad({ name: ' ' }))).rejects.toThrow(
 			'Country name is required'
@@ -2446,12 +2446,12 @@ describe('Teams and Kits admin', () => {
 		const lyon = await teamNamed('Lyon');
 		const move = { teamId: lyon.id, name: 'Lyon', kind: 'club', countryId: japan.id } as const;
 		await expect(catalog.editTeam(token, move)).rejects.toThrow(
-			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+			'Lyon has a Kit of Season 2023-24, which does not fit the Calendar format'
 		);
 		await expect(
 			catalog.editTeam(token, { ...move, kind: 'national', countryId: lyon.country.id })
 		).rejects.toThrow(
-			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+			'Lyon has a Kit of Season 2023-24, which does not fit the Calendar format'
 		);
 		const kobe = await teamNamed('Kobe');
 		await expect(
@@ -2461,7 +2461,7 @@ describe('Teams and Kits admin', () => {
 				name: 'Kobe',
 				countryId: lyon.country.id
 			})
-		).rejects.toThrow('Kobe has a Kit of Season 2024, which does not fit a Split Season Format');
+		).rejects.toThrow('Kobe has a Kit of Season 2024, which does not fit the Season format');
 		expect(await teamNamed('Lyon')).toEqual(lyon);
 	});
 
@@ -2493,7 +2493,7 @@ describe('Teams and Kits admin', () => {
 				seasonFormat
 			});
 		await expect(edit('calendar')).rejects.toThrow(
-			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+			'Lyon has a Kit of Season 2023-24, which does not fit the Calendar format'
 		);
 		expect((await catalog.listCountries())[0].league.seasonFormat).toBe('split');
 		// A National Team keeps the Calendar format, so its Kits never block the League.

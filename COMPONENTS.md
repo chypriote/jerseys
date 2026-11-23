@@ -259,7 +259,7 @@ Like Vinyles, plus dates:
 Add and edit a Jersey. Fields, in order:
 
 1. Team: TeamLookup.
-2. Season: Field. Placeholder from the Team's Season Format: "2024-25" (Split) or "2024" (Calendar).
+2. Season: Field. Placeholder from the Team's Season Format: "2024-25" (Season) or "2024" (Calendar).
 3. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
 4. Main Picture: file input "Main picture", shown when the Kit has no Main Picture yet. One Main Picture per Kit.
 5. Version: ToggleGroup Fan / Player / Tracksuit.
