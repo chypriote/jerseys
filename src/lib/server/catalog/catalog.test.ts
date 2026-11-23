@@ -2450,9 +2450,7 @@ describe('Teams and Kits admin', () => {
 		);
 		await expect(
 			catalog.editTeam(token, { ...move, kind: 'national', countryId: lyon.country.id })
-		).rejects.toThrow(
-			'Lyon has a Kit of Season 2023-24, which does not fit the Calendar format'
-		);
+		).rejects.toThrow('Lyon has a Kit of Season 2023-24, which does not fit the Calendar format');
 		const kobe = await teamNamed('Kobe');
 		await expect(
 			catalog.editTeam(token, {
