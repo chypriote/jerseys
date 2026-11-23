@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { seasonFormats } from '../../countries';
+import { mapCountryNamed } from '../../map';
 import {
 	countries,
 	jerseys,
@@ -672,6 +673,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			await requireOwner(token);
 			const { continent, leagueName, seasonFormat } = countryFields(input);
 			const name = await freeName(countries, 'Country', input.name);
+			if (!mapCountryNamed(name)) throw new Error(`“${name}” is not a country`);
 			// One batch is one transaction: the Country takes the League inserted just before it.
 			const [, [created]] = await db.batch([
 				db.insert(leagues).values({ name: leagueName, seasonFormat }),

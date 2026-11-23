@@ -3,6 +3,7 @@
 	import { continents, seasonFormats } from '#lib/countries';
 	import { postAction } from '#lib/forms';
 	import type { Continent, Country, SeasonFormat } from '#lib/server/catalog/types';
+	import CountryNameLookup from './CountryNameLookup.svelte';
 	import Field from './Field.svelte';
 	import FormActions from './FormActions.svelte';
 	import Select from './Select.svelte';
@@ -41,7 +42,11 @@
 </script>
 
 <form class="flex flex-col gap-4" onsubmit={save}>
-	<Field label="Name" required bind:value={name} {error} />
+	{#if country}
+		<Field label="Name" required bind:value={name} {error} />
+	{:else}
+		<CountryNameLookup bind:value={name} {error} />
+	{/if}
 	<div class="flex flex-col gap-1.5">
 		<span class="text-sm font-bold">Continent</span>
 		<Select label="Continent" bind:value={continent} options={continents} />
