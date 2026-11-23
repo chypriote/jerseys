@@ -64,11 +64,6 @@ Numbers use tabular-nums.
 - **Tile:** square, surface colour, 14px radius, offset shadow. It shows the Kit's Cover, contained. If the Kit has no Cover: a shirt outline in the muted colour.
 - **Popup:** opens over the tapped tile, clamped to the screen. Max width 420px, Cover 150px, X button at top right. Tap outside or Esc closes it.
 
-## Not decided
-
-- World map (Coverage) look.
-- Sticky bar filters and sorts.
-- Popup content per page.
-- Owner UI, empty states and import screen.
+World map, sticky bar filters and sorts, popup content, Owner UI, empty states and the import screen: [COMPONENTS.md](COMPONENTS.md).
 
 Reference: [visual direction page](https://claude.ai/artifact/Pc2Ztut5qgQ2Z9PAE63CF1), variant A.

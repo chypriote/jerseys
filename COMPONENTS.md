@@ -2,7 +2,7 @@
 
 Sources: [DESIGN.md](DESIGN.md) for the look, [TOKENS.md](TOKENS.md) for values, [GLOSSARY.md](GLOSSARY.md) for names. Components use only semantic or component tokens.
 
-Status: proposed, waiting for Nico's review.
+Accepted by Nico on 2026-11-23.
 
 Stack: same as Vinyles, SvelteKit (Svelte 5) with shadcn-svelte and Tailwind CSS v4. "Snippet" is a Svelte 5 slot. Props are camelCase; callbacks start with `on`. Where a component is the same as in Vinyles, this file says so and lists only the differences.
 
