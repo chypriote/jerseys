@@ -50,6 +50,13 @@
       "when": 1795425157291,
       "tag": "0006_drop_wishlist_desire",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1795429362815,
+      "tag": "0007_rename_teams_to_kit_archive",
+      "breakpoints": true
     }
   ]
 }
