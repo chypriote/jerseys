@@ -148,6 +148,14 @@ export interface LookupProgress {
 	rateLimited?: boolean;
 }
 
+// --- Coverage ----------------------------------------------------------------
+
+export interface CoverageCountry {
+	id: number;
+	name: string;
+	covered: boolean;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -162,6 +170,8 @@ export interface Catalog {
 	listCountries(): Promise<Country[]>;
 	/** Every Jersey with its Kit, Team, Country and Acquisition, newest Acquisition first. */
 	listCollection(): Promise<CollectionJersey[]>;
+	/** Every Country by name, covered when Nico owns a Jersey of its National Team or of a Club in its League. */
+	listCoverage(): Promise<CoverageCountry[]>;
 	/** The Main Picture image of a Kit, or null when it has none. */
 	getMainPicture(kitId: number): Promise<MainPictureImage | null>;
 

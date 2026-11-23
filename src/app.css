@@ -93,6 +93,9 @@
 	--popup-picture-size: 150px;
 	--tile-hover-lift: -3px;
 	--tile-hover-tilt: -1.5deg;
+	--map-country-covered: var(--icon-accent);
+	--map-country-empty: var(--border);
+	--map-country-border: var(--card);
 	--map-width-min: 900px;
 }
 

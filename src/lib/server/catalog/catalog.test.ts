@@ -1156,3 +1156,75 @@ describe('Collection', () => {
 		});
 	});
 });
+
+describe('Coverage', () => {
+	const catalog = createCatalog(env);
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+	});
+
+	it('lists every Country by name, none covered without Jerseys', async () => {
+		await insertKit({ team: 'Lille', country: 'France', start: 2021, end: 2022, kitType: 'home' });
+		await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			country: 'Japan',
+			start: 2024,
+			kitType: 'home'
+		});
+
+		expect(await catalog.listCoverage()).toEqual([
+			{ id: expect.any(Number), name: 'France', covered: false },
+			{ id: expect.any(Number), name: 'Japan', covered: false }
+		]);
+	});
+
+	it('covers the Country of a National Team Nico owns a Jersey of', async () => {
+		const japan = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			country: 'Japan',
+			start: 2024,
+			kitType: 'home'
+		});
+		await insertKit({ team: 'Lille', country: 'France', start: 2021, end: 2022, kitType: 'home' });
+		await insertJersey(japan, { kind: 'gift', date: '2024' });
+
+		expect(await catalog.listCoverage()).toMatchObject([
+			{ name: 'France', covered: false },
+			{ name: 'Japan', covered: true }
+		]);
+	});
+
+	it('covers the Country of the League of a Club Nico owns a Jersey of', async () => {
+		const lille = await insertKit({
+			team: 'Lille',
+			country: 'France',
+			league: 'Ligue 1',
+			start: 2021,
+			end: 2022,
+			kitType: 'home'
+		});
+		await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			country: 'Japan',
+			start: 2024,
+			kitType: 'home'
+		});
+		await insertJersey(lille, { date: '2021-10-04' });
+		await insertJersey(lille, { date: '2022-01-04' });
+
+		expect(await catalog.listCoverage()).toMatchObject([
+			{ name: 'France', covered: true },
+			{ name: 'Japan', covered: false }
+		]);
+	});
+});
