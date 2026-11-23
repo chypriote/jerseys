@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CountriesSection from '#lib/components/CountriesSection.svelte';
 	import StoresSection from '#lib/components/StoresSection.svelte';
 	import { Button as UiButton } from '#lib/components/ui/button/index.js';
 	import type { PageProps } from './$types';
@@ -15,6 +16,7 @@
 	</div>
 	<!-- One section per kind of reference data (Countries, Kits without a main picture come next). -->
 	<div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+		<CountriesSection countries={data.countries} />
 		<StoresSection stores={data.stores} />
 	</div>
 </main>

@@ -1,0 +1,55 @@
+<script lang="ts">
+	import { continents, seasonFormats } from '#lib/countries';
+	import type { Country } from '#lib/server/catalog/types';
+	import Button from './Button.svelte';
+	import CountryForm from './CountryForm.svelte';
+	import Popup from './Popup.svelte';
+
+	let { countries }: { countries: Country[] } = $props();
+
+	let open = $state(false);
+	/** The Country being edited; null while adding. */
+	let editing = $state<Country | null>(null);
+
+	function show(country: Country | null) {
+		editing = country;
+		open = true;
+	}
+
+	const continentLabel = (value: string) => continents.find((c) => c.value === value)?.label;
+	const formatLabel = (value: string) => seasonFormats.find((f) => f.value === value)?.label;
+</script>
+
+<section aria-labelledby="countries-heading" class="flex min-w-0 flex-col gap-3">
+	<div class="flex items-center justify-between gap-3">
+		<h2 id="countries-heading" class="font-display text-xl font-extrabold uppercase italic">
+			Countries
+		</h2>
+		<Button intent="success" size="sm" onclick={() => show(null)}>Add a country</Button>
+	</div>
+	<ul class="flex flex-col gap-2">
+		{#each countries as country (country.id)}
+			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
+				<div class="flex min-w-0 flex-col">
+					<span class="font-medium">{country.name}</span>
+					<span class="text-sm text-muted-foreground">
+						{continentLabel(country.continent)} · {country.league.name} · {formatLabel(
+							country.league.seasonFormat
+						)}
+					</span>
+				</div>
+				<Button size="sm" onclick={() => show(country)}>
+					Edit<span class="sr-only"> {country.name}</span>
+				</Button>
+			</li>
+		{/each}
+	</ul>
+</section>
+
+<Popup bind:open title={editing ? 'Edit country' : 'Add a country'}>
+	{#snippet details()}
+		{#key editing}
+			<CountryForm country={editing} onSuccess={() => (open = false)} />
+		{/key}
+	{/snippet}
+</Popup>
