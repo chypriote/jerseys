@@ -1,11 +1,16 @@
 <script lang="ts">
 	import type { KitSummary } from '#lib/server/catalog/types';
+	import { matchesSearch } from '#lib/search';
 	import Button from './Button.svelte';
 	import MainPictureLookup from './MainPictureLookup.svelte';
 	import PicturePicker from './PicturePicker.svelte';
 	import Popup from './Popup.svelte';
+	import SearchField from './SearchField.svelte';
 
 	let { kits }: { kits: KitSummary[] } = $props();
+
+	let search = $state('');
+	const shown = $derived(kits.filter((k) => matchesSearch(search, k.teamName, k.season)));
 
 	let open = $state(false);
 	/** The Kit whose Main Picture the picker sets. */
@@ -28,11 +33,12 @@
 		Kits without a main picture
 	</h2>
 	<MainPictureLookup />
+	<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
 	{#if kits.length === 0}
 		<p class="text-sm text-muted-foreground">Every kit has a main picture.</p>
 	{:else}
 		<ul class="flex flex-col gap-2">
-			{#each kits as kit (kit.id)}
+			{#each shown as kit (kit.id)}
 				<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
 					<span class="min-w-0">
 						<span class="block font-medium">{kit.teamName}</span>

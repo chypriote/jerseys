@@ -1,18 +1,25 @@
 <script lang="ts">
 	import { deleteRow, postAction } from '#lib/forms';
+	import { matchesSearch } from '#lib/search';
 	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
 	import Popup from './Popup.svelte';
+	import SearchField from './SearchField.svelte';
 	import Select from './Select.svelte';
 
 	let { kits, teams }: { kits: KitView[]; teams: TeamView[] } = $props();
 
+	let search = $state('');
+	const shown = $derived(
+		kits.filter((k) => matchesSearch(search, k.team.name, k.season, kitTypeLabels[k.kitType]))
+	);
+
 	// Grouped by Team (the Catalog lists Kits by Team, then Season, then Kit Type).
 	const groups = $derived(
-		kits.reduce<{ team: KitView['team']; kits: KitView[] }[]>((all, kit) => {
+		shown.reduce<{ team: KitView['team']; kits: KitView[] }[]>((all, kit) => {
 			const last = all.at(-1);
 			if (last?.team.id === kit.team.id) last.kits.push(kit);
 			else all.push({ team: kit.team, kits: [kit] });
@@ -55,8 +62,11 @@
 
 <section aria-labelledby="kits-heading" class="flex min-w-0 flex-col gap-3">
 	<h2 id="kits-heading" class="font-display text-xl font-extrabold uppercase italic">Kits</h2>
+	<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
 	{#if groups.length === 0}
-		<p class="text-sm text-muted-foreground">No kits yet: the jersey forms add them.</p>
+		<p class="text-sm text-muted-foreground">
+			{search.trim() ? 'No kit matches.' : 'No kits yet: the jersey forms add them.'}
+		</p>
 	{/if}
 	{#each groups as group (group.team.id)}
 		<div class="flex flex-col gap-2">
