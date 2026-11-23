@@ -2,6 +2,8 @@ import { eq, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
 import { countries, jerseys, kits, leagues, stores, teams } from '../db/schema';
+import { kitSeasonFirst, matchTeam } from './matching';
+import { fetchKitPicture, listKitPictures, searchTeams, type SportsDbConfig } from './thesportsdb';
 import { checkImage, MAX_UPLOAD_BYTES, readBody } from './images';
 import { issueToken, passwordMatches, tokenIsValid, UnauthorizedError } from './auth';
 import type { Acquisition, Catalog, CollectionJersey, Country, CountryInput } from './types';
@@ -11,6 +13,13 @@ export interface CatalogEnv {
 	COVERS: R2Bucket;
 	OWNER_PASSWORD: string;
 	JWT_SECRET: string;
+	/** TheSportsDB API key (free test key: 123). */
+	THESPORTSDB_KEY: string;
+}
+
+export interface CatalogOptions {
+	/** Minimum gap between TheSportsDB requests. Default 2000 (their limit). */
+	lookupIntervalMs?: number;
 }
 
 function required(value: string, what: string) {
@@ -48,8 +57,12 @@ const compareDates = (a: CollectionJersey, b: CollectionJersey) =>
 
 const KIT_TYPE_ORDER = ['home', 'away', 'third', 'fourth', 'cup', 'special'];
 
-export function buildCatalog(env: CatalogEnv): Catalog {
+export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Catalog {
 	const db = drizzle(env.DB);
+	const sportsDb: SportsDbConfig = {
+		key: env.THESPORTSDB_KEY,
+		intervalMs: options.lookupIntervalMs ?? 2000
+	};
 
 	async function owner(token: string) {
 		if (!env.JWT_SECRET || !(await tokenIsValid(token, env.JWT_SECRET)))
@@ -94,6 +107,38 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 		const kit = (await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId)))[0];
 		if (!kit) throw new Error('Kit not found');
 		await storeMainPicture(kit.id, body, contentType);
+	}
+
+	/** A Kit with its Team, Country and League, or a readable error. */
+	async function kitWithTeam(kitId: number) {
+		const found = (
+			await db
+				.select({ kit: kits, team: teams, country: countries.name, league: leagues.name })
+				.from(kits)
+				.innerJoin(teams, eq(kits.teamId, teams.id))
+				.innerJoin(countries, eq(teams.countryId, countries.id))
+				.innerJoin(leagues, eq(countries.leagueId, leagues.id))
+				.where(eq(kits.id, kitId))
+		)[0];
+		if (!found) throw new Error('Kit not found');
+		return found;
+	}
+
+	/** The stored TheSportsDB Team of a Team, or the one the Team match finds (then stored). */
+	async function sourceTeamOf(found: Awaited<ReturnType<typeof kitWithTeam>>) {
+		if (found.team.sourceTeamId) return found.team.sourceTeamId;
+		const hit = matchTeam(
+			{
+				name: found.team.name,
+				national: found.team.kind === 'national',
+				country: found.country,
+				league: found.league
+			},
+			await searchTeams(sportsDb, found.team.name)
+		);
+		if (!hit) return null;
+		await db.update(teams).set({ sourceTeamId: hit.id }).where(eq(teams.id, found.team.id));
+		return hit.id;
 	}
 
 	/** The trimmed name, or a readable error when it is empty or another Store has it. */
@@ -261,6 +306,53 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 			await owner(token);
 			const image = await fetchImage(input.url);
 			await saveUpload(input.kitId, image.body, image.contentType);
+		},
+
+		async listPictureCandidates(token, kitId) {
+			await owner(token);
+			const found = await kitWithTeam(kitId);
+			const sourceTeamId = await sourceTeamOf(found);
+			const pictures = sourceTeamId ? await listKitPictures(sportsDb, sourceTeamId) : [];
+			const season = { start: found.kit.seasonStartYear, end: found.kit.seasonEndYear };
+			return {
+				teamId: found.team.id,
+				sourceTeamId,
+				candidates: kitSeasonFirst(pictures, season).map((p) => ({
+					id: p.imageUrl,
+					imageUrl: p.imageUrl,
+					season: p.season && formatSeason(p.season.start, p.season.end),
+					kitType: p.kitType
+				}))
+			};
+		},
+
+		async searchTeams(token, query) {
+			await owner(token);
+			const hits = await searchTeams(sportsDb, query);
+			return hits
+				.filter((hit) => hit.soccer)
+				.map(({ id, name, country, league }) => ({ id, name, country, league }));
+		},
+
+		async setTeamSource(token, input) {
+			await owner(token);
+			const sourceTeamId = String(input.sourceTeamId ?? '').trim();
+			if (!sourceTeamId) throw new Error('Choose a TheSportsDB team');
+			const [updated] = await db
+				.update(teams)
+				.set({ sourceTeamId })
+				.where(eq(teams.id, input.teamId))
+				.returning({ id: teams.id });
+			if (!updated) throw new Error('Unknown team');
+		},
+
+		async pickMainPicture(token, input) {
+			await owner(token);
+			const kit = (await db.select({ id: kits.id }).from(kits).where(eq(kits.id, input.kitId)))[0];
+			if (!kit) throw new Error('Kit not found');
+			const image = await fetchKitPicture(sportsDb, String(input.candidateId ?? ''));
+			checkImage(image.body, image.contentType);
+			await storeMainPicture(kit.id, image.body, image.contentType);
 		},
 
 		async listKitsWithoutMainPicture(token) {

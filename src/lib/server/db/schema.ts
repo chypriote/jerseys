@@ -32,7 +32,9 @@ export const teams = sqliteTable(
 		/** A Club's League is its Country's League. */
 		countryId: integer('country_id')
 			.notNull()
-			.references(() => countries.id)
+			.references(() => countries.id),
+		/** The TheSportsDB Team (`idTeam`), found by the lookup or chosen by the Owner. */
+		sourceTeamId: text('source_team_id')
 	},
 	(t) => [
 		uniqueIndex('team_national_country_unique')

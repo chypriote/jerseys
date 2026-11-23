@@ -1,0 +1,1 @@
+ALTER TABLE `team` ADD `source_team_id` text;
