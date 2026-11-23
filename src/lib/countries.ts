@@ -9,6 +9,6 @@ export const continents: { value: Continent; label: string }[] = [
 ];
 
 export const seasonFormats: { value: SeasonFormat; label: string }[] = [
-	{ value: 'split', label: 'Split' },
+	{ value: 'split', label: 'Season' },
 	{ value: 'calendar', label: 'Calendar' }
 ];

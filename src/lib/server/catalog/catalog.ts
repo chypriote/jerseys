@@ -238,7 +238,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		if (misfit) {
 			const label = seasonFormats.find((f) => f.value === format)!.label;
 			throw new Error(
-				`${misfit.team} has a Kit of Season ${formatSeason(misfit.start, misfit.end)}, which does not fit a ${label} Season Format`
+				`${misfit.team} has a Kit of Season ${formatSeason(misfit.start, misfit.end)}, which does not fit the ${label} format`
 			);
 		}
 	}
