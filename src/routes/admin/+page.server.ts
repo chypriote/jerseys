@@ -11,6 +11,8 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	return {
 		stores: await catalog.listStores(),
 		countries: await catalog.listCountries(),
+		teams: await catalog.listTeams(),
+		kits: await catalog.listKits(),
 		kitsWithoutMainPicture: await catalog.listKitsWithoutMainPicture(token)
 	};
 };
@@ -19,5 +21,7 @@ export const actions: Actions = {
 	addStore: ownerActions.addStore,
 	renameStore: ownerActions.renameStore,
 	addCountry: ownerActions.addCountry,
-	editCountry: ownerActions.editCountry
+	editCountry: ownerActions.editCountry,
+	editTeam: ownerActions.editTeam,
+	editKit: ownerActions.editKit
 };

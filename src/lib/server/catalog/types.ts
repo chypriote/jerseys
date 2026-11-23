@@ -249,6 +249,22 @@ export interface GotItInput {
 	jersey: Pick<JerseyInput, 'version' | 'size' | 'fit' | 'print' | 'acquisition'>;
 }
 
+// --- Teams and Kits admin -----------------------------------------------------
+
+export interface TeamEditInput {
+	teamId: number;
+	name: string;
+	kind: TeamKind;
+	countryId: number;
+}
+
+export interface KitEditInput {
+	kitId: number;
+	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
+	season: string;
+	kitType: KitType;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -280,6 +296,14 @@ export interface Catalog {
 	// Stores (Owner). A name another Store has (any case) is refused.
 	addStore(token: string, name: string): Promise<Store>;
 	renameStore(token: string, id: number, name: string): Promise<Store>;
+
+	// Teams and Kits admin (Owner). The forms and the import create them; these fix them.
+	/** Every Kit with its Team and Country, by Team, then Season, then Kit Type. */
+	listKits(): Promise<KitView[]>;
+	/** Renames a Team or changes its kind or Country. Its Kits keep their Seasons. */
+	editTeam(token: string, input: TeamEditInput): Promise<TeamView>;
+	/** Changes a Kit's Season (in its Team's Season Format) or Kit Type. Its Jerseys and Wishlist Item follow. */
+	editKit(token: string, input: KitEditInput): Promise<KitView>;
 
 	// Kit Main Pictures (Owner). A Main Picture set here is marked Owner-chosen and gets a new version.
 	/** Kits with no Main Picture, by Team, then Season, then Kit Type. */
