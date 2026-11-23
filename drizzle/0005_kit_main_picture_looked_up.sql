@@ -1,0 +1,1 @@
+ALTER TABLE `kit` ADD `main_picture_looked_up` integer DEFAULT false NOT NULL;

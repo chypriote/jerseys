@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { KitSummary } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
+	import MainPictureLookup from './MainPictureLookup.svelte';
 	import PicturePicker from './PicturePicker.svelte';
 	import Popup from './Popup.svelte';
 
@@ -26,6 +27,7 @@
 	>
 		Kits without a main picture
 	</h2>
+	<MainPictureLookup />
 	{#if kits.length === 0}
 		<p class="text-sm text-muted-foreground">Every kit has a main picture.</p>
 	{:else}
