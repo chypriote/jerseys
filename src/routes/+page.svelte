@@ -5,7 +5,9 @@
 	import { formatCents, formatDate } from '#lib/format';
 	import { fitLabels, kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
+	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
+	import JerseyForm from '#lib/components/JerseyForm.svelte';
 	import Chip from '#lib/components/Chip.svelte';
 	import CoverageMap from '#lib/components/CoverageMap.svelte';
 	import CountryFilter from '#lib/components/CountryFilter.svelte';
@@ -99,7 +101,11 @@
 	let anchor = $state<HTMLElement | null>(null);
 	let open = $state(false);
 
+	// Owner: "Edit" turns the Jersey Popup into the JerseyForm.
+	let editing = $state(false);
+
 	function select(jersey: CollectionJersey, el: HTMLElement) {
+		editing = false;
 		selectedId = jersey.id;
 		anchor = el;
 		open = true;
@@ -119,6 +125,16 @@
 	{/snippet}
 	{#snippet login()}
 		<LoginAction isOwner={data.isOwner} />
+	{/snippet}
+	{#snippet action()}
+		{#if data.form}
+			{@const lists = data.form}
+			<AddAction title="Add a jersey">
+				{#snippet form(close)}
+					<JerseyForm {...lists} onDone={close} />
+				{/snippet}
+			</AddAction>
+		{/if}
 	{/snippet}
 	{#snippet searchBox()}
 		<SearchField
@@ -174,35 +190,45 @@
 	{/if}
 {/snippet}
 
+{#snippet editAction()}
+	<Button onclick={() => (editing = true)}>Edit</Button>
+{/snippet}
+
 {#if selected}
 	<Popup
 		bind:open
 		{anchor}
-		title={selected.kit.team.name}
+		title={editing ? 'Edit jersey' : selected.kit.team.name}
 		subtitle={caption(selected)}
 		mainPictureUrl={mainPictureUrl(selected.kit)}
+		wide={editing}
+		actions={data.form && !editing ? editAction : undefined}
 	>
 		{#snippet details()}
 			{@const a = selected.acquisition}
-			<dl
-				class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[15px] [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
-			>
-				{@render row('Version', versionLabels[selected.version])}
-				{@render row('Print', selected.print)}
-				{@render row('Size', selected.size)}
-				{@render row('Fit', selected.fit && fitLabels[selected.fit])}
-				{#if a.kind === 'purchase'}
-					{@render row('Store', a.store?.name)}
-					{@render row('Price', a.priceCents === null ? null : formatCents(a.priceCents))}
-					{@render row('Bought', formatDate(a.bought))}
-					{@render row('Sent', a.sent && formatDate(a.sent))}
-					{@render row('Received', a.received && formatDate(a.received))}
-				{:else}
-					{@render row('Acquired', 'Gift')}
-					{@render row('Date', formatDate(a.date))}
-					{@render row('From', a.giver)}
-				{/if}
-			</dl>
+			{#if editing && data.form}
+				<JerseyForm jersey={selected} {...data.form} onDone={() => (editing = false)} />
+			{:else}
+				<dl
+					class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[15px] [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
+				>
+					{@render row('Version', versionLabels[selected.version])}
+					{@render row('Print', selected.print)}
+					{@render row('Size', selected.size)}
+					{@render row('Fit', selected.fit && fitLabels[selected.fit])}
+					{#if a.kind === 'purchase'}
+						{@render row('Store', a.store?.name)}
+						{@render row('Price', a.priceCents === null ? null : formatCents(a.priceCents))}
+						{@render row('Bought', formatDate(a.bought))}
+						{@render row('Sent', a.sent && formatDate(a.sent))}
+						{@render row('Received', a.received && formatDate(a.received))}
+					{:else}
+						{@render row('Acquired', 'Gift')}
+						{@render row('Date', formatDate(a.date))}
+						{@render row('From', a.giver)}
+					{/if}
+				</dl>
+			{/if}
 		{/snippet}
 	</Popup>
 {/if}

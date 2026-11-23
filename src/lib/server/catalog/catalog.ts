@@ -21,13 +21,18 @@ import { checkImage, MAX_UPLOAD_BYTES, readBody } from './images';
 import { issueToken, passwordMatches, tokenIsValid, UnauthorizedError } from './auth';
 import type {
 	Acquisition,
+	AcquisitionInput,
 	Catalog,
 	CollectionJersey,
 	Country,
 	CountryInput,
 	Desire,
+	JerseyInput,
 	KitView,
 	LookupProgress,
+	SeasonFormat,
+	TeamChoice,
+	TeamView,
 	WishlistItem
 } from './types';
 
@@ -99,6 +104,56 @@ const compareDates = (a: CollectionJersey, b: CollectionJersey) =>
 	acquiredOn(a) < acquiredOn(b) ? -1 : acquiredOn(a) > acquiredOn(b) ? 1 : 0;
 
 const KIT_TYPE_ORDER = ['home', 'away', 'third', 'fourth', 'cup', 'special'];
+
+// --- Jerseys: input checks (form payloads are untrusted) -------------------------------
+
+const YEAR_OR_DATE = /^(\d{4})(?:-(\d{2})-(\d{2}))?$/;
+
+/** `YYYY`, or a real calendar date `YYYY-MM-DD` (2024-02-31 is not one). */
+function checkDate(value: unknown, what: string): string {
+	const text = typeof value === 'string' ? value.trim() : '';
+	const match = YEAR_OR_DATE.exec(text);
+	if (match && match[2]) {
+		const date = new Date(`${text}T00:00:00Z`);
+		if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
+			throw new Error(`${what} is not a real date`);
+		}
+	}
+	if (!match) throw new Error(`${what} must be YYYY or YYYY-MM-DD`);
+	return text;
+}
+
+const optionalDate = (value: unknown, what: string) =>
+	typeof value === 'string' && value.trim() ? checkDate(value, what) : null;
+
+const cleanOrNull = (value: unknown) => (typeof value === 'string' && value.trim()) || null;
+
+function oneOf<T extends string>(value: unknown, allowed: readonly T[], message: string): T {
+	if (!allowed.includes(value as T)) throw new Error(message);
+	return value as T;
+}
+
+function nullableOneOf<T extends string>(value: unknown, allowed: readonly T[], message: string) {
+	return value === null || value === undefined || value === ''
+		? null
+		: oneOf(value, allowed, message);
+}
+
+/** A Season as start and end year, checked against the Team's Season Format. */
+function parseSeason(value: unknown, format: SeasonFormat) {
+	const text = typeof value === 'string' ? value.trim() : '';
+	if (format === 'calendar') {
+		if (/^\d{4}$/.test(text)) return { start: Number(text), end: null };
+		throw new Error('Season must be one year, like 2024');
+	}
+	const match = /^(\d{4})-(\d{2})$/.exec(text);
+	const start = Number(match?.[1]);
+	if (match && (start + 1) % 100 === Number(match[2])) return { start, end: start + 1 };
+	throw new Error('Season must be two years in a row, like 2024-25');
+}
+
+const isCents = (value: unknown): value is number =>
+	Number.isInteger(value) && (value as number) >= 0;
 
 export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Catalog {
 	const db = drizzle(env.DB);
@@ -191,41 +246,185 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		return found;
 	}
 
+	// --- Jerseys ---------------------------------------------------------------
+
+	async function readTeams(): Promise<TeamView[]> {
+		const rows = await db
+			.select({ team: teams, country: countries, league: leagues })
+			.from(teams)
+			.innerJoin(countries, eq(teams.countryId, countries.id))
+			.innerJoin(leagues, eq(countries.leagueId, leagues.id));
+		return rows
+			.map(({ team, country, league }) => ({
+				id: team.id,
+				name: team.name,
+				kind: team.kind,
+				seasonFormat: team.kind === 'national' ? ('calendar' as const) : league.seasonFormat,
+				country: { id: country.id, name: country.name, continent: country.continent }
+			}))
+			.sort((a, b) => compare(a.name, b.name));
+	}
+
+	/** Checks the Team choice. A new Team is only created by `writeTeam`, after every check passed. */
+	async function checkTeam(choice: TeamChoice) {
+		const all = await readTeams();
+		if (choice && 'teamId' in choice) {
+			const known = all.find((t) => t.id === Number(choice.teamId));
+			if (!known) throw new Error('Unknown team');
+			return { id: known.id, seasonFormat: known.seasonFormat };
+		}
+		const name = required(String(choice?.name ?? ''), 'Team name');
+		const kind = oneOf(choice.kind, ['club', 'national'], 'A team is a Club or a National Team');
+		const country = await countryById(Number(choice.countryId));
+		if (all.some((t) => compare(t.name, name) === 0))
+			throw new Error(`A team named “${name}” already exists`);
+		const national = all.find((t) => t.kind === 'national' && t.country.id === country.id);
+		if (kind === 'national' && national)
+			throw new Error(`${country.name} already has a National Team: ${national.name}`);
+		const seasonFormat: SeasonFormat =
+			kind === 'national' ? 'calendar' : country.league.seasonFormat;
+		return { id: null, create: { name, kind, countryId: country.id }, seasonFormat };
+	}
+
+	async function checkAcquisition(input: AcquisitionInput) {
+		if (input?.kind === 'purchase') {
+			const store = (
+				await db
+					.select()
+					.from(stores)
+					.where(eq(stores.id, Number(input.storeId)))
+			)[0];
+			if (!store) throw new Error('A Purchase needs a Store');
+			if (!isCents(input.priceCents)) throw new Error('A Purchase needs a price in euros');
+			return {
+				acquisitionKind: 'purchase' as const,
+				acquisitionDate: checkDate(input.bought, 'Bought date'),
+				sentDate: optionalDate(input.sent, 'Sent date'),
+				receivedDate: optionalDate(input.received, 'Received date'),
+				storeId: store.id,
+				priceCents: input.priceCents,
+				giver: null
+			};
+		}
+		if (input?.kind === 'gift') {
+			return {
+				acquisitionKind: 'gift' as const,
+				acquisitionDate: checkDate(input.date, 'Gift date'),
+				sentDate: null,
+				receivedDate: null,
+				storeId: null,
+				priceCents: null,
+				giver: cleanOrNull(input.giver)
+			};
+		}
+		throw new Error('Acquisition must be a Purchase or a Gift');
+	}
+
+	/** Checks the whole input, then creates the new Team and the Kit if needed. Returns the jersey row. */
+	async function jerseyRow(input: JerseyInput) {
+		const team = await checkTeam(input.team);
+		const season = parseSeason(input.season, team.seasonFormat);
+		const kitType = oneOf(
+			input.kitType,
+			['home', 'away', 'third', 'fourth', 'cup', 'special'],
+			'Kit Type must be Home, Away, Third, Fourth, Cup or Special'
+		);
+		const fields = {
+			version: oneOf(
+				input.version,
+				['fan', 'player', 'tracksuit'],
+				'Version must be Fan, Player or Tracksuit'
+			),
+			size: nullableOneOf(input.size, ['S', 'M', 'L'], 'Size must be S, M or L'),
+			fit: nullableOneOf(
+				input.fit,
+				['too-small', 'good', 'too-big'],
+				'Fit must be Too small, Good or Too big'
+			),
+			print: cleanOrNull(input.print),
+			...(await checkAcquisition(input.acquisition))
+		};
+		const teamId =
+			team.id ?? (await db.insert(teams).values(team.create).returning({ id: teams.id }))[0].id;
+		const kit = { teamId, seasonStartYear: season.start, seasonEndYear: season.end, kitType };
+		const [created] = await db
+			.insert(kits)
+			.values(kit)
+			.onConflictDoNothing()
+			.returning({ id: kits.id });
+		const kitId =
+			created?.id ??
+			(
+				await db
+					.select({ id: kits.id })
+					.from(kits)
+					.where(
+						and(
+							eq(kits.teamId, teamId),
+							eq(kits.seasonStartYear, season.start),
+							eq(kits.kitType, kitType)
+						)
+					)
+			)[0].id;
+		return { kitId, ...fields };
+	}
+
+	async function readCollection(id?: number): Promise<CollectionJersey[]> {
+		const rows = await db
+			.select({ jersey: jerseys, kit: kits, team: teams, country: countries, store: stores })
+			.from(jerseys)
+			.innerJoin(kits, eq(jerseys.kitId, kits.id))
+			.innerJoin(teams, eq(kits.teamId, teams.id))
+			.innerJoin(countries, eq(teams.countryId, countries.id))
+			.leftJoin(stores, eq(jerseys.storeId, stores.id))
+			.where(id === undefined ? undefined : eq(jerseys.id, id));
+		return rows
+			.map(({ jersey, kit, team, country, store }): CollectionJersey => {
+				const acquisition: Acquisition =
+					jersey.acquisitionKind === 'gift'
+						? { kind: 'gift', date: jersey.acquisitionDate, giver: jersey.giver }
+						: {
+								kind: 'purchase',
+								store: store && { id: store.id, name: store.name },
+								priceCents: jersey.priceCents,
+								bought: jersey.acquisitionDate,
+								sent: jersey.sentDate,
+								received: jersey.receivedDate
+							};
+				return {
+					id: jersey.id,
+					version: jersey.version,
+					size: jersey.size,
+					fit: jersey.fit,
+					print: jersey.print,
+					kit: kitView(kit, team, country),
+					acquisition
+				};
+			})
+			.sort((a, b) => compareDates(b, a) || b.id - a.id);
+	}
+
 	return {
 		listCountries: readCountries,
 
-		async listCollection() {
-			const rows = await db
-				.select({ jersey: jerseys, kit: kits, team: teams, country: countries, store: stores })
-				.from(jerseys)
-				.innerJoin(kits, eq(jerseys.kitId, kits.id))
-				.innerJoin(teams, eq(kits.teamId, teams.id))
-				.innerJoin(countries, eq(teams.countryId, countries.id))
-				.leftJoin(stores, eq(jerseys.storeId, stores.id));
-			return rows
-				.map(({ jersey, kit, team, country, store }): CollectionJersey => {
-					const acquisition: Acquisition =
-						jersey.acquisitionKind === 'gift'
-							? { kind: 'gift', date: jersey.acquisitionDate, giver: jersey.giver }
-							: {
-									kind: 'purchase',
-									store: store && { id: store.id, name: store.name },
-									priceCents: jersey.priceCents,
-									bought: jersey.acquisitionDate,
-									sent: jersey.sentDate,
-									received: jersey.receivedDate
-								};
-					return {
-						id: jersey.id,
-						version: jersey.version,
-						size: jersey.size,
-						fit: jersey.fit,
-						print: jersey.print,
-						kit: kitView(kit, team, country),
-						acquisition
-					};
-				})
-				.sort((a, b) => compareDates(b, a) || b.id - a.id);
+		listCollection: () => readCollection(),
+
+		listTeams: readTeams,
+
+		async addJersey(token, input) {
+			await owner(token);
+			const row = await jerseyRow(input);
+			const [{ id }] = await db.insert(jerseys).values(row).returning({ id: jerseys.id });
+			return (await readCollection(id))[0];
+		},
+
+		async editJersey(token, input) {
+			await owner(token);
+			const id = Number(input.id);
+			if (!(await readCollection(id)).length) throw new Error('Jersey not found');
+			const row = await jerseyRow(input);
+			await db.update(jerseys).set(row).where(eq(jerseys.id, id));
+			return (await readCollection(id))[0];
 		},
 
 		async listCoverage() {
