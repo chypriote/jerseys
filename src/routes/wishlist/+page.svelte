@@ -4,6 +4,7 @@
 	import { continents } from '#lib/countries';
 	import { kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
+	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
 	import Chip from '#lib/components/Chip.svelte';
 	import CountryFilter from '#lib/components/CountryFilter.svelte';
@@ -18,6 +19,7 @@
 	import StickyBar from '#lib/components/StickyBar.svelte';
 	import Tile from '#lib/components/Tile.svelte';
 	import TileGrid from '#lib/components/TileGrid.svelte';
+	import WishlistItemForm from '#lib/components/WishlistItemForm.svelte';
 
 	let { data }: PageProps = $props();
 
@@ -112,6 +114,16 @@
 	{/snippet}
 	{#snippet login()}
 		<LoginAction isOwner={data.isOwner} />
+	{/snippet}
+	{#snippet action()}
+		{#if data.form}
+			{@const lists = data.form}
+			<AddAction title="Add a wishlist item">
+				{#snippet form(close)}
+					<WishlistItemForm {...lists} onDone={close} />
+				{/snippet}
+			</AddAction>
+		{/if}
 	{/snippet}
 	{#snippet searchBox()}
 		<SearchField bind:value={search} label="Search team" placeholder="Search team" />

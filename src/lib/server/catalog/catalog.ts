@@ -1,6 +1,7 @@
 import { and, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
+import { kitTypeLabels } from '../../labels';
 import { countries, jerseys, kits, leagues, stores, teams, wishlistItems } from '../db/schema';
 import { kitSeasonFirst } from './matching';
 import {
@@ -28,6 +29,8 @@ import type {
 	CountryInput,
 	Desire,
 	JerseyInput,
+	KitInput,
+	KitType,
 	KitView,
 	LookupProgress,
 	SeasonFormat,
@@ -271,7 +274,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		if (choice && 'teamId' in choice) {
 			const known = all.find((t) => t.id === Number(choice.teamId));
 			if (!known) throw new Error('Unknown team');
-			return { id: known.id, seasonFormat: known.seasonFormat };
+			return { id: known.id, name: known.name, seasonFormat: known.seasonFormat };
 		}
 		const name = required(String(choice?.name ?? ''), 'Team name');
 		const kind = oneOf(choice.kind, ['club', 'national'], 'A team is a Club or a National Team');
@@ -283,7 +286,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			throw new Error(`${country.name} already has a National Team: ${national.name}`);
 		const seasonFormat: SeasonFormat =
 			kind === 'national' ? 'calendar' : country.league.seasonFormat;
-		return { id: null, create: { name, kind, countryId: country.id }, seasonFormat };
+		return { id: null, name, create: { name, kind, countryId: country.id }, seasonFormat };
 	}
 
 	async function checkAcquisition(input: AcquisitionInput) {
@@ -320,8 +323,22 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		throw new Error('Acquisition must be a Purchase or a Gift');
 	}
 
-	/** Checks the whole input, then creates the new Team and the Kit if needed. Returns the jersey row. */
-	async function jerseyRow(input: JerseyInput) {
+	async function findKitId(teamId: number, seasonStart: number, kitType: KitType) {
+		const [found] = await db
+			.select({ id: kits.id })
+			.from(kits)
+			.where(
+				and(
+					eq(kits.teamId, teamId),
+					eq(kits.seasonStartYear, seasonStart),
+					eq(kits.kitType, kitType)
+				)
+			);
+		return found?.id ?? null;
+	}
+
+	/** Checks the Team, Season and Kit Type, writing nothing. `existingId` is the Kit when it exists. */
+	async function checkKit(input: KitInput) {
 		const team = await checkTeam(input.team);
 		const season = parseSeason(input.season, team.seasonFormat);
 		const kitType = oneOf(
@@ -329,6 +346,26 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			['home', 'away', 'third', 'fourth', 'cup', 'special'],
 			'Kit Type must be Home, Away, Third, Fourth, Cup or Special'
 		);
+		const existingId = team.id === null ? null : await findKitId(team.id, season.start, kitType);
+		return { team, season, kitType, existingId };
+	}
+
+	/** Creates the new Team and the Kit if needed. Call it only after every check passed. */
+	async function writeKit({ team, season, kitType }: Awaited<ReturnType<typeof checkKit>>) {
+		const teamId =
+			team.id ?? (await db.insert(teams).values(team.create).returning({ id: teams.id }))[0].id;
+		const kit = { teamId, seasonStartYear: season.start, seasonEndYear: season.end, kitType };
+		const [created] = await db
+			.insert(kits)
+			.values(kit)
+			.onConflictDoNothing()
+			.returning({ id: kits.id });
+		return created?.id ?? (await findKitId(teamId, season.start, kitType))!;
+	}
+
+	/** Checks the whole input, then creates the new Team and the Kit if needed. Returns the jersey row. */
+	async function jerseyRow(input: JerseyInput) {
+		const kit = await checkKit(input);
 		const fields = {
 			version: oneOf(
 				input.version,
@@ -344,29 +381,25 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			print: cleanOrNull(input.print),
 			...(await checkAcquisition(input.acquisition))
 		};
-		const teamId =
-			team.id ?? (await db.insert(teams).values(team.create).returning({ id: teams.id }))[0].id;
-		const kit = { teamId, seasonStartYear: season.start, seasonEndYear: season.end, kitType };
-		const [created] = await db
-			.insert(kits)
-			.values(kit)
-			.onConflictDoNothing()
-			.returning({ id: kits.id });
-		const kitId =
-			created?.id ??
-			(
-				await db
-					.select({ id: kits.id })
-					.from(kits)
-					.where(
-						and(
-							eq(kits.teamId, teamId),
-							eq(kits.seasonStartYear, season.start),
-							eq(kits.kitType, kitType)
-						)
-					)
-			)[0].id;
-		return { kitId, ...fields };
+		return { kitId: await writeKit(kit), ...fields };
+	}
+
+	async function readWishlist(id?: number): Promise<WishlistItem[]> {
+		const rows = await db
+			.select({ item: wishlistItems, kit: kits, team: teams, country: countries })
+			.from(wishlistItems)
+			.innerJoin(kits, eq(wishlistItems.kitId, kits.id))
+			.innerJoin(teams, eq(kits.teamId, teams.id))
+			.innerJoin(countries, eq(teams.countryId, countries.id))
+			.where(id === undefined ? undefined : eq(wishlistItems.id, id));
+		return rows
+			.map(({ item, kit, team, country }): WishlistItem => ({
+				id: item.id,
+				version: item.version,
+				desire: item.desire as Desire,
+				kit: kitView(kit, team, country)
+			}))
+			.sort((a, b) => b.desire - a.desire || b.id - a.id);
 	}
 
 	async function readCollection(id?: number): Promise<CollectionJersey[]> {
@@ -438,21 +471,43 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			return (await readCountries()).map(({ id, name }) => ({ id, name, covered: ids.has(id) }));
 		},
 
-		async listWishlist() {
-			const rows = await db
-				.select({ item: wishlistItems, kit: kits, team: teams, country: countries })
-				.from(wishlistItems)
-				.innerJoin(kits, eq(wishlistItems.kitId, kits.id))
-				.innerJoin(teams, eq(kits.teamId, teams.id))
-				.innerJoin(countries, eq(teams.countryId, countries.id));
-			return rows
-				.map(({ item, kit, team, country }): WishlistItem => ({
-					id: item.id,
-					version: item.version,
-					desire: item.desire as Desire,
-					kit: kitView(kit, team, country)
-				}))
-				.sort((a, b) => b.desire - a.desire || b.id - a.id);
+		listWishlist: () => readWishlist(),
+
+		async addWishlistItem(token, input) {
+			await owner(token);
+			const kit = await checkKit(input);
+			const version = nullableOneOf(
+				input.version,
+				['fan', 'player', 'tracksuit'],
+				'Version must be Any, Fan, Player or Tracksuit'
+			);
+			const desire = Number(input.desire);
+			if (!Number.isInteger(desire) || desire < 1 || desire > 5)
+				throw new Error('Desire must be 1 to 5');
+			if (kit.existingId !== null) {
+				const [listed] = await db
+					.select({ id: wishlistItems.id })
+					.from(wishlistItems)
+					.where(eq(wishlistItems.kitId, kit.existingId));
+				if (listed) {
+					const season = formatSeason(kit.season.start, kit.season.end);
+					throw new Error(
+						`${kit.team.name} ${season} ${kitTypeLabels[kit.kitType]} is already on the Wishlist`
+					);
+				}
+				const [owned] = await db
+					.select({ id: jerseys.id })
+					.from(jerseys)
+					.where(eq(jerseys.kitId, kit.existingId))
+					.limit(1);
+				if (owned && !input.addAnyway) return { status: 'already-owned' };
+			}
+			const kitId = await writeKit(kit);
+			const [{ id }] = await db
+				.insert(wishlistItems)
+				.values({ kitId, version, desire })
+				.returning({ id: wishlistItems.id });
+			return { status: 'added', item: (await readWishlist(id))[0] };
 		},
 
 		async addCountry(token, input) {

@@ -1,6 +1,6 @@
 import { fail, type RequestEvent } from '@sveltejs/kit';
 import { catalogFromPlatform, UnauthorizedError } from '#lib/server/catalog';
-import type { Catalog, CountryInput, JerseyInput } from '#lib/server/catalog';
+import type { AddWishlistItemInput, Catalog, CountryInput, JerseyInput } from '#lib/server/catalog';
 import { ownerToken } from '#lib/server/owner';
 
 /**
@@ -51,6 +51,11 @@ export const ownerActions = {
 	editJersey: (event: RequestEvent) =>
 		run<JerseyInput & { id: number }>(event, async (catalog, token, input) => {
 			await catalog.editJersey(token, { ...input, id: Number(input.id) });
+		}),
+	addWishlistItem: (event: RequestEvent) =>
+		run<AddWishlistItemInput>(event, async (catalog, token, input) => {
+			const result = await catalog.addWishlistItem(token, input);
+			return { alreadyOwned: result.status === 'already-owned' };
 		})
 };
 
