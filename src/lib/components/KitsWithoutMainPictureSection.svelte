@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { kitArchiveUrl } from '#lib/kit-archive';
 	import type { KitSummary } from '#lib/server/catalog/types';
 	import { matchesSearch } from '#lib/search';
 	import Button from './Button.svelte';
@@ -56,7 +57,13 @@
 	{/if}
 </section>
 
-<Popup bind:open title={editing ? `${editing.teamName} ${label(editing)}` : 'Set main picture'}>
+<Popup
+	bind:open
+	title={editing ? `${editing.teamName} ${label(editing)}` : 'Set main picture'}
+	findPicturesUrl={editing
+		? kitArchiveUrl(editing.teamName, editing.season, editing.kitType)
+		: null}
+>
 	{#snippet details()}
 		{#if editing}
 			{#key editing}
