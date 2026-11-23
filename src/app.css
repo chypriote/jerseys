@@ -128,6 +128,8 @@
 	--text-md--line-height: 1.45;
 	--text-lg: 24px;
 	--text-lg--line-height: 1.1;
+	--text-number: 26px;
+	--text-number--line-height: 1;
 	/* font.line-height.tight, snug */
 	--leading-tight: 1.1;
 	--leading-snug: 1.25;
