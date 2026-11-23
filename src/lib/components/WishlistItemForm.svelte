@@ -30,6 +30,7 @@
 	let team = $state<TeamChoice | null>(null);
 	let season = $state('');
 	let kitType = $state<KitType>('home');
+	let comment = $state('');
 	// "any" is the ToggleGroup value of no Version.
 	let version = $state<Version | 'any'>('any');
 	let mainPicture = $state<File | null>(null);
@@ -49,6 +50,7 @@
 			team,
 			season,
 			kitType,
+			comment: comment.trim() || undefined,
 			mainPictureUrl: mainPictureUrl.trim() || undefined,
 			version: version === 'any' ? null : version,
 			addAnyway
@@ -80,6 +82,7 @@
 		bind:team
 		bind:season
 		bind:kitType
+		bind:comment
 		bind:mainPicture
 		bind:mainPictureUrl
 		{teams}

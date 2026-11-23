@@ -19,6 +19,7 @@
 		team = $bindable(),
 		season = $bindable(),
 		kitType = $bindable(),
+		comment = $bindable(''),
 		mainPicture = $bindable(null),
 		mainPictureUrl = $bindable(''),
 		teams,
@@ -29,6 +30,8 @@
 		team: TeamChoice | null;
 		season: string;
 		kitType: KitType;
+		/** What a Special Kit is. Shown for the Special Kit Type only. */
+		comment?: string;
 		/** The "Main picture" file or address, empty when the Kit already has a Main Picture. */
 		mainPicture?: File | null;
 		mainPictureUrl?: string;
@@ -86,6 +89,9 @@
 		<Select label="Kit Type" bind:value={kitType} options={labelOptions(kitTypeLabels)} />
 	</div>
 </div>
+{#if kitType === 'special'}
+	<Field label="Comment" placeholder="Anniversary, Pride…" bind:value={comment} />
+{/if}
 {#if !hasMainPicture}
 	<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} />
 {/if}

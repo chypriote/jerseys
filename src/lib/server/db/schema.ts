@@ -56,6 +56,8 @@ export const kits = sqliteTable(
 		/** Set for a Split Season only. */
 		seasonEndYear: integer('season_end_year'),
 		kitType: text('kit_type', { enum: KIT_TYPES }).notNull(),
+		/** What a Special Kit is ("Anniversary"). Null for any other Kit Type. */
+		comment: text('comment'),
 		/** Main Picture key in R2. */
 		mainPictureKey: text('main_picture_key'),
 		/** Bumped when the Main Picture changes, so that its cached URL changes too. */

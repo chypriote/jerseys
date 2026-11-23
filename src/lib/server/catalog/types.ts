@@ -118,6 +118,8 @@ export interface KitView {
 	/** Formatted: "2023-24" (Split) or "2024" (Calendar). */
 	season: string;
 	kitType: KitType;
+	/** What a Special Kit is. Absent when the Kit has none. */
+	comment?: string;
 	mainPictureKey: string | null;
 	mainPictureVersion: number;
 	team: {
@@ -207,6 +209,11 @@ export interface KitInput {
 	season: string;
 	kitType: KitType;
 	/**
+	 * What a Special Kit is; ignored for any other Kit Type. Undefined keeps the Comment of an
+	 * existing Kit, null clears it.
+	 */
+	comment?: string | null;
+	/**
 	 * The form's "Main picture" (same rules as `uploadMainPicture`): stored as the Owner-chosen
 	 * Main Picture of the Kit. A new Kit sent with one skips the TheSportsDB lookup.
 	 */
@@ -293,6 +300,8 @@ export interface KitEditInput {
 	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
 	season: string;
 	kitType: KitType;
+	/** What a Special Kit is; cleared when the Kit Type is not Special. */
+	comment?: string | null;
 	/** A new Main Picture: a file, or an address to fetch when no file is sent. Same rules as `KitInput`. */
 	mainPicture?: MainPictureFile | null;
 	mainPictureUrl?: string | null;

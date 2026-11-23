@@ -2,7 +2,7 @@
 	import type { PageProps } from './$types';
 	import type { WishlistItem } from '#lib/server/catalog/types';
 	import { continents } from '#lib/countries';
-	import { kitTypeLabels, versionLabels } from '#lib/labels';
+	import { kitTypeText, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
 	import PictureCleaner from '#lib/components/PictureCleaner.svelte';
@@ -88,7 +88,7 @@
 		selectedCountries = [];
 	}
 
-	const caption = (i: WishlistItem) => `${i.kit.season} · ${kitTypeLabels[i.kit.kitType]}`;
+	const caption = (i: WishlistItem) => `${i.kit.season} · ${kitTypeText(i.kit)}`;
 
 	let selectedId = $state<number | null>(null);
 	const selected = $derived(data.items.find((i) => i.id === selectedId) ?? null);
@@ -178,7 +178,7 @@
 					<Tile
 						team={item.kit.team.name}
 						season={item.kit.season}
-						kitType={kitTypeLabels[item.kit.kitType]}
+						kitType={kitTypeText(item.kit)}
 						mainPictureUrl={mainPictureUrl(item.kit)}
 						onSelect={(el) => select(item, el)}
 					/>
