@@ -33,11 +33,11 @@
 	<div class="flex">
 		<SearchField bind:value={search} label="Search stores" placeholder="Search stores" />
 	</div>
-	<ul class="flex flex-col gap-2">
+	<ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
 		{#each shown as store (store.id)}
-			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
+			<li class="flex min-w-0 flex-col items-start justify-between gap-2 rounded-xl bg-card p-3">
 				<div class="flex min-w-0 flex-col">
-					<span class="font-medium">{store.name}</span>
+					<span class="font-medium break-words">{store.name}</span>
 					<span class="text-sm text-muted-foreground">{jerseyCount(counts[store.id])}</span>
 				</div>
 				<Button size="sm" onclick={() => show(store)}>
