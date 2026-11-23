@@ -224,6 +224,14 @@ export interface AddWishlistItemInput extends KitInput {
 export type AddWishlistItemResult =
 	{ status: 'added'; item: WishlistItem } | { status: 'already-owned' };
 
+// --- Got it ------------------------------------------------------------------
+
+export interface GotItInput {
+	wishlistItemId: number;
+	/** The Jersey of the Wishlist Item's Kit. */
+	jersey: Pick<JerseyInput, 'version' | 'size' | 'fit' | 'print' | 'acquisition'>;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -285,6 +293,10 @@ export interface Catalog {
 	// Wishlist (Owner). The Kit is found or created as for a Jersey. One Wishlist Item per Kit.
 	/** Without `addAnyway`, saves nothing and answers `already-owned` when Nico owns a Jersey of the Kit. */
 	addWishlistItem(token: string, input: AddWishlistItemInput): Promise<AddWishlistItemResult>;
+	/** Removes the Wishlist Item and adds the Jersey of its Kit, together. An invalid Jersey changes nothing. */
+	gotIt(token: string, input: GotItInput): Promise<CollectionJersey>;
+	/** Removes the Wishlist Item. The Kit stays. */
+	drop(token: string, wishlistItemId: number): Promise<void>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;
