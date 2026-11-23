@@ -229,7 +229,7 @@ Delete fixes a mistake (Nico, 2026-11-23). It refuses, never cascades: a Store w
 
 ### Admin sections
 
-Owner only. `/admin` redirects to `/admin/countries`. One page per section: `/admin/countries`, `/admin/stores`, `/admin/teams`, `/admin/kits`, `/admin/main-pictures` (Kits without a Main Picture). A nav under the title (AdminNav, styled like Tabs) links the pages and marks the current one with `aria-current="page"`. Each page has a SearchField above its list that filters the loaded rows by every word typed (page state, not in the URL). Each row has a Button that opens its form in a Popup ("Edit", or "Rename" for a Store). The Popup of an existing Country, Store, Team or Kit has a DeleteAction in `actions`, under "Save". A delete closes the Popup.
+Owner only. `/admin` redirects to `/admin/countries`. One page per section: `/admin/countries`, `/admin/stores`, `/admin/teams`, `/admin/kits`, `/admin/main-pictures` (Kits without a Main Picture). A nav under the title (AdminNav, styled like Tabs) links the pages and marks the current one with `aria-current="page"`. Each page has a SearchField above its list that filters the loaded rows by every word typed (page state, not in the URL). The Countries, Stores and Teams rows end their subtitle with the Jersey count ("3 jerseys"; Jerseys only, a Gift counts for no Store). Each row has a Button that opens its form in a Popup ("Edit", or "Rename" for a Store). The Popup of an existing Country, Store, Team or Kit has a DeleteAction in `actions`, under "Save". A delete closes the Popup.
 
 ### AcquisitionFields
 

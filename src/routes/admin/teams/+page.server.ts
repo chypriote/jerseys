@@ -4,7 +4,11 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	const catalog = catalogFromPlatform();
-	return { teams: await catalog.listTeams(), countries: await catalog.listCountries() };
+	return {
+		teams: await catalog.listTeams(),
+		countries: await catalog.listCountries(),
+		counts: (await catalog.jerseyCounts()).teams
+	};
 };
 
 export const actions: Actions = {

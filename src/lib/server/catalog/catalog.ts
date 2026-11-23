@@ -65,6 +65,7 @@ import type {
 	Catalog,
 	CollectionJersey,
 	Country,
+	JerseyCounts,
 	JerseyInput,
 	GotItInput,
 	KitInput,
@@ -512,6 +513,23 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 
 	return {
 		listCountries: readCountries,
+		async jerseyCounts() {
+			const rows = await db
+				.select({ teamId: kits.teamId, countryId: teams.countryId, storeId: jerseys.storeId })
+				.from(jerseys)
+				.innerJoin(kits, eq(jerseys.kitId, kits.id))
+				.innerJoin(teams, eq(kits.teamId, teams.id));
+			const result: JerseyCounts = { countries: {}, teams: {}, stores: {} };
+			const add = (counts: Record<number, number>, id: number | null) => {
+				if (id !== null) counts[id] = (counts[id] ?? 0) + 1;
+			};
+			for (const row of rows) {
+				add(result.countries, row.countryId);
+				add(result.teams, row.teamId);
+				add(result.stores, row.storeId);
+			}
+			return result;
+		},
 
 		listCollection: () => readCollection(),
 

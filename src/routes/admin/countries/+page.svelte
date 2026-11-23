@@ -5,4 +5,4 @@
 	let { data }: PageProps = $props();
 </script>
 
-<CountriesSection countries={data.countries} />
+<CountriesSection countries={data.countries} counts={data.counts} />

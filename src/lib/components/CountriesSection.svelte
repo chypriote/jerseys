@@ -2,6 +2,7 @@
 	import { continents, seasonFormats } from '#lib/countries';
 	import type { Country } from '#lib/server/catalog/types';
 	import { deleteRow } from '#lib/forms';
+	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
@@ -9,7 +10,7 @@
 	import Popup from './Popup.svelte';
 	import SearchField from './SearchField.svelte';
 
-	let { countries }: { countries: Country[] } = $props();
+	let { countries, counts }: { countries: Country[]; counts: Record<number, number> } = $props();
 
 	let search = $state('');
 	const shown = $derived(
@@ -50,7 +51,7 @@
 					<span class="text-sm text-muted-foreground">
 						{continentLabel(country.continent)} · {country.league.name} · {formatLabel(
 							country.league.seasonFormat
-						)}
+						)} · {jerseyCount(counts[country.id])}
 					</span>
 				</div>
 				<Button size="sm" onclick={() => show(country)}>
