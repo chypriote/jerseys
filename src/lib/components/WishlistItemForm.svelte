@@ -32,7 +32,8 @@
 	let kitType = $state<KitType>('home');
 	// "any" is the ToggleGroup value of no Version.
 	let version = $state<Version | 'any'>('any');
-	let mainPicture = $state<FileList | null>(null);
+	let mainPicture = $state<File | null>(null);
+	let mainPictureUrl = $state('');
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
 	let alreadyOwned = $state(false);
@@ -48,6 +49,7 @@
 			team,
 			season,
 			kitType,
+			mainPictureUrl: mainPictureUrl.trim() || undefined,
 			version: version === 'any' ? null : version,
 			addAnyway
 		};
@@ -79,6 +81,7 @@
 		bind:season
 		bind:kitType
 		bind:mainPicture
+		bind:mainPictureUrl
 		{teams}
 		{countries}
 		{pictured}

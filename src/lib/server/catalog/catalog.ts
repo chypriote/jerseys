@@ -372,8 +372,10 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		const season = parseSeason(input.season, team.seasonFormat);
 		const kitType = checkKitType(input.kitType);
 		const existingId = team.id === null ? null : await findKitId(team.id, season.start, kitType);
-		if (input.mainPicture) checkImage(input.mainPicture.body, input.mainPicture.contentType);
-		return { team, season, kitType, existingId, mainPicture: input.mainPicture ?? null };
+		const address = input.mainPictureUrl?.trim();
+		const mainPicture = input.mainPicture ?? (address ? await fetchImage(address) : null);
+		if (mainPicture) checkImage(mainPicture.body, mainPicture.contentType);
+		return { team, season, kitType, existingId, mainPicture };
 	}
 
 	/**
