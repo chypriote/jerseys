@@ -1,5 +1,5 @@
 import type { KitType } from './types';
-import { MAX_UPLOAD_BYTES, readBody } from './images';
+import { MAX_UPLOAD_BYTES, readBody, tooBig } from './images';
 
 /**
  * TheSportsDB v1 client. The only module that knows TheSportsDB URLs and field names.
@@ -161,7 +161,7 @@ export async function fetchKitPicture(config: SportsDbConfig, address: string) {
 	if (!isKitPictureUrl(address)) throw new Error('Unknown candidate');
 	const response = await request(config, address);
 	const body = await readBody(response, MAX_UPLOAD_BYTES);
-	if (!body) throw new Error('The image must be under 2 MB');
+	if (!body) throw tooBig();
 	const contentType = (response.headers.get('content-type') ?? '').split(';')[0].trim();
 	return { body: body.buffer as ArrayBuffer, contentType };
 }

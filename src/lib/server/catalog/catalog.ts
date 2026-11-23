@@ -1,4 +1,17 @@
-import { and, asc, count, eq, gt, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
+import {
+	and,
+	asc,
+	count,
+	eq,
+	gt,
+	inArray,
+	isNotNull,
+	isNull,
+	lte,
+	or,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
 import { kitTypeLabels } from '../../labels';
@@ -15,6 +28,7 @@ import {
 import { kitSeasonFirst } from './matching';
 import {
 	fetchKitPicture,
+	isKitPictureUrl,
 	listKitPictures,
 	RateLimitError,
 	searchTeams,
@@ -27,7 +41,7 @@ import {
 	sourceTeamOf,
 	type LookupContext
 } from './lookup';
-import { checkImage, MAX_UPLOAD_BYTES, readBody } from './images';
+import { checkImage, MAX_UPLOAD_BYTES, readBody, tooBig } from './images';
 import { issueToken, passwordMatches, tokenIsValid, UnauthorizedError } from './auth';
 import type {
 	Acquisition,
@@ -264,8 +278,12 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 	const storeMainPicture = (kitId: number, body: ArrayBuffer, contentType: string) =>
 		putMainPicture(lookup, kitId, { body, contentType, chosen: true });
 
-	/** Fetches the image at an http(s) address. The caller checks it as an upload. */
+	/**
+	 * Fetches the image at an http(s) address. The caller checks it as an upload. A TheSportsDB
+	 * image waits for the shared TheSportsDB slot.
+	 */
 	async function fetchImage(address: string) {
+		if (isKitPictureUrl(address)) return fetchKitPicture(sportsDb, address);
 		let url: URL;
 		try {
 			url = new URL(address);
@@ -278,7 +296,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		const response = await fetch(url, { headers: { 'User-Agent': 'jerseys/0.1' } });
 		if (!response.ok) throw new Error(`The address answered ${response.status}`);
 		const body = await readBody(response, MAX_UPLOAD_BYTES);
-		if (!body) throw new Error('The image must be under 2 MB');
+		if (!body) throw tooBig();
 		const contentType = (response.headers.get('content-type') ?? '').split(';')[0].trim();
 		return { body: body.buffer as ArrayBuffer, contentType };
 	}
@@ -316,6 +334,27 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		if (all.some((c) => c.id !== exceptId && compare(c.name, cleaned) === 0))
 			throw new Error(`A country named “${cleaned}” already exists`);
 		return cleaned;
+	}
+
+	/** The Kits keep their Seasons, so a new Season Format must fit every Kit `where` takes. */
+	async function refuseMisfitKit(where: SQL, format: SeasonFormat) {
+		const [misfit] = await db
+			.select({ team: teams.name, start: kits.seasonStartYear, end: kits.seasonEndYear })
+			.from(kits)
+			.innerJoin(teams, eq(kits.teamId, teams.id))
+			.where(
+				and(
+					where,
+					format === 'calendar' ? isNotNull(kits.seasonEndYear) : isNull(kits.seasonEndYear)
+				)
+			)
+			.limit(1);
+		if (misfit) {
+			const label = seasonFormats.find((f) => f.value === format)!.label;
+			throw new Error(
+				`${misfit.team} has a Kit of Season ${formatSeason(misfit.start, misfit.end)}, which does not fit a ${label} Season Format`
+			);
+		}
 	}
 
 	async function readCountries(): Promise<Country[]> {
@@ -660,6 +699,9 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				if (acquisition.priceCents !== null && !isCents(acquisition.priceCents))
 					throw new Error('A price is euro cents, or null when unknown');
 				const storeName = cleanOrNull(acquisition.store);
+				// No Store is an unknown Store, which only a Purchase of unknown price has.
+				if (storeName === null && acquisition.priceCents !== null)
+					throw new Error('A Purchase with a price needs a Store');
 				let store = storeName === null ? null : named(storeList, storeName);
 				if (storeName !== null && !store)
 					storeList.push((store = { name: storeName, created: true }));
@@ -881,6 +923,11 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			if (!current) throw new Error('Unknown country');
 			const { continent, leagueName, seasonFormat } = countryFields(input);
 			const name = await freeCountryName(input.name, input.id);
+			const clubs = db
+				.select({ id: teams.id })
+				.from(teams)
+				.where(and(eq(teams.countryId, current.id), eq(teams.kind, 'club')));
+			await refuseMisfitKit(inArray(kits.teamId, clubs), seasonFormat);
 			await db.batch([
 				db.update(countries).set({ name, continent }).where(eq(countries.id, input.id)),
 				db
@@ -945,23 +992,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			if (!team) throw new Error('Unknown team');
 			const others = all.filter((t) => t.id !== team.id);
 			const { name, kind, country, seasonFormat: format } = await teamFields(input, others);
-			// The Kits keep their Seasons, so the new Season Format must fit every one of them.
-			const [misfit] = await db
-				.select({ start: kits.seasonStartYear, end: kits.seasonEndYear })
-				.from(kits)
-				.where(
-					and(
-						eq(kits.teamId, team.id),
-						format === 'calendar' ? isNotNull(kits.seasonEndYear) : isNull(kits.seasonEndYear)
-					)
-				)
-				.limit(1);
-			if (misfit) {
-				const label = seasonFormats.find((f) => f.value === format)!.label;
-				throw new Error(
-					`${team.name} has a Kit of Season ${formatSeason(misfit.start, misfit.end)}, which does not fit a ${label} Season Format`
-				);
-			}
+			await refuseMisfitKit(eq(kits.teamId, team.id), format);
 			await db
 				.update(teams)
 				.set({ name, kind, countryId: country.id })

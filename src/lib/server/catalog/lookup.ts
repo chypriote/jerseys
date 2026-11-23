@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { countries, kits, leagues, teams } from '../db/schema';
-import { checkImage } from './images';
+import { checkImage, ImageError } from './images';
 import { matchTeam, sameSeason } from './matching';
 import { fetchKitPicture, listKitPictures, searchTeams, type SportsDbConfig } from './thesportsdb';
 
@@ -67,10 +67,22 @@ export async function sourceTeamOf(
 	return hit.id;
 }
 
+/** The TheSportsDB image, or null when the image rules refuse it. */
+async function fetchCheckedPicture(ctx: LookupContext, imageUrl: string) {
+	try {
+		const image = await fetchKitPicture(ctx.sportsDb, imageUrl);
+		checkImage(image.body, image.contentType);
+		return image;
+	} catch (error) {
+		if (error instanceof ImageError) return null;
+		throw error;
+	}
+}
+
 /**
  * Looks up the Main Picture of one Kit: the TheSportsDB picture of its Team with the same Season
  * and Kit Type, stored as a Main Picture the Owner did not choose. No Team or no match keeps the
- * current Main Picture. An Owner-chosen Main Picture is never replaced. Marks the Kit looked up.
+ * current Main Picture, and so does an image the image rules refuse. An Owner-chosen Main Picture is never replaced. Marks the Kit looked up.
  * Throws on a TheSportsDB error (the Kit stays not looked up); Kit create catches and logs it.
  */
 export async function lookUpMainPicture(ctx: LookupContext, kitId: number) {
@@ -89,11 +101,8 @@ export async function lookUpMainPicture(ctx: LookupContext, kitId: number) {
 				(p) => p.kitType === found.kit.kitType && sameSeason(season, p.season)
 			)
 		: undefined;
-	if (match) {
-		const image = await fetchKitPicture(ctx.sportsDb, match.imageUrl);
-		checkImage(image.body, image.contentType);
-		// The Owner may have chosen a Main Picture while the lookup was running.
-		if (!(await isChosen())) await putMainPicture(ctx, kitId, { ...image, chosen: false });
-	}
+	const image = match && (await fetchCheckedPicture(ctx, match.imageUrl));
+	// The Owner may have chosen a Main Picture while the lookup was running.
+	if (image && !(await isChosen())) await putMainPicture(ctx, kitId, { ...image, chosen: false });
 	await markLookedUp();
 }

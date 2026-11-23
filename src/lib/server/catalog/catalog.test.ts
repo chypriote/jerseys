@@ -887,7 +887,33 @@ describe('Picture candidates', () => {
 		expect(times[2] - times[1]).toBeGreaterThanOrEqual(55);
 	});
 
+	it('waits for the TheSportsDB interval for a pasted TheSportsDB image address', async () => {
+		const slow = createCatalog(env, { lookupIntervalMs: 60 });
+		const kit = await lyon();
+		await slow.listPictureCandidates(token, kit);
+		await slow.uploadMainPictureFromUrl(token, { kitId: kit, url: equipmentUrl('pasted') });
+		const times = calls.map((c) => c.at);
+		expect(times).toHaveLength(3);
+		expect(times[2] - times[1]).toBeGreaterThanOrEqual(55);
+		expect((await mainPictureOf(kit))?.main_picture_chosen).toBe(1);
+	});
+
 	describe('lookup in batches', () => {
+		it('marks a Kit looked up with no Main Picture when the matching image is refused', async () => {
+			equipment['133713'] = {
+				equipment: [
+					{ strSeason: '2023-2024', strType: '1st', strEquipment: equipmentUrl('big') },
+					{ strSeason: '2023-2024', strType: '2nd', strEquipment: equipmentUrl('page') }
+				]
+			};
+			const home = await lyon();
+			const away = await lyon({ kitType: 'away' });
+			expect(await catalog.lookupNext(token, { size: 10 })).toEqual({ total: 2, done: 2 });
+			for (const kit of [home, away]) {
+				expect((await mainPictureOf(kit))?.main_picture_key).toBe(null);
+			}
+		});
+
 		it('stores the matching picture as a Main Picture the Owner did not choose', async () => {
 			const kit = await lyon();
 			expect(await catalog.lookupNext(token, { size: 5 })).toEqual({ total: 1, done: 1 });
@@ -2441,6 +2467,41 @@ describe('Teams and Kits admin', () => {
 		expect(await teamNamed('Lyon')).toEqual(lyon);
 	});
 
+	it('refuses a Country Season Format that a Kit Season of one of its Clubs does not fit', async () => {
+		const league = 'Ligue 1';
+		await insertKit({
+			team: 'Lyon',
+			start: 2023,
+			end: 2024,
+			kitType: 'home',
+			country: 'France',
+			league
+		});
+		await insertKit({
+			team: 'France',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home',
+			country: 'France',
+			league
+		});
+		const france = (await teamNamed('Lyon')).country;
+		const edit = (seasonFormat: 'split' | 'calendar') =>
+			catalog.editCountry(token, {
+				id: france.id,
+				name: 'France',
+				continent: 'europe',
+				leagueName: league,
+				seasonFormat
+			});
+		await expect(edit('calendar')).rejects.toThrow(
+			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+		);
+		expect((await catalog.listCountries())[0].league.seasonFormat).toBe('split');
+		// A National Team keeps the Calendar format, so its Kits never block the League.
+		expect((await edit('split')).league.seasonFormat).toBe('split');
+	});
+
 	it('changes a Kit Season and Kit Type, and its Jerseys and Wishlist Item follow', async () => {
 		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
 		const jersey = await insertJersey(kitId, { date: '2024', storeId: 1 });
@@ -2735,6 +2796,20 @@ describe('Import the sheet rows', () => {
 		await catalog.importRows(token, input);
 		const jersey = (await catalog.listCollection()).find((j) => j.print === 'NICOLAS 4')!;
 		expect(jersey.acquisition).toMatchObject({ kind: 'purchase', store: null, priceCents: null });
+	});
+
+	it('refuses a Purchase with a price and no Store, naming the row', async () => {
+		const input = rows();
+		input.jerseys[1].acquisition = {
+			kind: 'purchase',
+			store: null,
+			priceCents: 2500,
+			bought: '2024'
+		};
+		await expect(catalog.importRows(token, input)).rejects.toThrow(
+			'jerseys[1]: A Purchase with a price needs a Store'
+		);
+		expect(await catalog.listCountries()).toEqual([]);
 	});
 
 	it('is refused when the Collection already has a Jersey', async () => {
