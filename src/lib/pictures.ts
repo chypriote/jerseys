@@ -9,6 +9,9 @@ export function mainPictureUrl(kit: {
 	return kit.mainPictureKey ? `/pictures/main/${kit.id}?v=${kit.mainPictureVersion}` : null;
 }
 
+/** The URL of an extra Picture of a Kit, on the `/pictures` route. */
+export const pictureUrl = (picture: { id: number }) => `/pictures/${picture.id}`;
+
 /** Whether the Kit of these form fields exists and has a Main Picture. A new Team has no Kit yet. */
 export function kitHasMainPicture(
 	pictured: KitKey[],

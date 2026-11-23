@@ -9,6 +9,7 @@
 		title,
 		subtitle = '',
 		mainPictureUrl = null,
+		pictureUrls = [],
 		wide = false,
 		onDismiss,
 		details,
@@ -21,6 +22,8 @@
 		/** "{season} · {kitType}". Set it for a Tile Popup: the Main Picture shows next to the details. */
 		subtitle?: string;
 		mainPictureUrl?: string | null;
+		/** The Kit's extra Pictures: thumbnails under the Main Picture, a tap shows one in its place. */
+		pictureUrls?: string[];
 		/** Form Popup: wider, no Main Picture. The form lays out its two columns from `sm`. */
 		wide?: boolean;
 		/** X button, Esc, tap on the backdrop. */
@@ -29,6 +32,15 @@
 		/** Owner only. */
 		actions?: Snippet;
 	} = $props();
+
+	/** The thumbnail shown in place of the Main Picture: 0 is the Main Picture. */
+	let shown = $state(0);
+	const thumbnails = $derived([mainPictureUrl, ...pictureUrls]);
+	$effect(() => {
+		void mainPictureUrl;
+		void open;
+		shown = 0;
+	});
 
 	function onOpenChange(next: boolean) {
 		if (!next) onDismiss?.();
@@ -47,11 +59,28 @@
 	>
 		{#if subtitle && !wide}
 			<div class="grid grid-cols-[minmax(0,var(--popup-picture-size))_minmax(0,1fr)] gap-4">
-				<span
-					class="flex aspect-square items-center justify-center overflow-hidden rounded-md bg-background"
-				>
-					<MainPicture url={mainPictureUrl} />
-				</span>
+				<div class="flex min-w-0 flex-col gap-2">
+					<span
+						class="flex aspect-square items-center justify-center overflow-hidden rounded-md bg-background"
+					>
+						<MainPicture url={thumbnails[shown] ?? mainPictureUrl} />
+					</span>
+					{#if pictureUrls.length}
+						<div class="flex flex-wrap gap-1" role="group" aria-label="Pictures">
+							{#each thumbnails as url, index (index)}
+								<button
+									type="button"
+									class="flex size-(--control-size-min) items-center justify-center overflow-hidden rounded-md bg-background outline-ring focus-visible:outline-3 focus-visible:outline-solid aria-pressed:outline-3 aria-pressed:outline-solid"
+									aria-label={index === 0 ? 'Main picture' : `Picture ${index + 1}`}
+									aria-pressed={shown === index}
+									onclick={() => (shown = index)}
+								>
+									<MainPicture {url} />
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 				<div class="min-w-0">
 					<Dialog.Title class="[overflow-wrap:anywhere]">{title}</Dialog.Title>
 					<p class="mt-1 mb-3 text-[15px] text-muted-foreground">{subtitle}</p>

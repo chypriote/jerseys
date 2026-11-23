@@ -1,8 +1,17 @@
-import { and, count, eq, gt, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gt, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
 import { kitTypeLabels } from '../../labels';
-import { countries, jerseys, kits, leagues, stores, teams, wishlistItems } from '../db/schema';
+import {
+	countries,
+	jerseys,
+	kits,
+	leagues,
+	pictures,
+	stores,
+	teams,
+	wishlistItems
+} from '../db/schema';
 import { kitSeasonFirst } from './matching';
 import {
 	fetchKitPicture,
@@ -40,6 +49,7 @@ import type {
 	LookupProgress,
 	SeasonFormat,
 	TeamChoice,
+	TeamKind,
 	TeamView,
 	WishlistItem
 } from './types';
@@ -162,15 +172,15 @@ function parseSeason(value: unknown, format: SeasonFormat) {
 	throw new Error('Season must be two years in a row, like 2024-25');
 }
 
-const isCents = (value: unknown): value is number =>
-	Number.isInteger(value) && (value as number) >= 0;
-
 const checkKitType = (value: unknown) =>
-	oneOf(
+	oneOf<KitType>(
 		value,
 		['home', 'away', 'third', 'fourth', 'cup', 'special'],
 		'Kit Type must be Home, Away, Third, Fourth, Cup or Special'
 	);
+
+const isCents = (value: unknown): value is number =>
+	Number.isInteger(value) && (value as number) >= 0;
 
 /** Version, Size, Fit and Print of a Jersey. */
 function checkCut(input: Pick<JerseyInput, 'version' | 'size' | 'fit' | 'print'>) {
@@ -343,17 +353,26 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			if (!known) throw new Error('Unknown team');
 			return { id: known.id, name: known.name, seasonFormat: known.seasonFormat };
 		}
-		const name = required(String(choice?.name ?? ''), 'Team name');
-		const kind = oneOf(choice.kind, ['club', 'national'], 'A team is a Club or a National Team');
-		const country = await countryById(Number(choice.countryId));
-		if (all.some((t) => compare(t.name, name) === 0))
+		const { name, kind, country, seasonFormat } = await teamFields(choice, all);
+		return { id: null, name, create: { name, kind, countryId: country.id }, seasonFormat };
+	}
+
+	/** The cleaned name, kind and Country of a Team, or a readable error. `others` excludes the Team edited. */
+	async function teamFields(
+		input: { name: string; kind: TeamKind; countryId: number },
+		others: TeamView[]
+	) {
+		const name = required(String(input?.name ?? ''), 'Team name');
+		const kind = oneOf(input.kind, ['club', 'national'], 'A team is a Club or a National Team');
+		const country = await countryById(Number(input.countryId));
+		if (others.some((t) => compare(t.name, name) === 0))
 			throw new Error(`A team named “${name}” already exists`);
-		const national = all.find((t) => t.kind === 'national' && t.country.id === country.id);
+		const national = others.find((t) => t.kind === 'national' && t.country.id === country.id);
 		if (kind === 'national' && national)
 			throw new Error(`${country.name} already has a National Team: ${national.name}`);
 		const seasonFormat: SeasonFormat =
 			kind === 'national' ? 'calendar' : country.league.seasonFormat;
-		return { id: null, name, create: { name, kind, countryId: country.id }, seasonFormat };
+		return { name, kind, country, seasonFormat };
 	}
 
 	async function checkAcquisition(input: AcquisitionInput) {
@@ -449,6 +468,25 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		const kit = await checkKit(input);
 		const fields = await checkJerseyFields(input);
 		return { kitId: await writeKit(kit), ...fields };
+	}
+
+	// --- Teams and Kits admin ---
+
+	async function readKits(id?: number): Promise<KitView[]> {
+		const rows = await db
+			.select({ kit: kits, team: teams, country: countries })
+			.from(kits)
+			.innerJoin(teams, eq(kits.teamId, teams.id))
+			.innerJoin(countries, eq(teams.countryId, countries.id))
+			.where(id === undefined ? undefined : eq(kits.id, id));
+		return rows
+			.sort(
+				(a, b) =>
+					compare(a.team.name, b.team.name) ||
+					a.kit.seasonStartYear - b.kit.seasonStartYear ||
+					KIT_TYPE_ORDER.indexOf(a.kit.kitType) - KIT_TYPE_ORDER.indexOf(b.kit.kitType)
+			)
+			.map(({ kit, team, country }) => kitView(kit, team, country));
 	}
 
 	async function readWishlist(id?: number): Promise<WishlistItem[]> {
@@ -769,6 +807,46 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			await db.delete(wishlistItems).where(eq(wishlistItems.id, Number(wishlistItemId)));
 		},
 
+		// --- Kit Pictures ---
+
+		listPictures: (kitId) =>
+			db
+				.select({ id: pictures.id, kitId: pictures.kitId, position: pictures.position })
+				.from(pictures)
+				.where(eq(pictures.kitId, Number(kitId)))
+				.orderBy(asc(pictures.position)),
+
+		async getPicture(pictureId) {
+			const [picture] = await db
+				.select({ key: pictures.key })
+				.from(pictures)
+				.where(eq(pictures.id, Number(pictureId)));
+			if (!picture) return null;
+			const object = await env.COVERS.get(picture.key);
+			if (!object) return null;
+			return { body: object.body, contentType: object.httpMetadata?.contentType ?? 'image/jpeg' };
+		},
+
+		async addPicture(token, input) {
+			await owner(token);
+			checkImage(input.body, input.contentType);
+			const kitId = Number(input.kitId);
+			const [kit] = await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId));
+			if (!kit) throw new Error('Kit not found');
+			// R2 first: a failed put leaves no row without an image.
+			const key = `pictures/${kit.id}/${crypto.randomUUID()}`;
+			await env.COVERS.put(key, input.body, { httpMetadata: { contentType: input.contentType } });
+			const [created] = await db
+				.insert(pictures)
+				.values({
+					kitId: kit.id,
+					key,
+					position: sql`(SELECT coalesce(max(${pictures.position}), 0) + 1 FROM ${pictures} WHERE ${pictures.kitId} = ${kit.id})`
+				})
+				.returning({ id: pictures.id, kitId: pictures.kitId, position: pictures.position });
+			return created;
+		},
+
 		async addCountry(token, input) {
 			await owner(token);
 			const { continent, leagueName, seasonFormat } = countryFields(input);
@@ -822,6 +900,60 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.returning();
 			if (!renamed) throw new Error('Unknown store');
 			return { id: renamed.id, name: renamed.name };
+		},
+
+		// --- Teams and Kits admin ---
+
+		listKits: () => readKits(),
+
+		async editKit(token, input) {
+			await owner(token);
+			const [found] = await readKits(Number(input.kitId));
+			if (!found) throw new Error('Kit not found');
+			const team = (await readTeams()).find((t) => t.id === found.team.id)!;
+			const season = parseSeason(input.season, team.seasonFormat);
+			const kitType = checkKitType(input.kitType);
+			const sameId = await findKitId(team.id, season.start, kitType);
+			if (sameId !== null && sameId !== found.id) {
+				const label = `${team.name} ${formatSeason(season.start, season.end)} ${kitTypeLabels[kitType]}`;
+				throw new Error(`The Kit ${label} already exists`);
+			}
+			await db
+				.update(kits)
+				.set({ seasonStartYear: season.start, seasonEndYear: season.end, kitType })
+				.where(eq(kits.id, found.id));
+			return (await readKits(found.id))[0];
+		},
+
+		async editTeam(token, input) {
+			await owner(token);
+			const all = await readTeams();
+			const team = all.find((t) => t.id === Number(input.teamId));
+			if (!team) throw new Error('Unknown team');
+			const others = all.filter((t) => t.id !== team.id);
+			const { name, kind, country, seasonFormat: format } = await teamFields(input, others);
+			// The Kits keep their Seasons, so the new Season Format must fit every one of them.
+			const [misfit] = await db
+				.select({ start: kits.seasonStartYear, end: kits.seasonEndYear })
+				.from(kits)
+				.where(
+					and(
+						eq(kits.teamId, team.id),
+						format === 'calendar' ? isNotNull(kits.seasonEndYear) : isNull(kits.seasonEndYear)
+					)
+				)
+				.limit(1);
+			if (misfit) {
+				const label = seasonFormats.find((f) => f.value === format)!.label;
+				throw new Error(
+					`${team.name} has a Kit of Season ${formatSeason(misfit.start, misfit.end)}, which does not fit a ${label} Season Format`
+				);
+			}
+			await db
+				.update(teams)
+				.set({ name, kind, countryId: country.id })
+				.where(eq(teams.id, team.id));
+			return (await readTeams()).find((t) => t.id === team.id)!;
 		},
 
 		async getMainPicture(kitId) {

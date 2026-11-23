@@ -273,6 +273,22 @@ export interface ImportKitRow {
 	kitType: KitType;
 }
 
+// --- Teams and Kits admin -----------------------------------------------------
+
+export interface TeamEditInput {
+	teamId: number;
+	name: string;
+	kind: TeamKind;
+	countryId: number;
+}
+
+export interface KitEditInput {
+	kitId: number;
+	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
+	season: string;
+	kitType: KitType;
+}
+
 /** Dates are `YYYY` or `YYYY-MM-DD`. A Store is named; a null Store or price is unknown. */
 export type ImportAcquisition =
 	| {
@@ -320,6 +336,22 @@ export interface ImportRowsResult {
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
 
+// --- Kit Pictures --------------------------------------------------------------------
+
+/** An extra Picture of a Kit, beyond its Main Picture. */
+export interface Picture {
+	id: number;
+	kitId: number;
+	/** 1 for the first Picture added to the Kit, then the next number. */
+	position: number;
+}
+
+export interface AddPictureInput {
+	kitId: number;
+	body: ArrayBuffer;
+	contentType: string;
+}
+
 /**
  * Every rule and every D1 and R2 access lives behind this interface.
  * Write operations take the Owner token and fail with `UnauthorizedError` if it is invalid.
@@ -347,6 +379,14 @@ export interface Catalog {
 	// Stores (Owner). A name another Store has (any case) is refused.
 	addStore(token: string, name: string): Promise<Store>;
 	renameStore(token: string, id: number, name: string): Promise<Store>;
+
+	// Teams and Kits admin (Owner). The forms and the import create them; these fix them.
+	/** Every Kit with its Team and Country, by Team, then Season, then Kit Type. */
+	listKits(): Promise<KitView[]>;
+	/** Renames a Team or changes its kind or Country. Its Kits keep their Seasons. */
+	editTeam(token: string, input: TeamEditInput): Promise<TeamView>;
+	/** Changes a Kit's Season (in its Team's Season Format) or Kit Type. Its Jerseys and Wishlist Item follow. */
+	editKit(token: string, input: KitEditInput): Promise<KitView>;
 
 	// Kit Main Pictures (Owner). A Main Picture set here is marked Owner-chosen and gets a new version.
 	/** Kits with no Main Picture, by Team, then Season, then Kit Type. */
@@ -391,6 +431,13 @@ export interface Catalog {
 	 * or a Wishlist Item exists. An invalid row throws an error naming it, and nothing is saved.
 	 */
 	importRows(token: string, rows: ImportRows): Promise<ImportRowsResult>;
+	// Kit Pictures. Same image rules as the Main Picture.
+	/** The extra Pictures of a Kit, in the order they were added. */
+	listPictures(kitId: number): Promise<Picture[]>;
+	/** The Picture image, or null when there is none. */
+	getPicture(pictureId: number): Promise<MainPictureImage | null>;
+	/** Owner: adds an uploaded JPEG, PNG or WebP image (under 2 MB) as the Kit's next Picture. */
+	addPicture(token: string, input: AddPictureInput): Promise<Picture>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;

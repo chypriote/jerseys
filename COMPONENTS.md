@@ -111,6 +111,7 @@ Same as Vinyles: native `<dialog>` with `showModal()`, centred on the screen. Fo
 | title | string | — | The Team name |
 | subtitle | string | — | "{season} · {kitType}", `text.body.detail`, muted |
 | mainPictureUrl | string \| null | null | `popup.picture.size`, contained, or the shirt outline |
+| pictureUrls | string[] | `[]` | The Kit's extra Pictures, in the order they were added (see "Popup content") |
 | wide | boolean | false | Form Popup: width `popup.width.wide`, no Main Picture. From `breakpoint.sm` the fields sit in two columns |
 | onDismiss | `() => void` | — | X button, Esc, tap on the backdrop |
 
@@ -213,6 +214,8 @@ Rows are `<dt>` label, `<dd>` value, `text.body.detail`. A row with no value is 
 - **Jersey:** Version, Print, Size, Fit, then the Acquisition. Purchase: Store, Price, Bought, Sent, Received. Gift: "Gift", Date, From. Dates show as stored: "2024" or "12 May 2024".
 - **Wishlist Item:** Version (or "Any version"), Desire (DesireDots). Owner `actions`: Button `success` "Got it", Button `neutral` "Drop". Drop acts at once, with no confirmation, as in Vinyles.
 - Owner on a Jersey: a `neutral` Button "Edit" in `actions`. It opens JerseyForm in the same Popup.
+- **Pictures** (Jersey and Wishlist Item): when the Kit has extra Pictures, a row of small contained thumbnails (`control.size.min` square, `color.bg.page` tile) sits under the Main Picture: the Main Picture first, then the Pictures in the order they were added. A tap shows that Picture in place of the Main Picture; the shown thumbnail has the focus outline (`aria-pressed`). Every Jersey and the Wishlist Item of a Kit show the same Pictures.
+- Owner on a Jersey or a Wishlist Item: a file input "Add pictures" (multiple, JPEG, PNG or WebP) after the Buttons in `actions`. Each file is shrunk like the Main Picture and added at once, in the order picked; a refused file shows its error under the input.
 
 ### LoginAction, AddAction
 
