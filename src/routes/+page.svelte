@@ -102,14 +102,14 @@
 		selectedCountries = [];
 	}
 
-	let main = $state<HTMLElement>();
+	let results = $state<HTMLElement>();
 
 	// A click on the map: only that Country, then down to the first Tile shown.
 	async function filterByCountry(countryId: number) {
 		search = '';
 		selectedCountries = [String(countryId)];
 		await tick();
-		main?.querySelector('li')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		results?.querySelector('li')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
 	const caption = (j: CollectionJersey) => `${j.kit.season} · ${kitTypeText(j.kit)}`;
@@ -173,39 +173,42 @@
 	<PictureCleaner kits={data.jerseys.map((j) => j.kit)} />
 {/if}
 
-<main bind:this={main}>
+<main>
 	<div
 		class="ps-[max(1rem,env(safe-area-inset-left))] pe-[max(1rem,env(safe-area-inset-right))] pb-4"
 	>
 		<CoverageMap countries={data.coverage} jerseys={data.jerseys} onSelect={filterByCountry} />
 	</div>
-	{#if data.jerseys.length === 0}
-		<EmptyState message="No jerseys yet" />
-	{:else if jerseys.length === 0}
-		<EmptyState message="No match">
-			{#snippet action()}
-				{#if isFiltering}
-					<Button onclick={clearFilters}>Clear filters</Button>
-				{/if}
-			{/snippet}
-		</EmptyState>
-	{:else}
-		<TileGrid>
-			{#each jerseys as jersey (jersey.id)}
-				<li class="min-w-0 scroll-mt-44">
-					<Tile
-						team={jersey.kit.team.name}
-						season={jersey.kit.season}
-						kitType={kitTypeText(jersey.kit)}
-						mainPictureUrl={mainPictureUrl(jersey.kit)}
-						print={jersey.print}
-						number={printNumber(jersey.print)}
-						onSelect={(el) => select(jersey, el)}
-					/>
-				</li>
-			{/each}
-		</TileGrid>
-	{/if}
+	<!-- Tall enough that the first Tile can always scroll up under the StickyBar. -->
+	<div bind:this={results} class="min-h-[calc(100dvh-12rem)]">
+		{#if data.jerseys.length === 0}
+			<EmptyState message="No jerseys yet" />
+		{:else if jerseys.length === 0}
+			<EmptyState message="No match">
+				{#snippet action()}
+					{#if isFiltering}
+						<Button onclick={clearFilters}>Clear filters</Button>
+					{/if}
+				{/snippet}
+			</EmptyState>
+		{:else}
+			<TileGrid>
+				{#each jerseys as jersey (jersey.id)}
+					<li class="min-w-0 scroll-mt-48">
+						<Tile
+							team={jersey.kit.team.name}
+							season={jersey.kit.season}
+							kitType={kitTypeText(jersey.kit)}
+							mainPictureUrl={mainPictureUrl(jersey.kit)}
+							print={jersey.print}
+							number={printNumber(jersey.print)}
+							onSelect={(el) => select(jersey, el)}
+						/>
+					</li>
+				{/each}
+			</TileGrid>
+		{/if}
+	</div>
 </main>
 
 {#snippet row(label: string, value: string | null | undefined)}

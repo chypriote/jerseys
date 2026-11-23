@@ -201,7 +201,7 @@ Same as the Vinyles CoverGrid: `grid.columns` per breakpoint, gaps `space.grid.g
 - The UK is four Countries: England, Scotland, Wales, Northern Ireland.
 - Heading above the map: "{covered} of {total} countries", `text.body`, value in extrabold. It is the button of an accordion with a chevron: it opens and closes the map (`aria-expanded`). The map starts open; the choice is kept in `localStorage` (`coverage-map-open`) and applied after mount. `total` is the number of Countries in the app, not in the world.
 - The SVG is `role="img"` with `aria-label` "Countries covered: {names}". No zoom in v1: sideways scroll only.
-- Click or tap on a covered Country: the page's Country filter becomes that Country alone, the search is cleared, and the page scrolls smoothly to the first Tile shown. Covered Countries show a pointer cursor; others do nothing.
+- Click or tap on a covered Country: the page's Country filter becomes that Country alone, the search is cleared, and the page scrolls smoothly to the first Tile shown, which stops just under the StickyBar. The Tile area is at least as tall as the screen under the StickyBar, so the scroll works even for a Country with one Tile. Covered Countries show a pointer cursor; others do nothing.
 - Hover (mouse and pen only): over a Country of the app, a tooltip follows the pointer with the Country name in extrabold and one line per Jersey of that Country, "{Team} {Season} {Kit Type}", or "No jersey yet". Surface card, `tile.shadow`, `text.body.detail`; it flips to the other side of the pointer in the far half of the screen. Countries not in the app show nothing.
 - The map reads all Jerseys, not the filtered list.
 
