@@ -174,7 +174,11 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		if (url.protocol !== 'https:' && url.protocol !== 'http:') {
 			throw new Error('Use an http or https address');
 		}
-		const response = await fetch(url, { headers: { 'User-Agent': 'jerseys/0.1' } });
+		// Football Kit Archive serves AVIF (`?fmt=avif`), which the image rules refuse.
+		url.searchParams.delete('fmt');
+		const response = await fetch(url, {
+			headers: { 'User-Agent': 'jerseys/0.1', Accept: 'image/jpeg,image/png,image/webp' }
+		});
 		if (!response.ok) throw new Error(`The address answered ${response.status}`);
 		const body = await readBody(response, MAX_UPLOAD_BYTES);
 		if (!body) throw tooBig();
