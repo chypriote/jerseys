@@ -8,6 +8,31 @@ export interface Store {
 	name: string;
 }
 
+export type Continent = 'europe' | 'asia-oceania' | 'americas' | 'africa';
+export type SeasonFormat = 'split' | 'calendar';
+
+export interface League {
+	id: number;
+	name: string;
+	seasonFormat: SeasonFormat;
+}
+
+/** A Country with its one League. */
+export interface Country {
+	id: number;
+	name: string;
+	continent: Continent;
+	league: League;
+}
+
+/** What the Owner types for a Country and its League. */
+export interface CountryInput {
+	name: string;
+	continent: Continent;
+	leagueName: string;
+	seasonFormat: SeasonFormat;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -19,6 +44,12 @@ export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wro
 export interface Catalog {
 	// Reads (Viewer and Owner)
 	listStores(): Promise<Store[]>;
+	listCountries(): Promise<Country[]>;
+
+	// Countries (Owner). A Country and its League are written together.
+	// A name another Country has (any case) is refused.
+	addCountry(token: string, input: CountryInput): Promise<Country>;
+	editCountry(token: string, input: CountryInput & { id: number }): Promise<Country>;
 
 	// Stores (Owner). A name another Store has (any case) is refused.
 	addStore(token: string, name: string): Promise<Store>;
