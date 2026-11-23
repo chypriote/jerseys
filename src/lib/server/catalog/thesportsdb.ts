@@ -61,9 +61,18 @@ async function waitForSlot(intervalMs: number) {
 	if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
 }
 
+/** TheSportsDB answered 429: stop and try again later, never retry at once. */
+export class RateLimitError extends Error {
+	constructor() {
+		super('TheSportsDB answered 429');
+		this.name = 'RateLimitError';
+	}
+}
+
 async function request(config: SportsDbConfig, url: URL | string) {
 	await waitForSlot(config.intervalMs);
 	const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+	if (response.status === 429) throw new RateLimitError();
 	if (!response.ok) throw new Error(`TheSportsDB answered ${response.status}`);
 	return response;
 }
