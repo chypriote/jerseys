@@ -12,7 +12,7 @@ Stack: same as Vinyles, SvelteKit (Svelte 5) with shadcn-svelte and Tailwind CSS
 |---|---|
 | Primitive | Chip, Button, DesireDots, SearchField, Select, Field, ToggleGroup |
 | Component | Tile, Tabs, Popup, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, TeamLookup, EmptyState |
-| Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm, ImportReview |
+| Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm |
 
 ## Shared rules
 
@@ -252,10 +252,6 @@ Team, Season, Kit Type (as in JerseyForm), Main Picture (same rule), Version (To
 ### GotItForm
 
 Opens from "Got it". Version (pre-set from the Wishlist Item, if any), Size, Fit, Print, AcquisitionFields. Save removes the Wishlist Item and creates the Jersey.
-
-### ImportReview
-
-Owner only, route `/import`. One `success` Button "Import from the sheet". While it runs: "Imported {n} of {total}". At the end: "Imported {jerseys} jerseys and {items} wishlist items". The route goes away when the sheet is retired.
 
 ---
 

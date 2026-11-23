@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCatalog } from './index';
+import type { ImportRows } from './types';
 import searchLyon from './fixtures/thesportsdb/searchteams-lyon.json';
 import searchJapan from './fixtures/thesportsdb/searchteams-japan.json';
 import searchNone from './fixtures/thesportsdb/searchteams-none.json';
@@ -154,7 +155,8 @@ describe('Owner login', () => {
 			() =>
 				catalog.addPicture(bad, { kitId: 1, body: new ArrayBuffer(1), contentType: 'image/png' }),
 			() => catalog.editTeam(bad, { teamId: 1, name: 'Lyon', kind: 'club', countryId: 1 }),
-			() => catalog.editKit(bad, { kitId: 1, season: '2024', kitType: 'home' })
+			() => catalog.editKit(bad, { kitId: 1, season: '2024', kitType: 'home' }),
+			() => catalog.importRows(bad, { countries: [], jerseys: [], wishlist: [] })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -2484,5 +2486,273 @@ describe('Teams and Kits admin', () => {
 			catalog.editKit(token, { kitId: 999999, season: '2023-24', kitType: 'home' })
 		).rejects.toThrow('Kit not found');
 		expect((await catalog.listKits()).map((k) => k.season)).toEqual(['2024', '2023-24']);
+	});
+});
+
+describe('Import the sheet rows', () => {
+	const catalog = createCatalog(env, { lookupIntervalMs: 0 });
+	let token: string;
+	let calls: string[];
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	beforeEach(async () => {
+		calls = [];
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+			calls.push(new Request(input as RequestInfo, init).url);
+			return Response.json(searchNone);
+		});
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM picture'),
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league'),
+			env.DB.prepare("DELETE FROM store WHERE name != 'Official Store'")
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	const lyon = { name: 'Lyon', kind: 'club', country: 'France' } as const;
+	const japan = { name: 'Japan', kind: 'national', country: 'Japan' } as const;
+
+	function rows(): ImportRows {
+		return {
+			countries: [
+				{ name: 'France', continent: 'europe', league: 'Ligue 1', seasonFormat: 'split' },
+				{ name: 'Japan', continent: 'asia-oceania', league: 'J1 League', seasonFormat: 'calendar' }
+			],
+			jerseys: [
+				{
+					team: lyon,
+					season: '2023-24',
+					kitType: 'home',
+					version: 'fan',
+					size: 'M',
+					fit: 'good',
+					print: 'NICOLAS 4',
+					acquisition: {
+						kind: 'purchase',
+						store: 'Taobao',
+						priceCents: 1485,
+						bought: '2023-11-02',
+						sent: '2023-11-20',
+						received: '2024-01-29'
+					}
+				},
+				{
+					team: lyon,
+					season: '2023-24',
+					kitType: 'home',
+					version: 'player',
+					size: null,
+					fit: null,
+					acquisition: {
+						kind: 'purchase',
+						store: 'official store',
+						priceCents: null,
+						bought: '2024'
+					}
+				},
+				{
+					team: japan,
+					season: '2018',
+					kitType: 'away',
+					version: 'fan',
+					size: 'L',
+					fit: 'too-big',
+					acquisition: { kind: 'gift', date: '2019' }
+				}
+			],
+			wishlist: [
+				{ team: japan, season: '2026', kitType: 'home', version: null, desire: 3 },
+				{
+					team: { name: 'Marseille', kind: 'club', country: 'France' },
+					season: '2026-27',
+					kitType: 'home',
+					version: 'player',
+					desire: 3
+				}
+			]
+		};
+	}
+
+	it('creates the Countries, Leagues, Stores, Teams, Kits, Jerseys and Wishlist Items', async () => {
+		const result = await catalog.importRows(token, rows());
+		expect(result).toEqual({
+			countries: 2,
+			stores: 1,
+			teams: 3,
+			kits: 4,
+			jerseys: 3,
+			wishlistItems: 2
+		});
+		expect(calls).toEqual([]);
+
+		expect(await catalog.listCountries()).toMatchObject([
+			{ name: 'France', continent: 'europe', league: { name: 'Ligue 1', seasonFormat: 'split' } },
+			{
+				name: 'Japan',
+				continent: 'asia-oceania',
+				league: { name: 'J1 League', seasonFormat: 'calendar' }
+			}
+		]);
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Official Store', 'Taobao']);
+		expect((await catalog.listTeams()).map((t) => [t.name, t.kind, t.country.name])).toEqual([
+			['Japan', 'national', 'Japan'],
+			['Lyon', 'club', 'France'],
+			['Marseille', 'club', 'France']
+		]);
+
+		const collection = await catalog.listCollection();
+		const bought = collection.find((j) => j.print === 'NICOLAS 4')!;
+		expect(bought).toMatchObject({
+			version: 'fan',
+			size: 'M',
+			fit: 'good',
+			kit: { season: '2023-24', kitType: 'home', team: { name: 'Lyon' } },
+			acquisition: {
+				kind: 'purchase',
+				store: { name: 'Taobao' },
+				priceCents: 1485,
+				bought: '2023-11-02',
+				sent: '2023-11-20',
+				received: '2024-01-29'
+			}
+		});
+		const unknownPrice = collection.find((j) => j.version === 'player')!;
+		expect(unknownPrice).toMatchObject({
+			size: null,
+			fit: null,
+			print: null,
+			acquisition: {
+				kind: 'purchase',
+				store: { name: 'Official Store' },
+				priceCents: null,
+				bought: '2024'
+			}
+		});
+		expect(unknownPrice.kit.id).toBe(bought.kit.id);
+		const gift = collection.find((j) => j.kit.team.name === 'Japan')!;
+		expect(gift.acquisition).toEqual({ kind: 'gift', date: '2019', giver: null });
+		expect(gift.kit).toMatchObject({ season: '2018', kitType: 'away' });
+
+		expect(
+			(await catalog.listWishlist()).map((i) => [
+				i.kit.team.name,
+				i.kit.season,
+				i.version,
+				i.desire
+			])
+		).toEqual([
+			['Marseille', '2026-27', 'player', 3],
+			['Japan', '2026', null, 3]
+		]);
+	});
+
+	it('reuses the Countries, Stores and Teams that exist, matched by name in any case', async () => {
+		await catalog.addCountry(token, {
+			name: 'France',
+			continent: 'europe',
+			leagueName: 'Ligue 1 Uber Eats',
+			seasonFormat: 'split'
+		});
+		await catalog.addStore(token, 'TAOBAO');
+		const input = rows();
+		input.countries[0].name = 'france';
+		const result = await catalog.importRows(token, input);
+		expect(result).toMatchObject({ countries: 1, stores: 0, teams: 3 });
+		expect((await catalog.listCountries()).map((c) => [c.name, c.league.name])).toEqual([
+			['France', 'Ligue 1 Uber Eats'],
+			['Japan', 'J1 League']
+		]);
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Official Store', 'TAOBAO']);
+	});
+
+	it('names the bad row and saves nothing', async () => {
+		const input = rows();
+		input.jerseys[2].season = '2018-19';
+		await expect(catalog.importRows(token, input)).rejects.toThrow(
+			'jerseys[2]: Season must be one year, like 2024'
+		);
+		const wish = rows();
+		wish.wishlist.push({ ...wish.wishlist[0], version: 'fan' });
+		await expect(catalog.importRows(token, wish)).rejects.toThrow(
+			'wishlist[2]: Japan 2026 Home is twice on the Wishlist'
+		);
+		const unknown = rows();
+		unknown.jerseys[0].team = { name: 'Porto', kind: 'club', country: 'Portugal' };
+		await expect(catalog.importRows(token, unknown)).rejects.toThrow(
+			'jerseys[0]: Unknown country: Portugal'
+		);
+		expect(await catalog.listCountries()).toEqual([]);
+		expect(await catalog.listTeams()).toEqual([]);
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Official Store']);
+	});
+
+	it('checks the rows as the Jersey form does', async () => {
+		const cases: [(input: ImportRows) => void, string][] = [
+			[
+				(r) => (r.jerseys[0].acquisition = { kind: 'gift', date: '2024-02-31' }),
+				'jerseys[0]: Gift date is not a real date'
+			],
+			[
+				(r) => (r.jerseys[1].version = 'retro' as never),
+				'jerseys[1]: Version must be Fan, Player or Tracksuit'
+			],
+			[(r) => (r.wishlist[0].desire = 6 as never), 'wishlist[0]: Desire must be 1 to 5'],
+			[
+				(r) => (r.wishlist[1].team = { name: 'Nippon', kind: 'national', country: 'Japan' }),
+				'wishlist[1]: Japan already has a National Team: Japan'
+			],
+			[
+				(r) => (r.countries[1].continent = 'asia' as never),
+				'countries[1]: Continent must be one of'
+			]
+		];
+		for (const [spoil, message] of cases) {
+			const input = rows();
+			spoil(input);
+			await expect(catalog.importRows(token, input)).rejects.toThrow(message);
+		}
+		expect(await catalog.listCountries()).toEqual([]);
+	});
+
+	it('keeps a Purchase whose Store is unknown', async () => {
+		const input = rows();
+		input.jerseys[0].acquisition = {
+			kind: 'purchase',
+			store: null,
+			priceCents: null,
+			bought: '2018-07-12'
+		};
+		await catalog.importRows(token, input);
+		const jersey = (await catalog.listCollection()).find((j) => j.print === 'NICOLAS 4')!;
+		expect(jersey.acquisition).toMatchObject({ kind: 'purchase', store: null, priceCents: null });
+	});
+
+	it('is refused when the Collection already has a Jersey', async () => {
+		await catalog.importRows(token, { ...rows(), wishlist: [] });
+		await expect(catalog.importRows(token, rows())).rejects.toThrow('already has entries');
+		expect(await catalog.listCollection()).toHaveLength(3);
+	});
+
+	it('is refused when the Wishlist already has an Item', async () => {
+		await catalog.importRows(token, { ...rows(), jerseys: [] });
+		await expect(catalog.importRows(token, rows())).rejects.toThrow('already has entries');
+		expect(await catalog.listCollection()).toEqual([]);
+	});
+
+	it('is refused without a valid token', async () => {
+		await expect(catalog.importRows('not-a-token', rows())).rejects.toMatchObject({
+			name: 'UnauthorizedError'
+		});
+		expect(await catalog.listCountries()).toEqual([]);
 	});
 });
