@@ -262,6 +262,18 @@ describe('Countries', () => {
 		expect(listed[0].league).toMatchObject({ name: 'Brasileirão', seasonFormat: 'calendar' });
 	});
 
+	it('refuses a Country name that is not a country of the map', async () => {
+		await expect(
+			catalog.addCountry(token, {
+				name: 'Atlantis',
+				continent: 'europe',
+				leagueName: 'Deep League',
+				seasonFormat: 'split'
+			})
+		).rejects.toThrow('“Atlantis” is not a country');
+		expect(await catalog.listCountries()).toEqual([]);
+	});
+
 	it('refuses a Country name that exists, in any case, with a readable error', async () => {
 		await catalog.addCountry(token, {
 			name: 'Japan',
