@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import type { PageProps } from './$types';
 	import type { CollectionJersey } from '#lib/server/catalog/types';
 	import { continents } from '#lib/countries';
@@ -101,6 +102,16 @@
 		selectedCountries = [];
 	}
 
+	let main = $state<HTMLElement>();
+
+	// A click on the map: only that Country, then down to the first Tile shown.
+	async function filterByCountry(countryId: number) {
+		search = '';
+		selectedCountries = [String(countryId)];
+		await tick();
+		main?.querySelector('li')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
 	const caption = (j: CollectionJersey) => `${j.kit.season} · ${kitTypeText(j.kit)}`;
 
 	let selectedId = $state<number | null>(null);
@@ -162,11 +173,11 @@
 	<PictureCleaner kits={data.jerseys.map((j) => j.kit)} />
 {/if}
 
-<main>
+<main bind:this={main}>
 	<div
 		class="ps-[max(1rem,env(safe-area-inset-left))] pe-[max(1rem,env(safe-area-inset-right))] pb-4"
 	>
-		<CoverageMap countries={data.coverage} jerseys={data.jerseys} />
+		<CoverageMap countries={data.coverage} jerseys={data.jerseys} onSelect={filterByCountry} />
 	</div>
 	{#if data.jerseys.length === 0}
 		<EmptyState message="No jerseys yet" />
@@ -181,7 +192,7 @@
 	{:else}
 		<TileGrid>
 			{#each jerseys as jersey (jersey.id)}
-				<li class="min-w-0">
+				<li class="min-w-0 scroll-mt-44">
 					<Tile
 						team={jersey.kit.team.name}
 						season={jersey.kit.season}
