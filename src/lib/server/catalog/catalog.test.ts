@@ -2224,7 +2224,14 @@ describe('Kit Pictures', () => {
 
 	beforeEach(async () => {
 		await clear();
-		kit = await insertKit({ team: 'Japan', kind: 'national', start: 2024, kitType: 'home' });
+		// A Picture only becomes an extra Picture once the Kit has a Main Picture.
+		kit = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home',
+			mainPictureKey: 'main-pictures/seed'
+		});
 		const result = await catalog.login('test-password');
 		if (!result.ok) throw new Error('login failed');
 		token = result.token;
@@ -2245,8 +2252,8 @@ describe('Kit Pictures', () => {
 			body: image(20),
 			contentType: 'image/webp'
 		});
-		expect(back.position).toBe(1);
-		expect(crest.position).toBe(2);
+		expect(back!.position).toBe(1);
+		expect(crest!.position).toBe(2);
 		expect(await catalog.listPictures(kit)).toEqual([back, crest]);
 		const other = await insertKit({
 			team: 'Japan',
@@ -2257,13 +2264,38 @@ describe('Kit Pictures', () => {
 		expect(await catalog.listPictures(other)).toEqual([]);
 	});
 
+	it('takes the first Picture of a Kit without a Main Picture as its Main Picture', async () => {
+		const bare = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2020,
+			kitType: 'third'
+		});
+		expect(
+			await catalog.addPicture(token, { kitId: bare, body: image(10), contentType: 'image/png' })
+		).toBeNull();
+		expect(await catalog.listPictures(bare)).toEqual([]);
+		const row = await env.DB.prepare(
+			'SELECT main_picture_key, main_picture_chosen FROM kit WHERE id = ?'
+		)
+			.bind(bare)
+			.first();
+		expect(row).toEqual({ main_picture_key: `main-pictures/${bare}`, main_picture_chosen: 1 });
+		const next = await catalog.addPicture(token, {
+			kitId: bare,
+			body: image(10),
+			contentType: 'image/png'
+		});
+		expect(next?.position).toBe(1);
+	});
+
 	it('serves a Picture image by its id', async () => {
 		const added = await catalog.addPicture(token, {
 			kitId: kit,
 			body: image(10),
 			contentType: 'image/webp'
 		});
-		const picture = await catalog.getPicture(added.id);
+		const picture = await catalog.getPicture(added!.id);
 		expect(picture?.contentType).toBe('image/webp');
 		expect((await new Response(picture!.body).arrayBuffer()).byteLength).toBe(10);
 		expect(await catalog.getPicture(99999)).toBeNull();
@@ -2305,9 +2337,9 @@ describe('Kit Pictures', () => {
 				kitId: kit,
 				url: 'https://images.example/back.png'
 			});
-			expect(added.position).toBe(1);
+			expect(added!.position).toBe(1);
 			expect(await catalog.listPictures(kit)).toEqual([added]);
-			const picture = await catalog.getPicture(added.id);
+			const picture = await catalog.getPicture(added!.id);
 			expect(picture?.contentType).toBe('image/png');
 		});
 
@@ -3007,7 +3039,8 @@ describe('Delete', () => {
 			team: 'Japan',
 			kind: 'national',
 			start: 2022,
-			kitType: 'home'
+			kitType: 'home',
+			mainPictureKey: 'main-pictures/seed'
 		});
 		await catalog.uploadMainPicture(token, { kitId, body: image, contentType: 'image/png' });
 		await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
@@ -3051,21 +3084,32 @@ describe('Delete', () => {
 			team: 'Japan',
 			kind: 'national',
 			start: 2024,
-			kitType: 'home'
+			kitType: 'home',
+			mainPictureKey: 'main-pictures/seed'
 		});
-		const wrong = await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
+		const wrong = (await catalog.addPicture(token, {
+			kitId,
+			body: image,
+			contentType: 'image/png'
+		}))!;
 		const kept = await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
 		expect(await r2Keys()).toHaveLength(2);
 		await catalog.deletePicture(token, wrong.id);
 		expect(await catalog.listPictures(kitId)).toEqual([kept]);
 		expect(await catalog.getPicture(wrong.id)).toBeNull();
 		expect(await r2Keys()).toHaveLength(1);
-		expect(await catalog.getPicture(kept.id)).not.toBeNull();
+		expect(await catalog.getPicture(kept!.id)).not.toBeNull();
 		await expect(catalog.deletePicture(token, wrong.id)).rejects.toThrow('Unknown picture');
 	});
 
 	it('refuses every delete without a valid token, and deletes nothing', async () => {
-		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const kitId = await insertKit({
+			team: 'Lyon',
+			start: 2023,
+			end: 2024,
+			kitType: 'home',
+			mainPictureKey: 'main-pictures/seed'
+		});
 		const jersey = await insertJersey(kitId, { date: '2024', storeId: 1 });
 		const picture = await catalog.addPicture(token, {
 			kitId,
@@ -3081,7 +3125,7 @@ describe('Delete', () => {
 			() => catalog.deleteTeam(bad, team.id),
 			() => catalog.deleteCountry(bad, team.country.id),
 			() => catalog.deleteStore(bad, shop.id),
-			() => catalog.deletePicture(bad, picture.id)
+			() => catalog.deletePicture(bad, picture!.id)
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });

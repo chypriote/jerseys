@@ -186,13 +186,18 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		return { body: body.buffer as ArrayBuffer, contentType };
 	}
 
+	/** Adds the image as the Kit's next Picture. A Kit without a Main Picture takes it as its Main Picture (answers null). */
 	async function storePicture(kitId: number, body: ArrayBuffer, contentType: string) {
 		checkImage(body, contentType);
 		const [kit] = await db
-			.select({ id: kits.id })
+			.select({ id: kits.id, mainPictureKey: kits.mainPictureKey })
 			.from(kits)
 			.where(eq(kits.id, Number(kitId)));
 		if (!kit) throw new Error('Unknown kit');
+		if (!kit.mainPictureKey) {
+			await storeMainPicture(kit.id, body, contentType);
+			return null;
+		}
 		// R2 first: a failed put leaves no row without an image.
 		const key = `pictures/${kit.id}/${crypto.randomUUID()}`;
 		await env.COVERS.put(key, body, { httpMetadata: { contentType } });
