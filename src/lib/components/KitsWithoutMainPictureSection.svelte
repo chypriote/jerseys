@@ -33,7 +33,10 @@
 		Kits without a main picture
 	</h2>
 	<MainPictureLookup />
-	<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
+	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
+	<div class="flex">
+		<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
+	</div>
 	{#if kits.length === 0}
 		<p class="text-sm text-muted-foreground">Every kit has a main picture.</p>
 	{:else}
