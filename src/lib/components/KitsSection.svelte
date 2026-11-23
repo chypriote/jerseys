@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { deleteRow, postAction } from '#lib/forms';
+	import { deleteRow, mainPictureUpload, postAction } from '#lib/forms';
 	import { matchesSearch } from '#lib/search';
 	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
+	import PictureInput from './PictureInput.svelte';
 	import Popup from './Popup.svelte';
 	import SearchField from './SearchField.svelte';
 	import Select from './Select.svelte';
@@ -33,6 +34,8 @@
 	let editing = $state<KitView | null>(null);
 	let season = $state('');
 	let kitType = $state<KitType>('home');
+	let mainPicture = $state<File | null>(null);
+	let mainPictureUrl = $state('');
 	let error = $state<string | null>(null);
 	let busy = $state(false);
 
@@ -47,6 +50,8 @@
 		editing = kit;
 		season = kit.season;
 		kitType = kit.kitType;
+		mainPicture = null;
+		mainPictureUrl = '';
 		error = null;
 		open = true;
 	}
@@ -55,7 +60,17 @@
 		event.preventDefault();
 		if (!editing) return;
 		busy = true;
-		const outcome = await postAction('?/editKit', { kitId: editing.id, season, kitType });
+		const upload = await mainPictureUpload(mainPicture);
+		if (typeof upload === 'string') {
+			busy = false;
+			error = upload;
+			return;
+		}
+		const outcome = await postAction(
+			'?/editKit',
+			{ kitId: editing.id, season, kitType, mainPictureUrl: mainPictureUrl.trim() || undefined },
+			upload
+		);
 		busy = false;
 		if (outcome.ok) open = false;
 		else error = outcome.error;
@@ -103,6 +118,7 @@
 				<span class="text-sm font-bold">Kit Type</span>
 				<Select label="Kit Type" bind:value={kitType} options={labelOptions(kitTypeLabels)} />
 			</div>
+			<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} />
 			<Button intent="success" type="submit" loading={busy}>Save</Button>
 		</form>
 	{/snippet}

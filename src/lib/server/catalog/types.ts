@@ -293,6 +293,9 @@ export interface KitEditInput {
 	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
 	season: string;
 	kitType: KitType;
+	/** A new Main Picture: a file, or an address to fetch when no file is sent. Same rules as `KitInput`. */
+	mainPicture?: MainPictureFile | null;
+	mainPictureUrl?: string | null;
 }
 
 /** Dates are `YYYY` or `YYYY-MM-DD`. A Store is named; a null Store or price is unknown. */

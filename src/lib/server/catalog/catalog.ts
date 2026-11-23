@@ -753,10 +753,14 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				const label = kitLabel(team.name, formatSeason(season.start, season.end), kitType);
 				throw new Error(`The Kit ${label} already exists`);
 			}
+			const address = input.mainPictureUrl?.trim();
+			const picture = input.mainPicture ?? (address ? await fetchImage(address) : null);
+			if (picture) checkImage(picture.body, picture.contentType);
 			await db
 				.update(kits)
 				.set({ seasonStartYear: season.start, seasonEndYear: season.end, kitType })
 				.where(eq(kits.id, found.id));
+			if (picture) await storeMainPicture(found.id, picture.body, picture.contentType);
 			return (await readKits(found.id))[0];
 		},
 
