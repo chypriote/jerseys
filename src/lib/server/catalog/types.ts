@@ -249,6 +249,73 @@ export interface GotItInput {
 	jersey: Pick<JerseyInput, 'version' | 'size' | 'fit' | 'print' | 'acquisition'>;
 }
 
+// --- Import (once) ------------------------------------------------------------
+
+/** A Team named by name; a new Team is created in the named Country. */
+export interface ImportTeam {
+	name: string;
+	kind: TeamKind;
+	country: string;
+}
+
+/** A Country with its League. An existing Country (same name, any case) is kept as it is. */
+export interface ImportCountryRow {
+	name: string;
+	continent: Continent;
+	league: string;
+	seasonFormat: SeasonFormat;
+}
+
+export interface ImportKitRow {
+	team: ImportTeam;
+	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
+	season: string;
+	kitType: KitType;
+}
+
+/** Dates are `YYYY` or `YYYY-MM-DD`. A Store is named; a null price is unknown. */
+export type ImportAcquisition =
+	| {
+			kind: 'purchase';
+			store: string;
+			priceCents: number | null;
+			bought: string;
+			sent?: string | null;
+			received?: string | null;
+	  }
+	| { kind: 'gift'; date: string; giver?: string | null };
+
+export interface ImportJerseyRow extends ImportKitRow {
+	version: Version;
+	size: Size | null;
+	fit: Fit | null;
+	print?: string | null;
+	acquisition: ImportAcquisition;
+}
+
+export interface ImportWishlistRow extends ImportKitRow {
+	/** null = any Version. */
+	version: Version | null;
+	desire: Desire;
+}
+
+/** The cleaned sheet rows (import/rows.json). */
+export interface ImportRows {
+	countries: ImportCountryRow[];
+	jerseys: ImportJerseyRow[];
+	wishlist: ImportWishlistRow[];
+}
+
+/** How many rows the import created. */
+export interface ImportRowsResult {
+	countries: number;
+	stores: number;
+	teams: number;
+	kits: number;
+	jerseys: number;
+	wishlistItems: number;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -316,6 +383,14 @@ export interface Catalog {
 	gotIt(token: string, input: GotItInput): Promise<CollectionJersey>;
 	/** Removes the Wishlist Item. The Kit stays. */
 	drop(token: string, wishlistItemId: number): Promise<void>;
+
+	// Import (Owner, once)
+	/**
+	 * Checks every row, then writes them all in one D1 batch: missing Countries, Stores and Teams
+	 * are created, existing ones matched by name; Kits are found or created. Refused when a Jersey
+	 * or a Wishlist Item exists. An invalid row throws an error naming it, and nothing is saved.
+	 */
+	importRows(token: string, rows: ImportRows): Promise<ImportRowsResult>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;
