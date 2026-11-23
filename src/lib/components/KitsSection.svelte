@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { deleteRow, mainPictureUpload, postAction } from '#lib/forms';
 	import { mainPictureUrl as pictureUrlOf } from '#lib/pictures';
+	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { matchesSearch } from '#lib/search';
 	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
@@ -114,7 +115,13 @@
 	{/each}
 </section>
 
-<Popup bind:open title={editing ? `Edit ${label(editing)}` : 'Edit kit'}>
+<Popup
+	bind:open
+	title={editing ? `Edit ${label(editing)}` : 'Edit kit'}
+	findPicturesUrl={editing
+		? kitArchiveUrl(editing.team.name, editing.season, editing.kitType)
+		: null}
+>
 	{#snippet details()}
 		<form class="flex flex-col gap-4" onsubmit={save}>
 			<Field label="Season" required placeholder={seasonPlaceholder} bind:value={season} {error} />
