@@ -133,7 +133,7 @@ Mobile first.
 ## 10. Voice and tone
 
 - Names come from [GLOSSARY.md](GLOSSARY.md): Jersey, Kit, Main Picture, Wishlist Item, Desire, Country. Use them in the UI and in code.
-- Labels are short and plain: "Got it", "Drop", "Add", "Save", "Cancel".
+- Labels are short and plain: "Got it", "Drop", "Add", "Save", "Cancel", "Delete".
 - No "owner only" text in the UI.
 
 ## 11. Agent prompt guide

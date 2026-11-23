@@ -91,8 +91,23 @@ export const ownerActions = {
 	drop: (event: RequestEvent) =>
 		run<{ id: number }>(event, async (catalog, token, { id }) => {
 			await catalog.drop(token, Number(id));
-		})
+		}),
+	deleteJersey: deleteAction('deleteJersey'),
+	deleteKit: deleteAction('deleteKit'),
+	deleteTeam: deleteAction('deleteTeam'),
+	deleteCountry: deleteAction('deleteCountry'),
+	deleteStore: deleteAction('deleteStore')
 };
+
+/** A form action that deletes the row with the payload `id`. */
+function deleteAction(
+	method: 'deleteJersey' | 'deleteKit' | 'deleteTeam' | 'deleteCountry' | 'deleteStore'
+) {
+	return (event: RequestEvent) =>
+		run<{ id: number }>(event, async (catalog, token, { id }) => {
+			await catalog[method](token, Number(id));
+		});
+}
 
 /** The JSON error answer of an Owner endpoint (for bodies a form action cannot carry, like an image). */
 export function endpointError(error: unknown): Response {

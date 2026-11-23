@@ -365,6 +365,20 @@ export interface Catalog {
 	/** Owner: adds an uploaded JPEG, PNG or WebP image (under 2 MB) as the Kit's next Picture. */
 	addPicture(token: string, input: AddPictureInput): Promise<Picture>;
 
+	// Delete (Owner), to fix a mistake. A row that other rows still use is refused, never cascaded.
+	/** The Kit stays, even without Jerseys. */
+	deleteJersey(token: string, jerseyId: number): Promise<void>;
+	/** Refused while a Purchase uses it. The Official Store is never deleted. */
+	deleteStore(token: string, storeId: number): Promise<void>;
+	/** Deletes the Country and its League. Refused while a Team uses it. */
+	deleteCountry(token: string, countryId: number): Promise<void>;
+	/** Refused while the Team has a Kit. */
+	deleteTeam(token: string, teamId: number): Promise<void>;
+	/** Deletes the Kit, its Pictures and their images and its Main Picture in R2. Refused while a Jersey or its Wishlist Item uses it. */
+	deleteKit(token: string, kitId: number): Promise<void>;
+	/** Deletes the Picture and its image in R2. */
+	deletePicture(token: string, pictureId: number): Promise<void>;
+
 	// Owner login
 	login(password: string): Promise<LoginResult>;
 	verifyToken(token: string): Promise<boolean>;

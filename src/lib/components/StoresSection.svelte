@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Store } from '#lib/server/catalog/types';
+	import { deleteRow } from '#lib/forms';
 	import Button from './Button.svelte';
+	import DeleteAction from './DeleteAction.svelte';
 	import Popup from './Popup.svelte';
 	import StoreForm from './StoreForm.svelte';
 
@@ -38,5 +40,15 @@
 		{#key editing}
 			<StoreForm store={editing} onSuccess={() => (open = false)} />
 		{/key}
+	{/snippet}
+	{#snippet actions()}
+		{#if editing}
+			{@const row = editing}
+			<DeleteAction
+				what={row.name}
+				text="This removes the store. A store that purchases use cannot be deleted."
+				onDelete={() => deleteRow('?/deleteStore', row.id, () => (open = false))}
+			/>
+		{/if}
 	{/snippet}
 </Popup>

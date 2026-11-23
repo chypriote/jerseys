@@ -9,6 +9,7 @@
 	import { postAction } from '#lib/forms';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
+	import DeleteAction from '#lib/components/DeleteAction.svelte';
 	import Chip from '#lib/components/Chip.svelte';
 	import CountryFilter from '#lib/components/CountryFilter.svelte';
 	import DesireDots from '#lib/components/DesireDots.svelte';
@@ -204,6 +205,14 @@
 	{/if}
 {/snippet}
 
+{#snippet pictureAction(index: number)}
+	<DeleteAction
+		what="this picture"
+		text="Every Jersey and the Wishlist Item of this Kit lose it."
+		onDelete={() => pictures.remove(index)}
+	/>
+{/snippet}
+
 {#if selected}
 	<Popup
 		bind:open
@@ -214,6 +223,7 @@
 		pictureUrls={pictures.urls}
 		wide={gettingIt}
 		actions={data.form && !gettingIt ? itemActions : undefined}
+		pictureAction={data.form && !gettingIt ? pictureAction : undefined}
 	>
 		{#snippet details()}
 			{#if gettingIt && data.form}

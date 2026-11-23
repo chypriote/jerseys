@@ -37,6 +37,14 @@ export async function postAction(
 	}
 }
 
+/** Posts a delete form action for the row `id`, then calls `onDone`. Answers the error, or null. */
+export async function deleteRow(action: string, id: number, onDone: () => void) {
+	const outcome = await postAction(action, { id });
+	if (!outcome.ok) return outcome.error;
+	onDone();
+	return null;
+}
+
 /** The chosen Main picture file, shrunk to a JPEG for the upload, or an error message to show. */
 export async function mainPictureUpload(files: FileList | null | undefined) {
 	const file = files?.[0];

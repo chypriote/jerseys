@@ -23,5 +23,9 @@ export const actions: Actions = {
 	addCountry: ownerActions.addCountry,
 	editCountry: ownerActions.editCountry,
 	editTeam: ownerActions.editTeam,
-	editKit: ownerActions.editKit
+	editKit: ownerActions.editKit,
+	deleteStore: ownerActions.deleteStore,
+	deleteCountry: ownerActions.deleteCountry,
+	deleteTeam: ownerActions.deleteTeam,
+	deleteKit: ownerActions.deleteKit
 };

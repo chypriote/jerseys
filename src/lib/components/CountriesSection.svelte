@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { continents, seasonFormats } from '#lib/countries';
 	import type { Country } from '#lib/server/catalog/types';
+	import { deleteRow } from '#lib/forms';
 	import Button from './Button.svelte';
+	import DeleteAction from './DeleteAction.svelte';
 	import CountryForm from './CountryForm.svelte';
 	import Popup from './Popup.svelte';
 
@@ -51,5 +53,15 @@
 		{#key editing}
 			<CountryForm country={editing} onSuccess={() => (open = false)} />
 		{/key}
+	{/snippet}
+	{#snippet actions()}
+		{#if editing}
+			{@const row = editing}
+			<DeleteAction
+				what={row.name}
+				text="This removes the country and its league. A country that teams use cannot be deleted."
+				onDelete={() => deleteRow('?/deleteCountry', row.id, () => (open = false))}
+			/>
+		{/if}
 	{/snippet}
 </Popup>
