@@ -1,0 +1,174 @@
+@import 'tailwindcss';
+
+/*
+ * "Kit wall" tokens (TOKENS.md) mapped onto the shadcn-svelte CSS variables.
+ * Light and dark are one set of semantic variables built with light-dark().
+ * The system theme picks the mode; <html data-theme="light|dark"> overrides it.
+ */
+
+/* shadcn `dark:` variant follows the system theme, and data-theme overrides it. */
+@custom-variant dark {
+	@media (prefers-color-scheme: dark) {
+		&:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+			@slot;
+		}
+	}
+	&:where([data-theme='dark'], [data-theme='dark'] *) {
+		@slot;
+	}
+}
+
+:root {
+	color-scheme: light dark;
+
+	/* Primitives: color */
+	--white: #ffffff;
+	--sky-50: #eef6ff;
+	--sky-100: #d6e4f7;
+	--sky-400: #5aa9ff;
+	--sky-600: #258dff;
+	--navy-300: #a3b1d9;
+	--navy-600: #5a6a8e;
+	--navy-700: #2a3a6e;
+	--navy-800: #1a2f6b;
+	--navy-900: #19254d;
+	--navy-950: #101a3a;
+	--green-400: #3fd68c;
+	--green-500: #1fbf75;
+	--green-700: #108a52;
+	--sun-400: #ffc83d;
+	--mint-400: #34d3a0;
+	--coral-400: #ff6f63;
+	--coral-600: #c9342a;
+	--scrim: rgb(10 18 50 / 0.75);
+	--shadow-color: rgb(26 47 107 / 0.12);
+	--shadow-color-dark: rgb(0 0 0 / 0.35);
+
+	/* Primitives: shape, motion, layers */
+	--radius-md-px: 14px;
+	--radius-xl-px: 28px;
+	--radius-full-px: 999px;
+	--duration-fast: 80ms;
+	--duration-base: 150ms;
+	--easing-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+	--layer-sticky: 10;
+	--layer-safe-area: 20;
+
+	/* shadcn variables bound to the Kit wall semantic tokens */
+	--background: light-dark(var(--sky-50), var(--navy-950)); /* color.bg.page */
+	--foreground: light-dark(var(--navy-800), var(--sky-50)); /* color.text.primary */
+	--card: light-dark(var(--white), var(--navy-900)); /* color.bg.surface */
+	--card-foreground: var(--foreground);
+	--popover: var(--card);
+	--popover-foreground: var(--foreground);
+	--primary: light-dark(var(--green-500), var(--green-400)); /* color.bg.accent */
+	--primary-foreground: var(--navy-950); /* color.text.on-accent */
+	--secondary: var(--sky-400); /* color.bg.info */
+	--secondary-foreground: var(--navy-800); /* color.text.on-chip */
+	--muted: light-dark(var(--sky-100), var(--navy-700)); /* color.border.subtle */
+	--muted-foreground: light-dark(var(--navy-600), var(--navy-300)); /* color.text.muted */
+	--accent: var(--sun-400); /* color.bg.highlight */
+	--accent-foreground: var(--navy-800); /* color.text.on-chip */
+	--destructive: light-dark(var(--coral-600), var(--coral-400)); /* color.text.error */
+	--border: light-dark(var(--sky-100), var(--navy-700)); /* color.border.subtle */
+	--input: var(--border);
+	--ring: light-dark(var(--sky-600), var(--sky-400)); /* color.outline.focus */
+	--radius: var(--radius-md-px);
+
+	/* Kit wall extras with no shadcn name */
+	--success: var(--mint-400); /* color.bg.success */
+	--success-foreground: var(--navy-800);
+	--highlight: var(--sun-400); /* color.bg.highlight */
+	--info: var(--sky-400); /* color.bg.info */
+	--icon-accent: light-dark(var(--green-700), var(--green-400)); /* color.icon.accent */
+	--overlay: var(--scrim); /* color.bg.overlay */
+	--shadow-raised: 0 3px 0 light-dark(var(--shadow-color), var(--shadow-color-dark));
+	--outline-focus-width: 3px;
+	--control-size-min: 44px;
+	--popup-radius: var(--radius-xl-px);
+	--popup-width-max: 420px;
+	--popup-width-wide: 672px;
+	--popup-cover-size: 150px;
+	--tile-hover-lift: -3px;
+	--tile-hover-tilt: -1.5deg;
+	--map-width-min: 900px;
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+}
+
+@theme inline {
+	--font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
+	--font-display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-highlight: var(--highlight);
+	--color-info: var(--info);
+	--color-icon-accent: var(--icon-accent);
+	--color-overlay: var(--overlay);
+
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: var(--radius);
+	--radius-lg: var(--radius);
+	--radius-xl: var(--popup-radius);
+	--radius-control: var(--radius-full-px);
+
+	--breakpoint-sm: 640px;
+	--breakpoint-md: 900px;
+	--breakpoint-lg: 1200px;
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background font-sans text-foreground;
+		font-size: 14px;
+		font-weight: 500;
+		line-height: 1.45;
+		font-variant-numeric: tabular-nums;
+	}
+	/* text.heading.page */
+	h1 {
+		font-family: var(--font-display);
+		font-size: 28px;
+		font-weight: 800;
+		font-style: italic;
+		line-height: 1.1;
+		text-transform: uppercase;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	::before,
+	::after {
+		transition: none !important;
+		animation: none !important;
+	}
+}
