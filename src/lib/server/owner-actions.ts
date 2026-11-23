@@ -67,7 +67,7 @@ export const ownerActions = {
 		}),
 	addTeam: (event: RequestEvent) =>
 		run<TeamInput>(event, async (catalog, token, input) => {
-			await catalog.addTeam(token, input);
+			return { teamId: (await catalog.addTeam(token, input)).id };
 		}),
 	editTeam: (event: RequestEvent) =>
 		run<TeamEditInput>(event, async (catalog, token, input) => {

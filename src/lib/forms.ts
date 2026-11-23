@@ -4,7 +4,8 @@ import type { Acquisition, AcquisitionInput, Store, TeamChoice } from '#lib/serv
 import { centsToEuros, eurosToCents } from '#lib/money';
 import { shrinkImage } from '#lib/pictures';
 
-export type Outcome = { ok: true; alreadyOwned: boolean } | { ok: false; error: string };
+export type Outcome =
+	{ ok: true; alreadyOwned: boolean; teamId?: number } | { ok: false; error: string };
 
 /**
  * Posts one JSON payload (and the form's Main picture, if any) to a form action of the current
@@ -28,7 +29,8 @@ export async function postAction(
 		if (result.type === 'success') {
 			const alreadyOwned = result.data?.alreadyOwned === true;
 			if (!alreadyOwned) await invalidateAll();
-			return { ok: true, alreadyOwned };
+			const teamId = typeof result.data?.teamId === 'number' ? result.data.teamId : undefined;
+			return { ok: true, alreadyOwned, teamId };
 		}
 		const message = result.type === 'failure' ? result.data?.error : undefined;
 		return { ok: false, error: typeof message === 'string' ? message : 'Something went wrong' };
