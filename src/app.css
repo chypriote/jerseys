@@ -53,6 +53,8 @@
 	--easing-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 	--layer-sticky: 10;
 	--layer-safe-area: 20;
+	/* Above the StickyBar and the safe-area strip: the bits-ui Dialog portals to <body>, not the top layer. */
+	--layer-popup: 30;
 
 	/* shadcn variables bound to the Kit wall semantic tokens */
 	--background: light-dark(var(--sky-50), var(--navy-950)); /* color.bg.page */
