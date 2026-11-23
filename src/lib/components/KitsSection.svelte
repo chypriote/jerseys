@@ -6,6 +6,7 @@
 	import { mainPictureUrl as pictureUrlOf } from '#lib/pictures';
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { matchesSearch } from '#lib/search';
+	import { seasonChoices } from '#lib/seasons';
 	import { kitLabel, kitTypeLabels, kitTypeText, labelOptions } from '#lib/labels';
 	import type { Country, KitKey, KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
@@ -66,10 +67,11 @@
 
 	const label = (kit: KitView) => kitLabel(kit.team.name, kit.season, kit.kitType);
 
-	// The Season follows the Team's Season Format.
-	const seasonPlaceholder = $derived(
-		teams.find((t) => t.id === editing?.team.id)?.seasonFormat === 'calendar' ? '2024' : '2024-25'
-	);
+	// The Season is chosen from the Team's Season Format.
+	const seasonOptions = $derived.by(() => {
+		const format = teams.find((t) => t.id === editing?.team.id)?.seasonFormat ?? 'split';
+		return seasonChoices(format, new Date(), editing?.season).map((s) => ({ value: s, label: s }));
+	});
 
 	function show(kit: KitView) {
 		editing = kit;
@@ -160,7 +162,15 @@
 <Popup bind:open title={editing ? `Edit ${label(editing)}` : 'Edit kit'}>
 	{#snippet details()}
 		<form class="flex flex-col gap-4" onsubmit={save}>
-			<Field label="Season" required placeholder={seasonPlaceholder} bind:value={season} {error} />
+			<div class="flex flex-col gap-1.5">
+				<span class="text-sm font-bold">Season</span>
+				<div class="flex">
+					<Select label="Season" bind:value={season} options={seasonOptions} />
+				</div>
+				{#if error}
+					<p class="text-sm font-bold text-destructive" role="alert">! {error}</p>
+				{/if}
+			</div>
 			<div class="flex flex-col gap-1.5">
 				<span class="text-sm font-bold">Kit Type</span>
 				<Select label="Kit Type" bind:value={kitType} options={labelOptions(kitTypeLabels)} />

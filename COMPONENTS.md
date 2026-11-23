@@ -260,7 +260,7 @@ Add and edit a Jersey. Fields, in order:
 
 1. Team: TeamLookup.
 2. Existing kits: shown when an existing Team is chosen and has Kits (ExistingKits). One pill Button per Kit, with its Main Picture in a small round thumbnail and "Season · Kit Type" (`aria-pressed` for the one that matches the fields). A tap fills Season, Kit Type and Comment. The Owner can still type a new Season and Kit Type. The same block shows in WishlistItemForm (both use KitFields).
-3. Season: Field. Placeholder from the Team's Season Format, written as an example: "e.g. 2024-25" (Season) or "e.g. 2024" (Calendar). It is never a suggestion from the Team's Kits.
+3. Season: Select of the Seasons of the Team's Season Format, newest first, from the next Season down to 1960 ("2027-28" … for Season, "2027" … for Calendar; a Season starts in July). A Season already on the Kit stays in the list. First option "Choose a season"; with no Team chosen, or a new Team with no Country yet, the Select is disabled and says "Choose a team first". Changing the Team to one of the other format clears the Season. The Add and Edit Kit Popups and WishlistItemForm use the same Select.
 4. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
 5. Main Picture: file input "Main picture", shown when the Kit has no Main Picture yet. One Main Picture per Kit.
 6. Version: ToggleGroup Fan / Player / Tracksuit.
