@@ -352,6 +352,7 @@ describe('Kit Main Pictures', () => {
 
 	beforeEach(async () => {
 		await env.DB.batch([
+			env.DB.prepare('DELETE FROM jersey'),
 			env.DB.prepare('DELETE FROM kit'),
 			env.DB.prepare('DELETE FROM team'),
 			env.DB.prepare('DELETE FROM country'),
@@ -567,6 +568,7 @@ describe('Picture candidates', () => {
 
 	beforeEach(async () => {
 		await env.DB.batch([
+			env.DB.prepare('DELETE FROM jersey'),
 			env.DB.prepare('DELETE FROM kit'),
 			env.DB.prepare('DELETE FROM team'),
 			env.DB.prepare('DELETE FROM country'),
@@ -1007,6 +1009,150 @@ describe('Picture candidates', () => {
 			expect(calls).toHaveLength(4);
 			expect((await mainPictureOf(first))?.main_picture_version).toBe(1);
 			expect((await mainPictureOf(second))?.main_picture_key).toBe(null);
+		});
+	});
+});
+
+async function insertJersey(
+	kitId: number,
+	jersey: {
+		version?: string;
+		size?: string;
+		fit?: string;
+		print?: string;
+		kind?: 'purchase' | 'gift';
+		date: string;
+		sent?: string;
+		received?: string;
+		storeId?: number;
+		priceCents?: number;
+		giver?: string;
+	}
+) {
+	const row = await env.DB.prepare(
+		`INSERT INTO jersey (kit_id, version, size, fit, print, acquisition_kind, acquisition_date,
+			sent_date, received_date, store_id, price_cents, giver)
+		VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) RETURNING id`
+	)
+		.bind(
+			kitId,
+			jersey.version ?? 'fan',
+			jersey.size ?? null,
+			jersey.fit ?? null,
+			jersey.print ?? null,
+			jersey.kind ?? 'purchase',
+			jersey.date,
+			jersey.sent ?? null,
+			jersey.received ?? null,
+			jersey.storeId ?? null,
+			jersey.priceCents ?? null,
+			jersey.giver ?? null
+		)
+		.first<{ id: number }>();
+	return row!.id;
+}
+
+describe('Collection', () => {
+	const catalog = createCatalog(env);
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+	});
+
+	it('is empty with no Jerseys', async () => {
+		expect(await catalog.listCollection()).toEqual([]);
+	});
+
+	it('lists Jerseys with their Kit, Team, Country and Acquisition, newest first', async () => {
+		const lille = await insertKit({
+			team: 'Lille',
+			start: 2021,
+			end: 2022,
+			kitType: 'third',
+			mainPictureKey: 'main-pictures/x'
+		});
+		const japan = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'special'
+		});
+		const bought = await insertJersey(lille, {
+			version: 'player',
+			size: 'L',
+			fit: 'good',
+			print: 'NICOLAS 4',
+			date: '2021-10-04',
+			received: '2021-10-20',
+			storeId: 1,
+			priceCents: 10300
+		});
+		const gift = await insertJersey(japan, {
+			print: 'ニコラス 4',
+			kind: 'gift',
+			date: '2024',
+			giver: 'Mum'
+		});
+
+		const collection = await catalog.listCollection();
+
+		expect(collection.map((j) => j.id)).toEqual([gift, bought]);
+		const country = (await catalog.listCountries()).find((c) => c.name === 'Country of Lille')!;
+		expect(collection[1]).toEqual({
+			id: bought,
+			version: 'player',
+			size: 'L',
+			fit: 'good',
+			print: 'NICOLAS 4',
+			kit: {
+				id: lille,
+				season: '2021-22',
+				kitType: 'third',
+				mainPictureKey: 'main-pictures/x',
+				mainPictureVersion: 0,
+				team: {
+					id: expect.any(Number),
+					name: 'Lille',
+					kind: 'club',
+					country: { id: country.id, name: 'Country of Lille', continent: 'europe' }
+				}
+			},
+			acquisition: {
+				kind: 'purchase',
+				store: { id: 1, name: 'Official Store' },
+				priceCents: 10300,
+				bought: '2021-10-04',
+				sent: null,
+				received: '2021-10-20'
+			}
+		});
+		expect(collection[0]).toMatchObject({
+			size: null,
+			fit: null,
+			kit: { season: '2024', kitType: 'special', mainPictureKey: null, team: { kind: 'national' } },
+			acquisition: { kind: 'gift', date: '2024', giver: 'Mum' }
+		});
+	});
+
+	it('shows two Jerseys of one Kit as two Jerseys of the same Kit', async () => {
+		const kit = await insertKit({ team: 'Roma', start: 2023, end: 2024, kitType: 'home' });
+		await insertJersey(kit, { date: '2023-10-02', priceCents: 2096, storeId: 1 });
+		await insertJersey(kit, { version: 'player', date: '2024-04-26' });
+
+		const collection = await catalog.listCollection();
+
+		expect(collection).toHaveLength(2);
+		expect(collection[0].kit).toEqual(collection[1].kit);
+		expect(collection[0].acquisition).toMatchObject({
+			kind: 'purchase',
+			store: null,
+			priceCents: null
 		});
 	});
 });

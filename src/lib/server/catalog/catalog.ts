@@ -1,7 +1,7 @@
 import { and, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
-import { countries, kits, leagues, stores, teams } from '../db/schema';
+import { countries, jerseys, kits, leagues, stores, teams } from '../db/schema';
 import { kitSeasonFirst } from './matching';
 import {
 	fetchKitPicture,
@@ -19,7 +19,14 @@ import {
 } from './lookup';
 import { checkImage, MAX_UPLOAD_BYTES, readBody } from './images';
 import { issueToken, passwordMatches, tokenIsValid, UnauthorizedError } from './auth';
-import type { Catalog, Country, CountryInput, LookupProgress } from './types';
+import type {
+	Acquisition,
+	Catalog,
+	CollectionJersey,
+	Country,
+	CountryInput,
+	LookupProgress
+} from './types';
 
 export interface CatalogEnv {
 	DB: D1Database;
@@ -60,6 +67,13 @@ const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensit
 function formatSeason(start: number, end: number | null) {
 	return end === null ? String(start) : `${start}-${String(end % 100).padStart(2, '0')}`;
 }
+
+const acquiredOn = (j: CollectionJersey) =>
+	j.acquisition.kind === 'gift' ? j.acquisition.date : j.acquisition.bought;
+
+/** By Acquisition date as stored: a year sorts before the full dates of that year. */
+const compareDates = (a: CollectionJersey, b: CollectionJersey) =>
+	acquiredOn(a) < acquiredOn(b) ? -1 : acquiredOn(a) > acquiredOn(b) ? 1 : 0;
 
 const KIT_TYPE_ORDER = ['home', 'away', 'third', 'fourth', 'cup', 'special'];
 
@@ -156,6 +170,52 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 
 	return {
 		listCountries: readCountries,
+
+		async listCollection() {
+			const rows = await db
+				.select({ jersey: jerseys, kit: kits, team: teams, country: countries, store: stores })
+				.from(jerseys)
+				.innerJoin(kits, eq(jerseys.kitId, kits.id))
+				.innerJoin(teams, eq(kits.teamId, teams.id))
+				.innerJoin(countries, eq(teams.countryId, countries.id))
+				.leftJoin(stores, eq(jerseys.storeId, stores.id));
+			return rows
+				.map(({ jersey, kit, team, country, store }): CollectionJersey => {
+					const acquisition: Acquisition =
+						jersey.acquisitionKind === 'gift'
+							? { kind: 'gift', date: jersey.acquisitionDate, giver: jersey.giver }
+							: {
+									kind: 'purchase',
+									store: store && { id: store.id, name: store.name },
+									priceCents: jersey.priceCents,
+									bought: jersey.acquisitionDate,
+									sent: jersey.sentDate,
+									received: jersey.receivedDate
+								};
+					return {
+						id: jersey.id,
+						version: jersey.version,
+						size: jersey.size,
+						fit: jersey.fit,
+						print: jersey.print,
+						kit: {
+							id: kit.id,
+							season: formatSeason(kit.seasonStartYear, kit.seasonEndYear),
+							kitType: kit.kitType,
+							mainPictureKey: kit.mainPictureKey,
+							mainPictureVersion: kit.mainPictureVersion,
+							team: {
+								id: team.id,
+								name: team.name,
+								kind: team.kind,
+								country: { id: country.id, name: country.name, continent: country.continent }
+							}
+						},
+						acquisition
+					};
+				})
+				.sort((a, b) => compareDates(b, a) || b.id - a.id);
+		},
 
 		async addCountry(token, input) {
 			await owner(token);
