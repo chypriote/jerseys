@@ -6,6 +6,7 @@
 	import { mainPictureUrl } from '#lib/pictures';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
 	import AddPictures from '#lib/components/AddPictures.svelte';
+	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { postAction } from '#lib/forms';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
@@ -210,6 +211,9 @@
 		wide={gettingIt}
 		actions={data.form && !gettingIt ? itemActions : undefined}
 		pictureAction={data.form && !gettingIt ? pictureAction : undefined}
+		findPicturesUrl={data.form && !gettingIt
+			? kitArchiveUrl(selected.kit.team.name, selected.kit.season, selected.kit.kitType)
+			: null}
 	>
 		{#snippet details()}
 			{#if gettingIt && data.form}

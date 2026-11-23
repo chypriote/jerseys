@@ -8,6 +8,7 @@
 	import { deleteRow } from '#lib/forms';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
 	import AddPictures from '#lib/components/AddPictures.svelte';
+	import { kitArchiveUrl } from '#lib/kit-archive';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
 	import DeleteAction from '#lib/components/DeleteAction.svelte';
@@ -227,6 +228,9 @@
 		wide={editing}
 		actions={data.form && !editing ? editAction : undefined}
 		pictureAction={data.form && !editing ? pictureAction : undefined}
+		findPicturesUrl={data.form && !editing
+			? kitArchiveUrl(selected.kit.team.name, selected.kit.season, selected.kit.kitType)
+			: null}
 	>
 		{#snippet details()}
 			{@const a = selected.acquisition}
