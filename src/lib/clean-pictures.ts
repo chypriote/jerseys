@@ -3,7 +3,7 @@ import { mainPictureUrl, prepareImage } from './pictures';
 type PicturedKit = { id: number; mainPictureKey: string | null; mainPictureVersion: number };
 
 /**
- * Removes the flat light background of the Kit's Main Picture and saves it as the Main Picture
+ * Removes the flat background of the Kit's Main Picture and saves it as the Main Picture
  * again (browser only). Answers whether the picture changed. Throws when it cannot read or save.
  */
 export async function cleanMainPicture(kit: PicturedKit) {
@@ -22,7 +22,7 @@ export async function cleanMainPicture(kit: PicturedKit) {
 	return true;
 }
 
-const CHECKED = 'checkedMainPictures';
+const CHECKED = 'checkedMainPictures-v2';
 
 /** The "{kit id}:{version}" of the Main Pictures this browser has already cleaned or found clean. */
 export function checkedPictures(): Set<string> {

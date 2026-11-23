@@ -28,7 +28,7 @@ export function kitHasMainPicture(
 }
 
 /**
- * Scales the image down to 1000 px on its long side and removes a flat light background (browser
+ * Scales the image down to 1000 px on its long side and removes a flat background (browser
  * only). The result is a WebP (PNG where the browser cannot write WebP) when the background went,
  * a JPEG otherwise. `changed` tells whether the background was removed.
  */

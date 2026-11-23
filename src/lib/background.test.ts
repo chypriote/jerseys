@@ -55,9 +55,23 @@ describe('removeBackground', () => {
 		expect(alpha).toBeLessThan(255);
 	});
 
-	it('leaves a dark background, an uneven one and a transparent one alone', () => {
-		const dark = picture([20, 20, 30], [200, 200, 200]);
-		expect(removeBackground(dark, 20, 20)).toBe(false);
+	it('removes a flat orange background and keeps a red shirt opaque', () => {
+		const data = picture([255, 143, 57], [250, 101, 64], 20, [222, 32, 46]);
+		expect(removeBackground(data, 20, 20)).toBe(true);
+		expect(alphaAt(data, 0, 0)).toBe(0);
+		expect(alphaAt(data, 5, 10)).toBe(255);
+		expect(alphaAt(data, 10, 10)).toBe(255);
+	});
+
+	it('leaves a coloured background alone when the shirt touches the edge', () => {
+		const data = picture([255, 143, 57], [250, 101, 64]);
+		for (let y = 0; y < 20; y++)
+			for (let x = 0; x < 8; x++) data.set([222, 32, 46, 255], (y * 20 + x) * 4);
+		for (let y = 0; y < 20; y++) data.set([255, 143, 57, 255], (y * 20 + 0) * 4);
+		expect(removeBackground(data, 20, 20)).toBe(false);
+	});
+
+	it('leaves an uneven one and a transparent one alone', () => {
 		const uneven = picture([255, 255, 255], [20, 20, 20]);
 		uneven.set([120, 120, 120, 255], 0);
 		expect(removeBackground(uneven, 20, 20)).toBe(false);

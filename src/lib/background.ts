@@ -6,18 +6,48 @@ const FADE = 70;
 const MAX_REMOVED = 0.85;
 /** The four corners must agree on one colour, or the background is not a flat one. */
 const CORNER_AGREEMENT = 40;
-/** Only light backgrounds are removed. */
-const MIN_BRIGHTNESS = 170;
+/** Below this brightness the background is a colour, not white or grey: the rules below are stricter. */
+const LIGHT = 170;
+/** A coloured background must cover at least this share of the picture's edge, so a shirt touching the edge is not eaten. */
+const EDGE_UNIFORMITY = 0.97;
+/** A coloured background fades over a narrower band, so a shirt of a close colour stays opaque. */
+const COLOURED_FADE = SOLID + 12;
 
 const distance = (data: Uint8ClampedArray, i: number, r: number, g: number, b: number) =>
 	Math.hypot(data[i] - r, data[i + 1] - g, data[i + 2] - b);
 
+/** The share of edge pixels that are the background colour. */
+function edgeShare(
+	data: Uint8ClampedArray,
+	width: number,
+	height: number,
+	r: number,
+	g: number,
+	b: number
+) {
+	let near = 0;
+	let all = 0;
+	const check = (x: number, y: number) => {
+		all++;
+		if (distance(data, (y * width + x) * 4, r, g, b) <= SOLID) near++;
+	};
+	for (let x = 0; x < width; x++) {
+		check(x, 0);
+		check(x, height - 1);
+	}
+	for (let y = 1; y < height - 1; y++) {
+		check(0, y);
+		check(width - 1, y);
+	}
+	return near / all;
+}
+
 /**
- * Makes the flat light background of a Kit picture transparent, in place. The background is the
+ * Makes the flat background of a Kit picture transparent, in place. The background is the
  * colour of the corners, flood-filled inward from the edges, so a white part of the shirt that does
- * not touch the edge stays. Answers whether the picture changed. A picture with no flat light
- * background, one that already has transparency, or one that is mostly background colour is left
- * as it is.
+ * not touch the edge stays. Answers whether the picture changed. A picture with no flat background,
+ * one that already has transparency, or one that is mostly background colour is left as it is. A
+ * coloured (not light) background must run along nearly the whole edge.
  */
 export function removeBackground(data: Uint8ClampedArray, width: number, height: number) {
 	const at = (x: number, y: number) => (y * width + x) * 4;
@@ -25,7 +55,9 @@ export function removeBackground(data: Uint8ClampedArray, width: number, height:
 	if (corners.some((i) => data[i + 3] < 255)) return false;
 	const [r, g, b] = [0, 1, 2].map((c) => corners.reduce((sum, i) => sum + data[i + c], 0) / 4);
 	if (corners.some((i) => distance(data, i, r, g, b) > CORNER_AGREEMENT)) return false;
-	if ((r + g + b) / 3 < MIN_BRIGHTNESS) return false;
+	const coloured = (r + g + b) / 3 < LIGHT;
+	if (coloured && edgeShare(data, width, height, r, g, b) < EDGE_UNIFORMITY) return false;
+	const fadeTo = coloured ? COLOURED_FADE : FADE;
 
 	const total = width * height;
 	const removed = new Uint8Array(total);
@@ -69,7 +101,7 @@ export function removeBackground(data: Uint8ClampedArray, width: number, height:
 				(y < height - 1 && removed[pixel + width]);
 			if (!touches) continue;
 			const d = distance(data, pixel * 4, r, g, b);
-			if (d < FADE) faded.push([pixel, Math.round(((d - SOLID) / (FADE - SOLID)) * 255)]);
+			if (d < fadeTo) faded.push([pixel, Math.round(((d - SOLID) / (fadeTo - SOLID)) * 255)]);
 		}
 	}
 	for (let pixel = 0; pixel < total; pixel++) if (removed[pixel]) data[pixel * 4 + 3] = 0;
