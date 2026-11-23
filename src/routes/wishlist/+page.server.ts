@@ -13,13 +13,20 @@ export const load: PageServerLoad = async ({ parent }) => {
 					catalog.listTeams(),
 					catalog.listCountries(),
 					catalog.listStores(),
-					catalog.listPicturedKits()
+					catalog.listPicturedKits(),
+					catalog.listKits()
 				])
 			: null
 	]);
 	return {
 		items,
-		form: form && { teams: form[0], countries: form[1], stores: form[2], pictured: form[3] }
+		form: form && {
+			teams: form[0],
+			countries: form[1],
+			stores: form[2],
+			pictured: form[3],
+			kits: form[4]
+		}
 	};
 };
 
