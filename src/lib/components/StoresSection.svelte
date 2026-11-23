@@ -15,7 +15,7 @@
 	const shown = $derived(stores.filter((s) => matchesSearch(search, s.name)));
 
 	let open = $state(false);
-	/** The Store being renamed; null while adding. */
+	/** The Store being edited; null while adding. */
 	let editing = $state<Store | null>(null);
 
 	function show(store: Store | null) {
@@ -41,14 +41,14 @@
 					<span class="text-sm text-muted-foreground">{jerseyCount(counts[store.id])}</span>
 				</div>
 				<Button size="sm" onclick={() => show(store)}>
-					Rename<span class="sr-only"> {store.name}</span>
+					Edit<span class="sr-only"> {store.name}</span>
 				</Button>
 			</li>
 		{/each}
 	</ul>
 </section>
 
-<Popup bind:open title={editing ? 'Rename store' : 'Add a store'}>
+<Popup bind:open title={editing ? 'Edit store' : 'Add a store'}>
 	{#snippet details()}
 		{#key editing}
 			<StoreForm store={editing} onSuccess={() => (open = false)} />

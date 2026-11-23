@@ -5,7 +5,7 @@
 	import Button from './Button.svelte';
 	import Field from './Field.svelte';
 
-	/** `store` set: renames it. Unset: adds a Store. */
+	/** `store` set: edits it. Unset: adds a Store. */
 	let { store = null, onSuccess }: { store?: Store | null; onSuccess: () => void } = $props();
 
 	// The form starts from the Store; the caller re-creates it for another Store.
