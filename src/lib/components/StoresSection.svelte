@@ -28,7 +28,10 @@
 		<h2 id="stores-heading" class="font-display text-xl font-extrabold uppercase italic">Stores</h2>
 		<Button intent="success" size="sm" onclick={() => show(null)}>Add a store</Button>
 	</div>
-	<SearchField bind:value={search} label="Search stores" placeholder="Search stores" />
+	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
+	<div class="flex">
+		<SearchField bind:value={search} label="Search stores" placeholder="Search stores" />
+	</div>
 	<ul class="flex flex-col gap-2">
 		{#each shown as store (store.id)}
 			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">

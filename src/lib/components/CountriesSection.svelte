@@ -38,7 +38,10 @@
 		</h2>
 		<Button intent="success" size="sm" onclick={() => show(null)}>Add a country</Button>
 	</div>
-	<SearchField bind:value={search} label="Search countries" placeholder="Search countries" />
+	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
+	<div class="flex">
+		<SearchField bind:value={search} label="Search countries" placeholder="Search countries" />
+	</div>
 	<ul class="flex flex-col gap-2">
 		{#each shown as country (country.id)}
 			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">

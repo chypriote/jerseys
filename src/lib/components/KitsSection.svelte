@@ -62,7 +62,10 @@
 
 <section aria-labelledby="kits-heading" class="flex min-w-0 flex-col gap-3">
 	<h2 id="kits-heading" class="font-display text-xl font-extrabold uppercase italic">Kits</h2>
-	<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
+	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
+	<div class="flex">
+		<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
+	</div>
 	{#if groups.length === 0}
 		<p class="text-sm text-muted-foreground">
 			{search.trim() ? 'No kit matches.' : 'No kits yet: the jersey forms add them.'}

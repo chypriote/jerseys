@@ -66,7 +66,10 @@
 
 <section aria-labelledby="teams-heading" class="flex min-w-0 flex-col gap-3">
 	<h2 id="teams-heading" class="font-display text-xl font-extrabold uppercase italic">Teams</h2>
-	<SearchField bind:value={search} label="Search teams" placeholder="Search teams" />
+	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
+	<div class="flex">
+		<SearchField bind:value={search} label="Search teams" placeholder="Search teams" />
+	</div>
 	{#if groups.length === 0}
 		<p class="text-sm text-muted-foreground">
 			{search.trim() ? 'No team matches.' : 'No teams yet: the jersey forms add them.'}
