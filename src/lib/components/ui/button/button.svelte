@@ -9,7 +9,8 @@
 			variant: {
 				default: 'bg-primary text-primary-foreground',
 				success: 'bg-success text-success-foreground',
-				neutral: 'bg-card text-foreground'
+				neutral: 'bg-card text-foreground',
+				danger: 'bg-destructive text-destructive-foreground'
 			},
 			size: {
 				default: 'min-h-11',

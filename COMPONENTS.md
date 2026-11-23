@@ -40,7 +40,7 @@ Same as Vinyles. Tones: `highlight` (jersey count), `success` (total spent), `in
 
 ### Button
 
-Same as Vinyles. Intents `success` (Got it, Save, Log in) and `neutral` (Drop, Cancel, Delete). Also `size="icon"` for the icon pills (search toggle, filter toggle, sort order, lock, theme): a visually hidden label is required.
+Same as Vinyles. Intents `success` (Got it, Save, Log in), `neutral` (Drop, Cancel) and `danger` (the Delete Button of DeleteAction, `color.bg.danger`). Also `size="icon"` for the icon pills (search toggle, filter toggle, sort order, lock, theme): a visually hidden label is required.
 
 States: default, hover (8% state layer of the text color), focus, pressed (shadow to 0, move down 3px), disabled (50% opacity, no shadow).
 
@@ -213,7 +213,7 @@ Rows are `<dt>` label, `<dd>` value, `text.body.detail`. A row with no value is 
 
 - **Jersey:** Version, Print, Size, Fit, then the Acquisition. Purchase: Store, Price, Bought, Sent, Received. Gift: "Gift", Date, From. Dates show as stored: "2024" or "12 May 2024".
 - **Wishlist Item:** Version (or "Any version"). Owner `actions`: Button `success` "Got it", Button `neutral` "Drop". Drop acts at once, with no confirmation, as in Vinyles.
-- Owner on a Jersey: `neutral` Buttons "Edit" and "Delete" in `actions`. "Edit" opens JerseyForm in the same Popup. "Delete" (DeleteAction) removes the Jersey and closes the Popup; the Kit stays, even with no Jersey left.
+- Owner on a Jersey: a `neutral` Button "Edit" and a `danger` Button "Delete" in `actions`. "Edit" opens JerseyForm in the same Popup. "Delete" (DeleteAction) removes the Jersey and closes the Popup; the Kit stays, even with no Jersey left.
 - **Pictures** (Jersey and Wishlist Item): when the Kit has extra Pictures, a row of small contained thumbnails (`control.size.min` square, `color.bg.page` tile) sits under the Main Picture: the Main Picture first, then the Pictures in the order they were added. A tap shows that Picture in place of the Main Picture; the shown thumbnail has the focus outline (`aria-pressed`). Every Jersey and the Wishlist Item of a Kit show the same Pictures.
 - Owner, while a Picture is shown: a `neutral` Button "Delete" under the thumbnails (DeleteAction, "Delete this picture?"). It removes the Picture and its image for every Jersey and the Wishlist Item of the Kit.
 - Owner on a Jersey or a Wishlist Item: a file input "Add pictures" (multiple, JPEG, PNG or WebP) after the Buttons in `actions`. Each file is shrunk like the Main Picture and added at once, in the order picked; a refused file shows its error under the input.
@@ -224,7 +224,7 @@ Same as Vinyles. LoginAction: lock icon Button (Viewer) or nothing extra (Owner)
 
 ### DeleteAction
 
-A `neutral` Button "Delete" (visually hidden: the row's name) that opens ConfirmDialog. After "Delete" it runs the delete. A refused delete shows its error under the Buttons, in `color.text.error`, and the row stays: "Kitbag is still used by 2 Purchases", "France is still used by 3 Teams", "Lyon is still used by 4 Kits", "Lyon 2023-24 Home is still used by 1 Jersey and 1 Wishlist Item", "The Official Store cannot be deleted".
+A `danger` Button "Delete" (visually hidden: the row's name) that opens ConfirmDialog. After "Delete" it runs the delete. A refused delete shows its error under the Buttons, in `color.text.error`, and the row stays: "Kitbag is still used by 2 Purchases", "France is still used by 3 Teams", "Lyon is still used by 4 Kits", "Lyon 2023-24 Home is still used by 1 Jersey and 1 Wishlist Item", "The Official Store cannot be deleted".
 
 Delete fixes a mistake (Nico, 2026-11-23). It refuses, never cascades: a Store with Purchases, a Country with Teams, a Team with Kits, a Kit with Jerseys or a Wishlist Item stay. Deleting a Country deletes its League. Deleting a Kit deletes its Pictures and its Main Picture and Picture images. No undo, no trash.
 

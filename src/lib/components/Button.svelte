@@ -12,7 +12,7 @@
 		class: className,
 		children
 	}: {
-		intent?: 'success' | 'neutral';
+		intent?: 'success' | 'neutral' | 'danger';
 		/** `icon`: a round icon pill. Put a visually hidden label in it. */
 		size?: 'default' | 'sm' | 'icon';
 		class?: string;

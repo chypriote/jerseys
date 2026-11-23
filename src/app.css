@@ -71,7 +71,11 @@
 	--muted-foreground: light-dark(var(--navy-600), var(--navy-300)); /* color.text.muted */
 	--accent: var(--sun-400); /* color.bg.highlight */
 	--accent-foreground: var(--navy-800); /* color.text.on-chip */
-	--destructive: light-dark(var(--coral-600), var(--coral-400)); /* color.text.error */
+	--destructive: light-dark(
+		var(--coral-600),
+		var(--coral-400)
+	); /* color.text.error, color.bg.danger */
+	--destructive-foreground: light-dark(var(--white), var(--navy-950)); /* color.text.on-danger */
 	--border: light-dark(var(--sky-100), var(--navy-700)); /* color.border.subtle */
 	--input: var(--border);
 	--ring: light-dark(var(--sky-600), var(--sky-400)); /* color.outline.focus */
@@ -141,6 +145,7 @@
 	--color-accent: var(--accent);
 	--color-accent-foreground: var(--accent-foreground);
 	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
