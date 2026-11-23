@@ -16,7 +16,8 @@ export default defineConfig(async () => {
 					bindings: {
 						TEST_MIGRATIONS: migrations,
 						OWNER_PASSWORD: 'test-password',
-						JWT_SECRET: 'test-jwt-secret'
+						JWT_SECRET: 'test-jwt-secret',
+						THESPORTSDB_KEY: 'test-sportsdb-key'
 					}
 				}
 			})

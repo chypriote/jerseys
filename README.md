@@ -29,14 +29,18 @@ Nico's football jersey Collection and Wishlist as a wall of Kits. SvelteKit (Sve
 4. Secrets:
    - `OWNER_PASSWORD`: the one Owner password. `npx wrangler secret put OWNER_PASSWORD`
    - `JWT_SECRET`: key that signs the Owner login token. Use a long random value. `npx wrangler secret put JWT_SECRET`
+   - `THESPORTSDB_KEY`: TheSportsDB API key, for the Kit picture lookup. The free test key `123` works but returns few rows; a paid key returns all of them. `npx wrangler secret put THESPORTSDB_KEY`
 5. `npm run deploy`.
 
-For local dev, put the two secrets in `.dev.vars` (git-ignored):
+For local dev, put the secrets in `.dev.vars` (git-ignored):
 
 ```
 OWNER_PASSWORD=change-me
 JWT_SECRET=change-me-too
+THESPORTSDB_KEY=123
 ```
+
+`wrangler.jsonc` lists the required secret names under `secrets.required`, so `npm run types` types them without a `.dev.vars`.
 
 Bindings: `DB` (D1), `COVERS` (R2).
 

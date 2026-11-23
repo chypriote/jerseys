@@ -1,0 +1,58 @@
+{
+	"equipment": [
+		{
+			"idEquipment": "1563",
+			"idTeam": "133713",
+			"date": "2022-07-12 13:03:35",
+			"strSeason": "2022-2023",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/8h2l6e1657631015.png",
+			"strType": "1st",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "1564",
+			"idTeam": "133713",
+			"date": "2022-07-12 13:04:06",
+			"strSeason": "2022-2023",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/w6w6g81657631046.png",
+			"strType": "2nd",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "3021",
+			"idTeam": "133713",
+			"date": "2023-07-15 15:58:53",
+			"strSeason": "2023-2024",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/2tpd4i1689433133.png",
+			"strType": "1st",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "3022",
+			"idTeam": "133713",
+			"date": "2023-07-15 15:59:20",
+			"strSeason": "2023-2024",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/y0wcw71689433160.png",
+			"strType": "2nd",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "3023",
+			"idTeam": "133713",
+			"date": "2023-09-11 11:03:25",
+			"strSeason": "2023-2024",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/5qb1ec1694430205.png",
+			"strType": "3rd",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "4410",
+			"idTeam": "133713",
+			"date": "2024-07-14 14:53:32",
+			"strSeason": "2024-2025",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/u7fx7s1720968812.png",
+			"strType": "1st",
+			"strUsername": "kitcollector"
+		}
+	]
+}

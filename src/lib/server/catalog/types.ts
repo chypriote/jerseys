@@ -57,6 +57,34 @@ export interface UploadMainPictureInput {
 	contentType: string;
 }
 
+/** A TheSportsDB kit picture the Owner can pick as the Main Picture. */
+export interface PictureCandidate {
+	/** What `pickMainPicture` takes. */
+	id: string;
+	imageUrl: string;
+	/** Formatted as a Kit Season ("2023-24" or "2024"); null when TheSportsDB gives none. */
+	season: string | null;
+	/** Null for a TheSportsDB type with no Kit Type. */
+	kitType: KitType | null;
+}
+
+export interface PictureCandidates {
+	/** The Kit's Team, for `setTeamSource`. */
+	teamId: number;
+	/** The TheSportsDB Team of the Team, null when none matches. */
+	sourceTeamId: string | null;
+	/** The Kit Season first, then the other Seasons from the newest. */
+	candidates: PictureCandidate[];
+}
+
+/** A Soccer Team found on TheSportsDB. */
+export interface SourceTeam {
+	id: string;
+	name: string;
+	country: string;
+	league: string;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -88,6 +116,14 @@ export interface Catalog {
 	uploadMainPicture(token: string, input: UploadMainPictureInput): Promise<void>;
 	/** Fetches an image from an http(s) address (same checks as an upload) and uses it as the Main Picture. */
 	uploadMainPictureFromUrl(token: string, input: { kitId: number; url: string }): Promise<void>;
+	/** TheSportsDB pictures of the Kit's Team. Finds and stores the TheSportsDB Team when it has none. */
+	listPictureCandidates(token: string, kitId: number): Promise<PictureCandidates>;
+	/** Soccer Teams on TheSportsDB for typed text. Empty text finds nothing. */
+	searchTeams(token: string, query: string): Promise<SourceTeam[]>;
+	/** Replaces the TheSportsDB Team of a Team. */
+	setTeamSource(token: string, input: { teamId: number; sourceTeamId: string }): Promise<void>;
+	/** Copies a candidate image (same checks as an upload) into R2 as the Main Picture. */
+	pickMainPicture(token: string, input: { kitId: number; candidateId: string }): Promise<void>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;
