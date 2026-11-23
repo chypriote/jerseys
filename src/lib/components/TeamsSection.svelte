@@ -6,6 +6,7 @@
 	import { kitLabel, kitTypeLabels } from '#lib/labels';
 	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
+	import { syncSearchParam } from '#lib/search-param.svelte';
 	import { unknownTeamMessage } from '#lib/team-name';
 	import type { Country, KitView, TeamKind, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
@@ -36,6 +37,7 @@
 
 	// A link from the Edit kit dialog arrives with the Team in `?search=`.
 	let search = $state(page.url.searchParams.get('search') ?? '');
+	syncSearchParam(() => search);
 
 	// Grouped by Country so that a long list stays readable.
 	const groups = $derived(

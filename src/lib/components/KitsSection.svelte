@@ -6,6 +6,7 @@
 	import { mainPictureUrl as pictureUrlOf } from '#lib/pictures';
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { matchesSearch } from '#lib/search';
+	import { syncSearchParam } from '#lib/search-param.svelte';
 	import { seasonChoices } from '#lib/seasons';
 	import { kitLabel, kitTypeLabels, kitTypeText, labelOptions } from '#lib/labels';
 	import type { Country, KitKey, KitType, KitView, TeamView } from '#lib/server/catalog/types';
@@ -36,6 +37,7 @@
 
 	// A link from the Edit team dialog arrives with the Kit in `?search=`.
 	let search = $state(page.url.searchParams.get('search') ?? '');
+	syncSearchParam(() => search);
 	let unpicturedOnly = $state(false);
 	const shown = $derived(
 		kits.filter(
