@@ -26,6 +26,8 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | color.green.700 | #108a52 | Icons on light page |
 | color.sun.400 | #ffc83d | |
 | color.mint.400 | #34d3a0 | |
+| color.coral.400 | #ff6f63 | Same as Vinyles coral.400 |
+| color.coral.600 | #c9342a | Darker than Vinyles coral.600, to pass as text |
 | color.scrim | rgb(10 18 50 / .75) | Overlay |
 | color.shadow | rgb(26 47 107 / .12) | navy.800 at 12% |
 | color.shadow.dark | rgb(0 0 0 / .35) | |
@@ -104,6 +106,7 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | color.bg.success | mint.400 | mint.400 | Total spent chip, Got it |
 | color.bg.info | sky.400 | sky.400 | Wishlist count chip |
 | color.text.on-chip | navy.800 | navy.800 | Text on sun, mint, sky |
+| color.text.error | coral.600 | coral.400 | Field error text |
 | color.outline.focus | sky.600 | sky.400 | Focus ring |
 | color.bg.overlay | scrim | scrim | Behind the popup |
 
@@ -170,6 +173,8 @@ Tabs, search, selects, chips and buttons use `radius.control`. Chips and buttons
 | icon.accent on bg.page | 4.03 | 9.11 | 3 (non-text) |
 | outline.focus on bg.page | 3.04 | 6.95 | 3 (focus ring) |
 | text.on-chip on sun, mint, sky | 8.17, 6.60, 5.14 | same | 4.5 |
+| text.error on bg.page | 4.81 | 6.26 | 4.5 |
+| text.error on bg.surface | 5.24 | 5.45 | 4.5 |
 | map.country.covered on map.country.empty | 3.41 | 5.81 | 3 (non-text) |
 
 green.500 on the light page is 2.2:1. Use it only as a fill under on-accent text, never for icons or thin marks: those use `color.icon.accent`.

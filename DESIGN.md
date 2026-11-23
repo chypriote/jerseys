@@ -25,6 +25,7 @@ Direction chosen by Nico on 2026-11-22. Reference: [visual direction page](https
 | on-accent | #101a3a | #101a3a |
 | desire dots, covered country | #108a52 | #3fd68c |
 | focus ring | #258dff | #5aa9ff |
+| error (coral) | #c9342a | #ff6f63 |
 
 - Chips: sun #ffc83d (jersey count), mint #34d3a0 (total spent, Got it), sky #5aa9ff (wishlist count). Chip text is always #1a2f6b.
 - Overlay: rgb(10 18 50 / .75).
@@ -149,7 +150,3 @@ Invariants. Do not change these without a change to this file:
 - Controls are pills with the raised shadow and no border.
 - Display face for short labels only. Nunito for everything else.
 - Light and dark both pass WCAG 2.2 AA.
-
-Open questions:
-
-- Error colour: Field shows `error` text, but there is no error colour token yet. Vinyles uses coral. Ask Nico before you pick one.
