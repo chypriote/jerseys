@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import FindPicturesLink from './FindPicturesLink.svelte';
 	import MainPicture from './MainPicture.svelte';
 	import * as Dialog from './ui/dialog/index.js';
 
@@ -15,8 +14,7 @@
 		onDismiss,
 		details,
 		actions,
-		pictureAction,
-		findPicturesUrl = null
+		pictureAction
 	}: {
 		open?: boolean;
 		/** The Tile that opened the Popup. Focus goes back to it on close. */
@@ -36,8 +34,6 @@
 		actions?: Snippet;
 		/** Owner only: on the top right corner of each Picture thumbnail, with its index in `pictureUrls`. */
 		pictureAction?: Snippet<[number]>;
-		/** Owner only: a page to look for pictures of the Kit, linked at the bottom. */
-		findPicturesUrl?: string | null;
 	} = $props();
 
 	/** The thumbnail shown in place of the Main Picture. A Kit without a Main Picture has no placeholder thumbnail. */
@@ -108,9 +104,6 @@
 		{/if}
 		{#if actions}
 			<div class="flex flex-wrap gap-2">{@render actions()}</div>
-		{/if}
-		{#if findPicturesUrl}
-			<FindPicturesLink url={findPicturesUrl} />
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>

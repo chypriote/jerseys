@@ -57,17 +57,15 @@
 	{/if}
 </section>
 
-<Popup
-	bind:open
-	title={editing ? `${editing.teamName} ${label(editing)}` : 'Set main picture'}
-	findPicturesUrl={editing
-		? kitArchiveUrl(editing.teamName, editing.season, editing.kitType)
-		: null}
->
+<Popup bind:open title={editing ? `${editing.teamName} ${label(editing)}` : 'Set main picture'}>
 	{#snippet details()}
 		{#if editing}
 			{#key editing}
-				<PicturePicker kitId={editing.id} onDone={() => (open = false)} />
+				<PicturePicker
+					kitId={editing.id}
+					onDone={() => (open = false)}
+					findUrl={kitArchiveUrl(editing.teamName, editing.season, editing.kitType)}
+				/>
 			{/key}
 		{/if}
 	{/snippet}

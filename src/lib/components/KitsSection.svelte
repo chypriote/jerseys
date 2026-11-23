@@ -124,13 +124,7 @@
 	{/each}
 </section>
 
-<Popup
-	bind:open
-	title={editing ? `Edit ${label(editing)}` : 'Edit kit'}
-	findPicturesUrl={editing
-		? kitArchiveUrl(editing.team.name, editing.season, editing.kitType)
-		: null}
->
+<Popup bind:open title={editing ? `Edit ${label(editing)}` : 'Edit kit'}>
 	{#snippet details()}
 		<form class="flex flex-col gap-4" onsubmit={save}>
 			<Field label="Season" required placeholder={seasonPlaceholder} bind:value={season} {error} />
@@ -141,7 +135,14 @@
 			{#if kitType === 'special'}
 				<Field label="Comment" placeholder="Anniversary, Pride…" bind:value={comment} />
 			{/if}
-			<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} />
+			<PictureInput
+				label="Main picture"
+				bind:file={mainPicture}
+				bind:url={mainPictureUrl}
+				findUrl={editing && season.trim()
+					? kitArchiveUrl(editing.team.name, season, kitType)
+					: null}
+			/>
 			<FormActions {busy}>
 				{#snippet remove()}
 					{#if editing}

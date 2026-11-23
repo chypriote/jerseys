@@ -210,7 +210,11 @@
 			text="This deletes the jersey from the collection. Its Kit stays."
 			onDelete={() => deleteRow('?/deleteJersey', jersey.id, () => (open = false))}
 		/>
-		<AddPictures kitId={jersey.kit.id} onAdded={pictures.reload} />
+		<AddPictures
+			kitId={jersey.kit.id}
+			onAdded={pictures.reload}
+			findUrl={kitArchiveUrl(jersey.kit.team.name, jersey.kit.season, jersey.kit.kitType)}
+		/>
 	{/if}
 {/snippet}
 
@@ -234,9 +238,6 @@
 		wide={editing}
 		actions={data.form && !editing ? editAction : undefined}
 		pictureAction={data.form && !editing ? pictureAction : undefined}
-		findPicturesUrl={data.form && !editing
-			? kitArchiveUrl(selected.kit.team.name, selected.kit.season, selected.kit.kitType)
-			: null}
 	>
 		{#snippet details()}
 			{@const a = selected.acquisition}

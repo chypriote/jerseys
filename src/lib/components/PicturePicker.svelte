@@ -7,11 +7,16 @@
 	import LinkIcon from '@lucide/svelte/icons/link';
 	import SpinnerIcon from '@lucide/svelte/icons/loader-circle';
 	import Button from './Button.svelte';
+	import FindPicturesLink from './FindPicturesLink.svelte';
 	import { Button as IconButton } from './ui/button/index.js';
 	import { Input } from './ui/input/index.js';
 
 	/** Sets the Main Picture of a Kit from a TheSportsDB candidate, an uploaded image or an image address. */
-	let { kitId, onDone }: { kitId: number; onDone: () => void } = $props();
+	let {
+		kitId,
+		onDone,
+		findUrl = null
+	}: { kitId: number; onDone: () => void; findUrl?: string | null } = $props();
 
 	let listing = $state<PictureCandidates | null>(null);
 	let listError = $state<string | null>(null);
@@ -151,6 +156,12 @@
 		urlInput?.focus();
 	}
 
+	async function openUrl() {
+		urlOpen = true;
+		await tick();
+		urlInput?.focus();
+	}
+
 	async function chooseUrl(event: SubmitEvent) {
 		event.preventDefault();
 		const address = urlText.trim();
@@ -283,6 +294,9 @@
 			<LinkIcon class="size-5" />
 		</IconButton>
 	</div>
+	{#if findUrl}
+		<FindPicturesLink url={findUrl} onOpen={openUrl} />
+	{/if}
 	{#if urlOpen}
 		<form class="flex gap-2" onsubmit={chooseUrl}>
 			<Input
