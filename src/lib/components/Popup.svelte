@@ -14,7 +14,8 @@
 		onDismiss,
 		details,
 		actions,
-		pictureAction
+		pictureAction,
+		findPicturesUrl = null
 	}: {
 		open?: boolean;
 		/** The Tile that opened the Popup. Focus goes back to it on close. */
@@ -34,6 +35,8 @@
 		actions?: Snippet;
 		/** Owner only: under the thumbnails while a Picture is shown, with its index in `pictureUrls`. */
 		pictureAction?: Snippet<[number]>;
+		/** Owner only: a page to look for pictures of the Kit, linked at the bottom. */
+		findPicturesUrl?: string | null;
 	} = $props();
 
 	/** The thumbnail shown in place of the Main Picture: 0 is the Main Picture. */
@@ -100,6 +103,19 @@
 		{/if}
 		{#if actions}
 			<div class="flex flex-wrap gap-2">{@render actions()}</div>
+		{/if}
+		{#if findPicturesUrl}
+			<!-- An external address: resolve() is for the app's own paths. -->
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<a
+				href={findPicturesUrl}
+				target="_blank"
+				rel="noreferrer"
+				class="text-sm font-bold text-primary underline outline-ring focus-visible:outline-3 focus-visible:outline-solid"
+			>
+				Find pictures on Football Kit Archive
+			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>
