@@ -3,6 +3,7 @@
 	import { deleteRow } from '#lib/forms';
 	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
+	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Popup from './Popup.svelte';
@@ -35,13 +36,14 @@
 	</div>
 	<ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
 		{#each shown as store (store.id)}
-			<li class="flex min-w-0 flex-col items-start justify-between gap-2 rounded-xl bg-card p-3">
+			<li class="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-card p-3">
 				<div class="flex min-w-0 flex-col">
 					<span class="font-medium break-words">{store.name}</span>
 					<span class="text-sm text-muted-foreground">{jerseyCount(counts[store.id])}</span>
 				</div>
-				<Button size="sm" onclick={() => show(store)}>
-					Edit<span class="sr-only"> {store.name}</span>
+				<Button size="icon" onclick={() => show(store)}>
+					<PencilIcon class="size-5" aria-hidden="true" />
+					<span class="sr-only">Edit {store.name}</span>
 				</Button>
 			</li>
 		{/each}
