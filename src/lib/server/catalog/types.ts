@@ -57,6 +57,51 @@ export interface UploadMainPictureInput {
 	contentType: string;
 }
 
+// --- Collection --------------------------------------------------------------
+
+export type Version = 'fan' | 'player' | 'tracksuit';
+export type Size = 'S' | 'M' | 'L';
+export type Fit = 'too-small' | 'good' | 'too-big';
+export type TeamKind = 'club' | 'national';
+
+/** Dates are as stored: `YYYY` or `YYYY-MM-DD`. A null price or Store is unknown. */
+export type Acquisition =
+	| {
+			kind: 'purchase';
+			store: Store | null;
+			priceCents: number | null;
+			bought: string;
+			sent: string | null;
+			received: string | null;
+	  }
+	| { kind: 'gift'; date: string; giver: string | null };
+
+/** A Kit with its Team and the Team's Country (a Club's League is its Country's League). */
+export interface KitView {
+	id: number;
+	/** Formatted: "2023-24" (Split) or "2024" (Calendar). */
+	season: string;
+	kitType: KitType;
+	mainPictureKey: string | null;
+	mainPictureVersion: number;
+	team: {
+		id: number;
+		name: string;
+		kind: TeamKind;
+		country: { id: number; name: string; continent: Continent };
+	};
+}
+
+export interface CollectionJersey {
+	id: number;
+	version: Version;
+	size: Size | null;
+	fit: Fit | null;
+	print: string | null;
+	kit: KitView;
+	acquisition: Acquisition;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -69,6 +114,8 @@ export interface Catalog {
 	// Reads (Viewer and Owner)
 	listStores(): Promise<Store[]>;
 	listCountries(): Promise<Country[]>;
+	/** Every Jersey with its Kit, Team, Country and Acquisition, newest Acquisition first. */
+	listCollection(): Promise<CollectionJersey[]>;
 	/** The Main Picture image of a Kit, or null when it has none. */
 	getMainPicture(kitId: number): Promise<MainPictureImage | null>;
 
