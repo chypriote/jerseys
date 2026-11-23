@@ -79,12 +79,14 @@ The shadcn-svelte toggle group, as radio pills, `type="single"`. Used for Versio
 | season | string | — | Already formatted ("2023-24", "2024") |
 | kitType | string | — | "Home", "Away"… Caption line 2 is "{season} · {kitType}", `text.caption.kit` |
 | mainPictureUrl | string \| null | null | The Kit's Main Picture. Null shows the shirt outline |
+| print | string \| null | null | The Jersey's Print, as on the shirt. Null for a Jersey without a Print and a Wishlist Item |
 | number | string \| null | null | Shirt number of the Jersey's Print: its trailing digits ("NICOLAS 4" gives "4"). Null for a Print without a number, a Jersey without a Print and a Wishlist Item |
 | onSelect | `(el: HTMLElement) => void` | — | Gives the Popup the Tile to focus on close |
 
 - The whole Tile is one `<button>`. The image has `alt=""`, because the caption names the Kit.
 - Square box: `tile.bg`, `tile.radius`, `tile.shadow`. The Main Picture is `object-fit: contain` with padding, so a shirt photo on any background reads on the neutral tile. `loading="lazy"`.
 - No Main Picture, or the image fails to load: a shirt outline SVG in `tile.placeholder`, `aria-hidden`.
+- The Print sits bottom center of the square box on one line, truncated with an ellipsis, 28px in from each side so it never reaches the number (`bottom` 4px), `text.tile.print`, `color.text.primary`, 3px halo in `tile.bg`. `aria-hidden`.
 - The number sits at the bottom right of the square box (6px from the right, 2px from the bottom), `text.tile.number`, `color.text.primary`, with a 4px halo in `tile.bg` so it reads on every shirt. It is `aria-hidden`: the Popup lists the full Print.
 - Never fill the tile with a kit colour (DESIGN.md).
 

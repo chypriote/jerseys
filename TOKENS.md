@@ -44,6 +44,7 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | font.weight.bold | 700 |
 | font.weight.extrabold | 800 |
 | font.size.2xs | 11px |
+| font.size.xs | 12px |
 | font.size.sm | 14px |
 | font.size.md | 15px |
 | font.size.lg | 24px |
@@ -126,6 +127,7 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | text.label.tab | display | sm | bold | tight | uppercase, +0.03em |
 | text.caption.team | display | sm | extrabold | snug | italic, uppercase, +0.02em |
 | text.caption.kit | base | 2xs | medium | snug | muted |
+| text.tile.print | display | xs | extrabold | none | italic, uppercase, +0.02em |
 | text.tile.number | display | number | extrabold | none | italic |
 | text.body | base | sm | medium | normal | |
 | text.body.detail | base | md | medium | normal | |

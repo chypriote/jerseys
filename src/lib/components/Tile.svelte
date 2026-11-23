@@ -6,6 +6,7 @@
 		season,
 		kitType,
 		mainPictureUrl = null,
+		print = null,
 		number = null,
 		onSelect
 	}: {
@@ -14,6 +15,8 @@
 		season: string;
 		kitType: string;
 		mainPictureUrl?: string | null;
+		/** The Jersey's Print, as on the shirt. */
+		print?: string | null;
 		/** Shirt number of the Jersey's Print. */
 		number?: string | null;
 		/** Gives the Popup the Tile to focus on close. */
@@ -30,6 +33,14 @@
 		class="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-card shadow-(--shadow-raised) motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-(--easing-out) motion-safe:group-hover:translate-y-(--tile-hover-lift) motion-safe:group-hover:rotate-(--tile-hover-tilt) motion-safe:group-focus-visible:translate-y-(--tile-hover-lift) motion-safe:group-focus-visible:rotate-(--tile-hover-tilt)"
 	>
 		<MainPicture url={mainPictureUrl} />
+		{#if print}
+			<span
+				class="absolute inset-x-7 bottom-1 truncate text-center font-display text-xs leading-none font-extrabold tracking-caption text-foreground uppercase italic [paint-order:stroke] [-webkit-text-stroke:3px_var(--card)]"
+				aria-hidden="true"
+			>
+				{print}
+			</span>
+		{/if}
 		{#if number}
 			<span
 				class="absolute right-1.5 bottom-0.5 font-display text-number leading-none font-extrabold text-foreground italic [paint-order:stroke] [-webkit-text-stroke:4px_var(--card)]"
