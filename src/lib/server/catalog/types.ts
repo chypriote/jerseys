@@ -448,8 +448,8 @@ export interface Catalog {
 	getPicture(pictureId: number): Promise<MainPictureImage | null>;
 	/** Owner: adds an uploaded JPEG, PNG or WebP image (under 2 MB) as the Kit's next Picture. A Kit without a Main Picture takes it as its Main Picture instead (answers null). */
 	addPicture(token: string, input: AddPictureInput): Promise<Picture | null>;
-	/** Owner: fetches the image at an http(s) address and adds it as the Kit's next Picture. Same image rules. */
-	addPictureFromUrl(token: string, input: { kitId: number; url: string }): Promise<Picture | null>;
+	/** Owner: the image at an http(s) address (under 2 MB), for the browser to clean and add. */
+	fetchPicture(token: string, url: string): Promise<MainPictureFile>;
 
 	// Delete (Owner), to fix a mistake. A row that other rows still use is refused, never cascaded.
 	/** The Kit stays, even without Jerseys. */

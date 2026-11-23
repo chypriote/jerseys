@@ -663,10 +663,9 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			return storePicture(input.kitId, input.body, input.contentType);
 		},
 
-		async addPictureFromUrl(token, input) {
+		async fetchPicture(token, url) {
 			await requireOwner(token);
-			const image = await fetchImage(input.url);
-			return storePicture(input.kitId, image.body, image.contentType);
+			return fetchImage(url);
 		},
 
 		async addCountry(token, input) {
