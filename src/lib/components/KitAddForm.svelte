@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { mainPictureUpload, postAction, teamProblem } from '#lib/forms';
 	import { newTeamName, unknownTeamMessage } from '#lib/team-name';
 	import type { Country, KitKey, KitType, TeamChoice, TeamView } from '#lib/server/catalog/types';
@@ -9,11 +10,19 @@
 		teams,
 		countries,
 		pictured,
+		teamId = null,
 		onSuccess
-	}: { teams: TeamView[]; countries: Country[]; pictured: KitKey[]; onSuccess: () => void } =
-		$props();
+	}: {
+		teams: TeamView[];
+		countries: Country[];
+		pictured: KitKey[];
+		/** The Team the form starts with. */
+		teamId?: number | null;
+		onSuccess: () => void;
+	} = $props();
 
-	let team = $state<TeamChoice | null>(null);
+	// The form is mounted per opening, so the starting Team is read once.
+	let team = $state<TeamChoice | null>(untrack(() => (teamId ? { teamId } : null)));
 	let season = $state('');
 	let kitType = $state<KitType>('home');
 	let comment = $state('');

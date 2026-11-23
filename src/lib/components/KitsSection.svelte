@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { deleteRow, mainPictureUpload, postAction } from '#lib/forms';
@@ -25,7 +26,11 @@
 		pictured
 	}: { kits: KitView[]; teams: TeamView[]; countries: Country[]; pictured: KitKey[] } = $props();
 
-	let adding = $state(false);
+	// A link from the Teams page arrives with the Team of the new Kit in `?addKit=`.
+	const linkedTeam = Number(page.url.searchParams.get('addKit')) || null;
+	const start = untrack(() => (teams.some((t) => t.id === linkedTeam) ? linkedTeam : null));
+	let addingFor = $state<number | null>(start);
+	let adding = $state(start !== null);
 
 	// A link from the Edit team dialog arrives with the Kit in `?search=`.
 	let search = $state(page.url.searchParams.get('search') ?? '');
@@ -101,7 +106,16 @@
 <section aria-labelledby="kits-heading" class="flex min-w-0 flex-col gap-3">
 	<div class="flex items-center justify-between gap-3">
 		<h2 id="kits-heading" class="font-display text-xl font-extrabold uppercase italic">Kits</h2>
-		<Button intent="success" size="sm" onclick={() => (adding = true)}>Add a kit</Button>
+		<Button
+			intent="success"
+			size="sm"
+			onclick={() => {
+				addingFor = null;
+				adding = true;
+			}}
+		>
+			Add a kit
+		</Button>
 	</div>
 	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
 	<div class="flex">
@@ -182,7 +196,13 @@
 <Popup bind:open={adding} wide title="Add a kit">
 	{#snippet details()}
 		{#if adding}
-			<KitAddForm {teams} {countries} {pictured} onSuccess={() => (adding = false)} />
+			<KitAddForm
+				{teams}
+				{countries}
+				{pictured}
+				teamId={addingFor}
+				onSuccess={() => (adding = false)}
+			/>
 		{/if}
 	{/snippet}
 </Popup>

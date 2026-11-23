@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { deleteRow, postAction } from '#lib/forms';
@@ -85,8 +86,12 @@
 			? await postAction('?/editTeam', { ...input, teamId: editing.id })
 			: await postAction('?/addTeam', input);
 		busy = false;
-		if (outcome.ok) open = false;
-		else error = outcome.error;
+		if (!outcome.ok) error = outcome.error;
+		else if (outcome.teamId) {
+			// The rule does not see that the path comes from resolve(); the query is added to it.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			await goto(`${resolve('/admin/kits')}?addKit=${outcome.teamId}`);
+		} else open = false;
 	}
 </script>
 
@@ -156,6 +161,9 @@
 		</form>
 		{#if editing}
 			{@const teamKits = kits.filter((k) => k.team.id === editing!.id)}
+			<a class="self-start font-bold underline" href="{resolve('/admin/kits')}?addKit={editing.id}">
+				Add a kit to {editing.name}
+			</a>
 			{#if teamKits.length > 0}
 				<div class="flex flex-col gap-1.5">
 					<span class="text-sm font-bold">Kits</span>
