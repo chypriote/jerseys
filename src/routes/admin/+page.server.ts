@@ -8,10 +8,12 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	const catalog = catalogFromPlatform();
 	const token = ownerToken(cookies);
 	if (token === '' || !(await catalog.verifyToken(token))) redirect(303, '/');
-	return { stores: await catalog.listStores() };
+	return { stores: await catalog.listStores(), countries: await catalog.listCountries() };
 };
 
 export const actions: Actions = {
 	addStore: ownerActions.addStore,
-	renameStore: ownerActions.renameStore
+	renameStore: ownerActions.renameStore,
+	addCountry: ownerActions.addCountry,
+	editCountry: ownerActions.editCountry
 };

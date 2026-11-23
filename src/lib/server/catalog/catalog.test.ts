@@ -79,7 +79,18 @@ describe('Owner login', () => {
 
 	it('refuses every write without a valid token', async () => {
 		const bad = 'not-a-token';
-		const calls = [() => catalog.addStore(bad, 'Shop'), () => catalog.renameStore(bad, 1, 'Shop')];
+		const country = {
+			name: 'Wales',
+			continent: 'europe',
+			leagueName: 'Cymru Premier',
+			seasonFormat: 'split'
+		} as const;
+		const calls = [
+			() => catalog.addStore(bad, 'Shop'),
+			() => catalog.renameStore(bad, 1, 'Shop'),
+			() => catalog.addCountry(bad, country),
+			() => catalog.editCountry(bad, { ...country, id: 1 })
+		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
 		}
@@ -144,5 +155,126 @@ describe('Stores', () => {
 		);
 		await expect(catalog.renameStore(token, 9999, 'Elsewhere')).rejects.toThrow('Unknown store');
 		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Kitbag', 'Official Store']);
+	});
+});
+
+describe('Countries', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	it('adds a Country with its League, trimmed, and lists Countries by name', async () => {
+		const france = await catalog.addCountry(token, {
+			name: ' France ',
+			continent: 'europe',
+			leagueName: ' Ligue 1 ',
+			seasonFormat: 'split'
+		});
+		expect(france).toMatchObject({
+			name: 'France',
+			continent: 'europe',
+			league: { name: 'Ligue 1', seasonFormat: 'split' }
+		});
+		await catalog.addCountry(token, {
+			name: 'Brazil',
+			continent: 'americas',
+			leagueName: 'Brasileirão',
+			seasonFormat: 'calendar'
+		});
+		const listed = await catalog.listCountries();
+		expect(listed.map((c) => c.name)).toEqual(['Brazil', 'France']);
+		expect(listed).toContainEqual(france);
+		expect(listed[0].league).toMatchObject({ name: 'Brasileirão', seasonFormat: 'calendar' });
+	});
+
+	it('refuses a Country name that exists, in any case, with a readable error', async () => {
+		await catalog.addCountry(token, {
+			name: 'Japan',
+			continent: 'asia-oceania',
+			leagueName: 'J1 League',
+			seasonFormat: 'calendar'
+		});
+		await expect(
+			catalog.addCountry(token, {
+				name: ' japan ',
+				continent: 'asia-oceania',
+				leagueName: 'Other League',
+				seasonFormat: 'split'
+			})
+		).rejects.toThrow('A country named “japan” already exists');
+		const listed = await catalog.listCountries();
+		expect(listed.map((c) => c.league.name)).toEqual(['J1 League']);
+	});
+
+	it('edits a Country, its Continent and its League, and lets an edit change only the case', async () => {
+		const added = await catalog.addCountry(token, {
+			name: 'australia',
+			continent: 'europe',
+			leagueName: 'A League',
+			seasonFormat: 'calendar'
+		});
+		const edited = await catalog.editCountry(token, {
+			id: added.id,
+			name: ' Australia ',
+			continent: 'asia-oceania',
+			leagueName: ' A-League Men ',
+			seasonFormat: 'split'
+		});
+		expect(edited).toEqual({
+			id: added.id,
+			name: 'Australia',
+			continent: 'asia-oceania',
+			league: { id: added.league.id, name: 'A-League Men', seasonFormat: 'split' }
+		});
+		expect(await catalog.listCountries()).toEqual([edited]);
+	});
+
+	it('refuses an edit to a name another Country has, or of an unknown Country', async () => {
+		const input = { continent: 'europe', leagueName: 'League', seasonFormat: 'split' } as const;
+		await catalog.addCountry(token, { ...input, name: 'Spain' });
+		const italy = await catalog.addCountry(token, { ...input, name: 'Italy' });
+		await expect(
+			catalog.editCountry(token, { ...input, id: italy.id, name: 'SPAIN' })
+		).rejects.toThrow('A country named “SPAIN” already exists');
+		await expect(catalog.editCountry(token, { ...input, id: 9999, name: 'Wales' })).rejects.toThrow(
+			'Unknown country'
+		);
+		expect((await catalog.listCountries()).map((c) => c.name)).toEqual(['Italy', 'Spain']);
+	});
+
+	it('refuses an unknown Continent or Season Format, and empty names', async () => {
+		const input = {
+			name: 'Atlantis',
+			continent: 'europe',
+			leagueName: 'Deep League',
+			seasonFormat: 'split'
+		} as const;
+		const bad = (extra: object) => ({ ...input, ...extra }) as never;
+		await expect(catalog.addCountry(token, bad({ continent: 'antarctica' }))).rejects.toThrow(
+			'Continent must be one of Europe, Asia & Oceania, Americas, Africa'
+		);
+		await expect(catalog.addCountry(token, bad({ seasonFormat: 'weekly' }))).rejects.toThrow(
+			'Season Format must be Split or Calendar'
+		);
+		await expect(catalog.addCountry(token, bad({ name: ' ' }))).rejects.toThrow(
+			'Country name is required'
+		);
+		await expect(catalog.addCountry(token, bad({ leagueName: '' }))).rejects.toThrow(
+			'League name is required'
+		);
+		const spain = await catalog.addCountry(token, { ...input, name: 'Spain' });
+		await expect(
+			catalog.editCountry(token, bad({ id: spain.id, continent: 'oceania' }))
+		).rejects.toThrow('Continent must be one of');
+		expect(await catalog.listCountries()).toEqual([spain]);
 	});
 });
