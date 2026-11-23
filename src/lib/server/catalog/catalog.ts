@@ -241,7 +241,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		return cleaned;
 	}
 
-	/** The Kits keep their Seasons, so a new Season Format must fit every Kit `where` takes. */
+	/** A Team change keeps the Kit Seasons, so the new Season Format must fit every Kit `where` takes. */
 	async function refuseMisfitKit(where: SQL, format: SeasonFormat) {
 		const [misfit] = await db
 			.select({ team: teams.name, start: kits.seasonStartYear, end: kits.seasonEndYear })
@@ -665,8 +665,16 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.select({ id: teams.id })
 				.from(teams)
 				.where(and(eq(teams.countryId, current.id), eq(teams.kind, 'club')));
-			await refuseMisfitKit(inArray(kits.teamId, clubs), seasonFormat);
+			// Kits keep their start year, so the Team, Season and Kit Type stay unique.
+			const toSeasons =
+				seasonFormat === 'calendar'
+					? db.update(kits).set({ seasonEndYear: null }).where(inArray(kits.teamId, clubs))
+					: db
+							.update(kits)
+							.set({ seasonEndYear: sql`${kits.seasonStartYear} + 1` })
+							.where(and(inArray(kits.teamId, clubs), isNull(kits.seasonEndYear)));
 			await db.batch([
+				toSeasons,
 				db.update(countries).set({ name, continent }).where(eq(countries.id, input.id)),
 				db
 					.update(leagues)
