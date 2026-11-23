@@ -2609,6 +2609,49 @@ describe('Teams and Kits admin', () => {
 		expect(wanted).toMatchObject({ id: item, kit: { id: kitId, kitType: 'away' } });
 	});
 
+	it('sets the Main Picture of a Kit when it is edited, from a file or an address', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const body = PNG.slice().buffer as ArrayBuffer;
+		await catalog.editKit(token, {
+			kitId,
+			season: '2023-24',
+			kitType: 'home',
+			mainPicture: { body, contentType: 'image/png' }
+		});
+		expect(await mainPictureOf(kitId)).toMatchObject({
+			main_picture_key: `main-pictures/${kitId}`,
+			main_picture_version: 1,
+			main_picture_chosen: 1
+		});
+		vi.spyOn(globalThis, 'fetch').mockImplementation(
+			async () => new Response(PNG.slice(), { headers: { 'content-type': 'image/png' } })
+		);
+		try {
+			await catalog.editKit(token, {
+				kitId,
+				season: '2023-24',
+				kitType: 'home',
+				mainPictureUrl: 'https://images.example/lyon.png'
+			});
+		} finally {
+			vi.restoreAllMocks();
+		}
+		expect(await mainPictureOf(kitId)).toMatchObject({ main_picture_version: 2 });
+	});
+
+	it('changes nothing when the edited Kit gets a bad picture', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		await expect(
+			catalog.editKit(token, {
+				kitId,
+				season: '2022-23',
+				kitType: 'away',
+				mainPicture: { body: new ArrayBuffer(10), contentType: 'image/gif' }
+			})
+		).rejects.toThrow('Use a JPEG, PNG or WebP image');
+		expect((await catalog.listKits())[0]).toMatchObject({ season: '2023-24', kitType: 'home' });
+	});
+
 	it('refuses a Kit change that would make two Kits with one Team, Season and Kit Type', async () => {
 		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
 		const away = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'away' });
