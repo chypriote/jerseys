@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm';
 import { check, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
-const VERSIONS = ['fan', 'player', 'tracksuit'] as const;
+/** The Kit Types and Versions, in display order. Types, labels and checks derive from them. */
+export const KIT_TYPES = ['home', 'away', 'third', 'fourth', 'cup', 'special'] as const;
+export const VERSIONS = ['fan', 'player', 'tracksuit'] as const;
 
 export const leagues = sqliteTable('league', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
@@ -53,9 +55,7 @@ export const kits = sqliteTable(
 		seasonStartYear: integer('season_start_year').notNull(),
 		/** Set for a Split Season only. */
 		seasonEndYear: integer('season_end_year'),
-		kitType: text('kit_type', {
-			enum: ['home', 'away', 'third', 'fourth', 'cup', 'special']
-		}).notNull(),
+		kitType: text('kit_type', { enum: KIT_TYPES }).notNull(),
 		/** Main Picture key in R2. */
 		mainPictureKey: text('main_picture_key'),
 		/** Bumped when the Main Picture changes, so that its cached URL changes too. */

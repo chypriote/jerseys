@@ -491,7 +491,7 @@ describe('Kit Main Pictures', () => {
 			'The image must be under 2 MB'
 		);
 		await expect(upload({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
-		await expect(upload({ kitId: 99999 })).rejects.toThrow('Kit not found');
+		await expect(upload({ kitId: 99999 })).rejects.toThrow('Unknown kit');
 		expect(await mainPictureOf(kit)).toEqual({
 			main_picture_key: null,
 			main_picture_version: 0,
@@ -580,9 +580,7 @@ describe('Kit Main Pictures', () => {
 			await expect(paste(kit, 'https://images.example/missing.png')).rejects.toThrow(
 				'The address answered 404'
 			);
-			await expect(paste(99999, 'https://images.example/kit.webp')).rejects.toThrow(
-				'Kit not found'
-			);
+			await expect(paste(99999, 'https://images.example/kit.webp')).rejects.toThrow('Unknown kit');
 			expect(await mainPictureOf(kit)).toEqual({
 				main_picture_key: null,
 				main_picture_version: 0,
@@ -857,7 +855,7 @@ describe('Picture candidates', () => {
 		await expect(pick(equipmentUrl('page'))).rejects.toThrow('Use a JPEG, PNG or WebP image');
 		await expect(pick(equipmentUrl('big'))).rejects.toThrow('The image must be under 2 MB');
 		await expect(pick(equipmentUrl('missing'))).rejects.toThrow('TheSportsDB answered 404');
-		await expect(pick(equipmentUrl('ok'), 99999)).rejects.toThrow('Kit not found');
+		await expect(pick(equipmentUrl('ok'), 99999)).rejects.toThrow('Unknown kit');
 		expect(await mainPictureOf(kit)).toEqual({
 			main_picture_key: null,
 			main_picture_version: 0,
@@ -871,7 +869,7 @@ describe('Picture candidates', () => {
 		await expect(catalog.listPictureCandidates(token, kit)).rejects.toThrow(
 			'TheSportsDB answered 429'
 		);
-		await expect(catalog.listPictureCandidates(token, 99999)).rejects.toThrow('Kit not found');
+		await expect(catalog.listPictureCandidates(token, 99999)).rejects.toThrow('Unknown kit');
 		failing = false;
 		expect((await catalog.listPictureCandidates(token, kit)).sourceTeamId).toBe('133713');
 	});
@@ -1731,7 +1729,7 @@ describe('Add and edit a Jersey', () => {
 				season: '2023-24',
 				kitType: 'home'
 			})
-		).rejects.toThrow('Jersey not found');
+		).rejects.toThrow('Unknown jersey');
 		expect(await catalog.listTeams()).toEqual([]);
 	});
 
@@ -1981,7 +1979,7 @@ describe('Got it and Drop', () => {
 					acquisition: { kind: 'gift', date: '2024' }
 				}
 			})
-		).rejects.toThrow('Wishlist Item not found');
+		).rejects.toThrow('Unknown wishlist item');
 		expect(await catalog.listCollection()).toEqual([]);
 	});
 
@@ -2278,7 +2276,7 @@ describe('Kit Pictures', () => {
 			'The image must be under 2 MB'
 		);
 		await expect(add({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
-		await expect(add({ kitId: 99999 })).rejects.toThrow('Kit not found');
+		await expect(add({ kitId: 99999 })).rejects.toThrow('Unknown kit');
 		expect(await catalog.listPictures(kit)).toEqual([]);
 		expect((await env.COVERS.list()).objects).toEqual([]);
 	});
@@ -2545,7 +2543,7 @@ describe('Teams and Kits admin', () => {
 		).rejects.toThrow('Kit Type must be Home, Away, Third, Fourth, Cup or Special');
 		await expect(
 			catalog.editKit(token, { kitId: 999999, season: '2023-24', kitType: 'home' })
-		).rejects.toThrow('Kit not found');
+		).rejects.toThrow('Unknown kit');
 		expect((await catalog.listKits()).map((k) => k.season)).toEqual(['2024', '2023-24']);
 	});
 });
@@ -2871,7 +2869,7 @@ describe('Delete', () => {
 		await catalog.deleteJersey(token, kept);
 		expect(await catalog.listCollection()).toEqual([]);
 		expect((await catalog.listKits()).map((k) => k.id)).toEqual([kitId]);
-		await expect(catalog.deleteJersey(token, kept)).rejects.toThrow('Jersey not found');
+		await expect(catalog.deleteJersey(token, kept)).rejects.toThrow('Unknown jersey');
 	});
 
 	it('deletes a Store no Purchase uses', async () => {
@@ -2970,7 +2968,7 @@ describe('Delete', () => {
 		expect(left).toHaveLength(1);
 		expect(left[0]).toMatch(`pictures/${other}/`);
 		expect(await catalog.listPictures(other)).toEqual([kept]);
-		await expect(catalog.deleteKit(token, kitId)).rejects.toThrow('Kit not found');
+		await expect(catalog.deleteKit(token, kitId)).rejects.toThrow('Unknown kit');
 	});
 
 	it('refuses to delete a Kit that Jerseys or its Wishlist Item use', async () => {
@@ -3006,7 +3004,7 @@ describe('Delete', () => {
 		expect(await catalog.getPicture(wrong.id)).toBeNull();
 		expect(await r2Keys()).toHaveLength(1);
 		expect(await catalog.getPicture(kept.id)).not.toBeNull();
-		await expect(catalog.deletePicture(token, wrong.id)).rejects.toThrow('Picture not found');
+		await expect(catalog.deletePicture(token, wrong.id)).rejects.toThrow('Unknown picture');
 	});
 
 	it('refuses every delete without a valid token, and deletes nothing', async () => {

@@ -8,18 +8,19 @@ import { fetchKitPicture, listKitPictures, searchTeams, type SportsDbConfig } fr
 /** What the Main Picture lookup reads and writes. */
 export interface LookupContext {
 	db: DrizzleD1Database;
-	covers: R2Bucket;
+	/** The R2 bucket of Main Pictures and Pictures. */
+	pictureBucket: R2Bucket;
 	sportsDb: SportsDbConfig;
 }
 
 /** Writes the image as the Main Picture of the Kit and changes its URL. */
 export async function putMainPicture(
-	{ db, covers }: LookupContext,
+	{ db, pictureBucket }: LookupContext,
 	kitId: number,
 	image: { body: ArrayBuffer; contentType: string; chosen: boolean }
 ) {
 	const mainPictureKey = `main-pictures/${kitId}`;
-	await covers.put(mainPictureKey, image.body, {
+	await pictureBucket.put(mainPictureKey, image.body, {
 		httpMetadata: { contentType: image.contentType }
 	});
 	await db
@@ -43,7 +44,7 @@ export async function kitWithTeam({ db }: LookupContext, kitId: number) {
 			.innerJoin(leagues, eq(countries.leagueId, leagues.id))
 			.where(eq(kits.id, kitId))
 	)[0];
-	if (!found) throw new Error('Kit not found');
+	if (!found) throw new Error('Unknown kit');
 	return found;
 }
 
@@ -81,8 +82,9 @@ async function fetchCheckedPicture(ctx: LookupContext, imageUrl: string) {
 
 /**
  * Looks up the Main Picture of one Kit: the TheSportsDB picture of its Team with the same Season
- * and Kit Type, stored as a Main Picture the Owner did not choose. No Team or no match keeps the
- * current Main Picture, and so does an image the image rules refuse. An Owner-chosen Main Picture is never replaced. Marks the Kit looked up.
+ * and Kit Type, stored as a Main Picture the Owner did not choose. No Team, no match or an image
+ * the image rules refuse keeps the current Main Picture. An Owner-chosen Main Picture is never
+ * replaced. Marks the Kit looked up.
  * Throws on a TheSportsDB error (the Kit stays not looked up); Kit create catches and logs it.
  */
 export async function lookUpMainPicture(ctx: LookupContext, kitId: number) {

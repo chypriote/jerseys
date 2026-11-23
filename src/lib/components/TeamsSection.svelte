@@ -105,7 +105,7 @@
 			{@const row = editing}
 			<DeleteAction
 				what={row.name}
-				text="This removes the team. A team with kits cannot be deleted."
+				text="This deletes the team. A team with kits cannot be deleted."
 				onDelete={() => deleteRow('?/deleteTeam', row.id, () => (open = false))}
 			/>
 		{/if}

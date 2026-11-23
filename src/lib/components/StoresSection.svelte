@@ -46,7 +46,7 @@
 			{@const row = editing}
 			<DeleteAction
 				what={row.name}
-				text="This removes the store. A store that purchases use cannot be deleted."
+				text="This deletes the store. A store that purchases use cannot be deleted."
 				onDelete={() => deleteRow('?/deleteStore', row.id, () => (open = false))}
 			/>
 		{/if}

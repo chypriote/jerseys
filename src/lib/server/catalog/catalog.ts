@@ -13,11 +13,11 @@ import {
 	type SQL
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
-import { continents, seasonFormats } from '../../countries';
-import { kitTypeLabels } from '../../labels';
+import { seasonFormats } from '../../countries';
 import {
 	countries,
 	jerseys,
+	KIT_TYPES,
 	kits,
 	leagues,
 	pictures,
@@ -25,6 +25,23 @@ import {
 	teams,
 	wishlistItems
 } from '../db/schema';
+import {
+	checkCut,
+	checkDesire,
+	checkKitType,
+	checkWishVersion,
+	compare,
+	countryFields,
+	formatSeason,
+	giftFields,
+	isCents,
+	oneOf,
+	parseSeason,
+	purchaseDates,
+	required
+} from './checks';
+import { kitLabel } from '../../labels';
+import { importRows } from './import';
 import { kitSeasonFirst } from './matching';
 import {
 	fetchKitPicture,
@@ -49,14 +66,9 @@ import type {
 	Catalog,
 	CollectionJersey,
 	Country,
-	CountryInput,
+	JerseyInput,
 	Desire,
 	GotItInput,
-	ImportCountryRow,
-	ImportKitRow,
-	ImportRows,
-	ImportTeam,
-	JerseyInput,
 	KitInput,
 	KitType,
 	KitView,
@@ -82,32 +94,6 @@ export interface CatalogOptions {
 	lookupIntervalMs?: number;
 	/** How long a save waits for the Main Picture lookup of a new Kit. Default 8000. */
 	lookupTimeoutMs?: number;
-}
-
-function required(value: string, what: string) {
-	const cleaned = value.trim();
-	if (!cleaned) throw new Error(`${what} is required`);
-	return cleaned;
-}
-
-/** The cleaned Country and League fields, or a readable error. Form payloads are untrusted. */
-function countryFields(input: CountryInput) {
-	if (!continents.some((c) => c.value === input.continent))
-		throw new Error(`Continent must be one of ${continents.map((c) => c.label).join(', ')}`);
-	if (!seasonFormats.some((f) => f.value === input.seasonFormat))
-		throw new Error('Season Format must be Split or Calendar');
-	return {
-		continent: input.continent,
-		leagueName: required(input.leagueName ?? '', 'League name'),
-		seasonFormat: input.seasonFormat
-	};
-}
-
-const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
-
-/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
-function formatSeason(start: number, end: number | null) {
-	return end === null ? String(start) : `${start}-${String(end % 100).padStart(2, '0')}`;
 }
 
 function kitView(
@@ -137,61 +123,14 @@ const acquiredOn = (j: CollectionJersey) =>
 const compareDates = (a: CollectionJersey, b: CollectionJersey) =>
 	acquiredOn(a) < acquiredOn(b) ? -1 : acquiredOn(a) > acquiredOn(b) ? 1 : 0;
 
-const KIT_TYPE_ORDER = ['home', 'away', 'third', 'fourth', 'cup', 'special'];
-
-// --- Jerseys: input checks (form payloads are untrusted) -------------------------------
-
-const YEAR_OR_DATE = /^(\d{4})(?:-(\d{2})-(\d{2}))?$/;
-
-/** `YYYY`, or a real calendar date `YYYY-MM-DD` (2024-02-31 is not one). */
-function checkDate(value: unknown, what: string): string {
-	const text = typeof value === 'string' ? value.trim() : '';
-	const match = YEAR_OR_DATE.exec(text);
-	if (match && match[2]) {
-		const date = new Date(`${text}T00:00:00Z`);
-		if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
-			throw new Error(`${what} is not a real date`);
-		}
-	}
-	if (!match) throw new Error(`${what} must be YYYY or YYYY-MM-DD`);
-	return text;
-}
-
-const optionalDate = (value: unknown, what: string) =>
-	typeof value === 'string' && value.trim() ? checkDate(value, what) : null;
-
-const cleanOrNull = (value: unknown) => (typeof value === 'string' && value.trim()) || null;
-
-function oneOf<T extends string>(value: unknown, allowed: readonly T[], message: string): T {
-	if (!allowed.includes(value as T)) throw new Error(message);
-	return value as T;
-}
-
-function nullableOneOf<T extends string>(value: unknown, allowed: readonly T[], message: string) {
-	return value === null || value === undefined || value === ''
-		? null
-		: oneOf(value, allowed, message);
-}
-
-/** A Season as start and end year, checked against the Team's Season Format. */
-function parseSeason(value: unknown, format: SeasonFormat) {
-	const text = typeof value === 'string' ? value.trim() : '';
-	if (format === 'calendar') {
-		if (/^\d{4}$/.test(text)) return { start: Number(text), end: null };
-		throw new Error('Season must be one year, like 2024');
-	}
-	const match = /^(\d{4})-(\d{2})$/.exec(text);
-	const start = Number(match?.[1]);
-	if (match && (start + 1) % 100 === Number(match[2])) return { start, end: start + 1 };
-	throw new Error('Season must be two years in a row, like 2024-25');
-}
-
-const checkKitType = (value: unknown) =>
-	oneOf<KitType>(
-		value,
-		['home', 'away', 'third', 'fourth', 'cup', 'special'],
-		'Kit Type must be Home, Away, Third, Fourth, Cup or Special'
-	);
+/** By Team name, then Season, then Kit Type in display order. */
+const compareKits = (
+	a: { teamName: string; start: number; kitType: KitType },
+	b: { teamName: string; start: number; kitType: KitType }
+) =>
+	compare(a.teamName, b.teamName) ||
+	a.start - b.start ||
+	KIT_TYPES.indexOf(a.kitType) - KIT_TYPES.indexOf(b.kitType);
 
 // --- Delete ---
 
@@ -206,62 +145,6 @@ function refuseWhileUsed(name: string, uses: [number, string][]) {
 	if (used.length) throw new Error(`${name} is still used by ${used.join(' and ')}`);
 }
 
-const isCents = (value: unknown): value is number =>
-	Number.isInteger(value) && (value as number) >= 0;
-
-/** Version, Size, Fit and Print of a Jersey. */
-function checkCut(input: Pick<JerseyInput, 'version' | 'size' | 'fit' | 'print'>) {
-	return {
-		version: oneOf(
-			input.version,
-			['fan', 'player', 'tracksuit'],
-			'Version must be Fan, Player or Tracksuit'
-		),
-		size: nullableOneOf(input.size, ['S', 'M', 'L'], 'Size must be S, M or L'),
-		fit: nullableOneOf(
-			input.fit,
-			['too-small', 'good', 'too-big'],
-			'Fit must be Too small, Good or Too big'
-		),
-		print: cleanOrNull(input.print)
-	};
-}
-
-const checkWishVersion = (value: unknown) =>
-	nullableOneOf(
-		value,
-		['fan', 'player', 'tracksuit'],
-		'Version must be Any, Fan, Player or Tracksuit'
-	);
-
-function checkDesire(value: unknown) {
-	const desire = Number(value);
-	if (!Number.isInteger(desire) || desire < 1 || desire > 5)
-		throw new Error('Desire must be 1 to 5');
-	return desire;
-}
-
-/** The Purchase dates, from the form or the import. */
-const purchaseDates = (input: { bought: unknown; sent?: unknown; received?: unknown }) => ({
-	acquisitionKind: 'purchase' as const,
-	acquisitionDate: checkDate(input.bought, 'Bought date'),
-	sentDate: optionalDate(input.sent, 'Sent date'),
-	receivedDate: optionalDate(input.received, 'Received date'),
-	giver: null
-});
-
-const giftFields = (input: { date: unknown; giver?: unknown }) => ({
-	acquisitionKind: 'gift' as const,
-	acquisitionDate: checkDate(input.date, 'Gift date'),
-	sentDate: null,
-	receivedDate: null,
-	storeId: null,
-	priceCents: null,
-	giver: cleanOrNull(input.giver)
-});
-
-type BatchStatements = Parameters<ReturnType<typeof drizzle>['batch']>[0];
-
 export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Catalog {
 	const db = drizzle(env.DB);
 	const sportsDb: SportsDbConfig = {
@@ -269,12 +152,12 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		intervalMs: options.lookupIntervalMs ?? 2000
 	};
 
-	async function owner(token: string) {
+	async function requireOwner(token: string) {
 		if (!env.JWT_SECRET || !(await tokenIsValid(token, env.JWT_SECRET)))
 			throw new UnauthorizedError();
 	}
 
-	const lookup: LookupContext = { db, covers: env.COVERS, sportsDb };
+	const lookup: LookupContext = { db, pictureBucket: env.COVERS, sportsDb };
 	const storeMainPicture = (kitId: number, body: ArrayBuffer, contentType: string) =>
 		putMainPicture(lookup, kitId, { body, contentType, chosen: true });
 
@@ -304,7 +187,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 	async function saveUpload(kitId: number, body: ArrayBuffer, contentType: string) {
 		checkImage(body, contentType);
 		const kit = (await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId)))[0];
-		if (!kit) throw new Error('Kit not found');
+		if (!kit) throw new Error('Unknown kit');
 		await storeMainPicture(kit.id, body, contentType);
 	}
 
@@ -318,21 +201,24 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		return { total, done };
 	}
 
-	/** The trimmed name, or a readable error when it is empty or another Store has it. */
-	async function freeStoreName(name: string, exceptId?: number) {
-		const cleaned = required(name, 'Store name');
-		const all = await db.select().from(stores);
-		if (all.some((s) => s.id !== exceptId && compare(s.name, cleaned) === 0))
-			throw new Error(`A store named “${cleaned}” already exists`);
-		return cleaned;
+	/** The image at an R2 key, or null when it is gone. */
+	async function readImage(key: string) {
+		const object = await env.COVERS.get(key);
+		if (!object) return null;
+		return { body: object.body, contentType: object.httpMetadata?.contentType ?? 'image/jpeg' };
 	}
 
-	/** The trimmed name, or a readable error when it is empty or another Country has it. */
-	async function freeCountryName(name: string, exceptId?: number) {
-		const cleaned = required(name ?? '', 'Country name');
-		const all = await db.select().from(countries);
-		if (all.some((c) => c.id !== exceptId && compare(c.name, cleaned) === 0))
-			throw new Error(`A country named “${cleaned}” already exists`);
+	/** The trimmed name, or a readable error when it is empty or another row of `table` has it. */
+	async function freeName(
+		table: typeof stores | typeof countries,
+		what: 'Store' | 'Country',
+		name: string,
+		exceptId?: number
+	) {
+		const cleaned = required(name ?? '', `${what} name`);
+		const all = await db.select({ id: table.id, name: table.name }).from(table);
+		if (all.some((row) => row.id !== exceptId && compare(row.name, cleaned) === 0))
+			throw new Error(`A ${what.toLowerCase()} named “${cleaned}” already exists`);
 		return cleaned;
 	}
 
@@ -531,13 +417,13 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			.innerJoin(teams, eq(kits.teamId, teams.id))
 			.innerJoin(countries, eq(teams.countryId, countries.id))
 			.where(id === undefined ? undefined : eq(kits.id, id));
+		const key = ({ kit, team }: (typeof rows)[number]) => ({
+			teamName: team.name,
+			start: kit.seasonStartYear,
+			kitType: kit.kitType
+		});
 		return rows
-			.sort(
-				(a, b) =>
-					compare(a.team.name, b.team.name) ||
-					a.kit.seasonStartYear - b.kit.seasonStartYear ||
-					KIT_TYPE_ORDER.indexOf(a.kit.kitType) - KIT_TYPE_ORDER.indexOf(b.kit.kitType)
-			)
+			.sort((a, b) => compareKits(key(a), key(b)))
 			.map(({ kit, team, country }) => kitView(kit, team, country));
 	}
 
@@ -594,165 +480,6 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			.sort((a, b) => compareDates(b, a) || b.id - a.id);
 	}
 
-	// --- Import (once) ---------------------------------------------------------
-
-	/** Checks every row, writing nothing. Returns what the one write batch needs. */
-	async function checkImport(rows: ImportRows) {
-		if (![rows?.countries, rows?.jerseys, rows?.wishlist].every(Array.isArray))
-			throw new Error('The rows need countries, jerseys and wishlist lists');
-		const named = <T extends { name: string }>(list: T[], name: string) =>
-			list.find((item) => compare(item.name, name) === 0);
-		const row = <T>(list: string, index: number, check: () => T): T => {
-			try {
-				return check();
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				throw new Error(`${list}[${index}]: ${message}`, { cause: error });
-			}
-		};
-
-		const countryList: (ImportCountryRow & { created: boolean })[] = (await readCountries()).map(
-			(c) => ({ ...c, league: c.league.name, seasonFormat: c.league.seasonFormat, created: false })
-		);
-		rows.countries.forEach((input, i) =>
-			row('countries', i, () => {
-				const name = required(String(input?.name ?? ''), 'Country name');
-				const fields = countryFields({ ...input, leagueName: input.league });
-				const found = named(countryList, name);
-				if (found?.created) throw new Error(`${name} is twice in the countries`);
-				if (!found)
-					countryList.push({
-						name,
-						continent: fields.continent,
-						league: fields.leagueName,
-						seasonFormat: fields.seasonFormat,
-						created: true
-					});
-			})
-		);
-
-		const storeList = (await db.select().from(stores)).map((s) => ({
-			name: s.name,
-			created: false
-		}));
-		const teamList = (await readTeams()).map((t) => ({
-			name: t.name,
-			kind: t.kind,
-			country: t.country.name,
-			seasonFormat: t.seasonFormat,
-			created: false
-		}));
-		const kitList = (
-			await db
-				.select({ team: teams.name, start: kits.seasonStartYear, kitType: kits.kitType })
-				.from(kits)
-				.innerJoin(teams, eq(kits.teamId, teams.id))
-		).map((k) => ({ ...k, end: null as number | null, created: false }));
-
-		function teamOf(input: ImportTeam) {
-			const name = required(String(input?.name ?? ''), 'Team name');
-			const kind = oneOf(input.kind, ['club', 'national'], 'A team is a Club or a National Team');
-			const country = named(countryList, String(input.country ?? ''));
-			if (!country) throw new Error(`Unknown country: ${input.country}`);
-			const found = named(teamList, name);
-			if (found) {
-				if (found.kind !== kind || found.country !== country.name)
-					throw new Error(`${found.name} is a ${found.kind} of ${found.country}`);
-				return found;
-			}
-			const national = teamList.find((t) => t.kind === 'national' && t.country === country.name);
-			if (kind === 'national' && national)
-				throw new Error(`${country.name} already has a National Team: ${national.name}`);
-			const team = {
-				name,
-				kind,
-				country: country.name,
-				seasonFormat: kind === 'national' ? ('calendar' as const) : country.seasonFormat,
-				created: true
-			};
-			teamList.push(team);
-			return team;
-		}
-
-		function kitOf(input: ImportKitRow) {
-			const team = teamOf(input.team);
-			const season = parseSeason(input.season, team.seasonFormat);
-			const kitType = checkKitType(input.kitType);
-			const found = kitList.find(
-				(k) => k.team === team.name && k.start === season.start && k.kitType === kitType
-			);
-			if (found) return found;
-			const kit = { team: team.name, start: season.start, end: season.end, kitType, created: true };
-			kitList.push(kit);
-			return kit;
-		}
-
-		const jerseyRows = rows.jerseys.map((input, i) =>
-			row('jerseys', i, () => {
-				const kit = kitOf(input);
-				const cut = checkCut(input);
-				const acquisition = input.acquisition;
-				if (acquisition?.kind === 'gift')
-					return { kit, store: null, ...cut, ...giftFields(acquisition) };
-				if (acquisition?.kind !== 'purchase')
-					throw new Error('Acquisition must be a Purchase or a Gift');
-				if (acquisition.priceCents !== null && !isCents(acquisition.priceCents))
-					throw new Error('A price is euro cents, or null when unknown');
-				const storeName = cleanOrNull(acquisition.store);
-				// No Store is an unknown Store, which only a Purchase of unknown price has.
-				if (storeName === null && acquisition.priceCents !== null)
-					throw new Error('A Purchase with a price needs a Store');
-				let store = storeName === null ? null : named(storeList, storeName);
-				if (storeName !== null && !store)
-					storeList.push((store = { name: storeName, created: true }));
-				return {
-					kit,
-					store: store?.name ?? null,
-					...cut,
-					...purchaseDates(acquisition),
-					priceCents: acquisition.priceCents
-				};
-			})
-		);
-
-		const wished = new Set<object>();
-		const wishlistRows = rows.wishlist.map((input, i) =>
-			row('wishlist', i, () => {
-				const kit = kitOf(input);
-				const version = checkWishVersion(input.version);
-				const desire = checkDesire(input.desire);
-				if (wished.has(kit)) {
-					const season = formatSeason(kit.start, kit.end);
-					throw new Error(
-						`${kit.team} ${season} ${kitTypeLabels[kit.kitType]} is twice on the Wishlist`
-					);
-				}
-				wished.add(kit);
-				return { kit, version, desire };
-			})
-		);
-
-		return {
-			countries: countryList.filter((c) => c.created),
-			stores: storeList.filter((s) => s.created),
-			teams: teamList.filter((t) => t.created),
-			kits: kitList.filter((k) => k.created),
-			jerseys: jerseyRows,
-			wishlist: wishlistRows
-		};
-	}
-
-	const countryIdNamed = (name: string) =>
-		sql`(SELECT ${countries.id} FROM ${countries} WHERE ${countries.name} = ${name})`;
-	const teamIdNamed = (name: string) =>
-		sql`(SELECT ${teams.id} FROM ${teams} WHERE ${teams.name} = ${name})`;
-	const storeIdNamed = (name: string) =>
-		sql`(SELECT ${stores.id} FROM ${stores} WHERE ${stores.name} = ${name})`;
-	const kitIdOf = (kit: { team: string; start: number; kitType: KitType }) =>
-		sql`(SELECT ${kits.id} FROM ${kits} JOIN ${teams} ON ${teams.id} = ${kits.teamId}
-			WHERE ${teams.name} = ${kit.team} AND ${kits.seasonStartYear} = ${kit.start}
-			AND ${kits.kitType} = ${kit.kitType})`;
-
 	return {
 		listCountries: readCountries,
 
@@ -778,16 +505,16 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async addJersey(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const row = await jerseyRow(input);
 			const [{ id }] = await db.insert(jerseys).values(row).returning({ id: jerseys.id });
 			return (await readCollection(id))[0];
 		},
 
 		async editJersey(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const id = Number(input.id);
-			if (!(await readCollection(id)).length) throw new Error('Jersey not found');
+			if (!(await readCollection(id)).length) throw new Error('Unknown jersey');
 			const row = await jerseyRow(input);
 			await db.update(jerseys).set(row).where(eq(jerseys.id, id));
 			return (await readCollection(id))[0];
@@ -807,7 +534,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		listWishlist: () => readWishlist(),
 
 		async addWishlistItem(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const kit = await checkKit(input);
 			const version = checkWishVersion(input.version);
 			const desire = checkDesire(input.desire);
@@ -819,7 +546,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				if (listed) {
 					const season = formatSeason(kit.season.start, kit.season.end);
 					throw new Error(
-						`${kit.team.name} ${season} ${kitTypeLabels[kit.kitType]} is already on the Wishlist`
+						`${kitLabel(kit.team.name, season, kit.kitType)} is already on the Wishlist`
 					);
 				}
 				const [owned] = await db
@@ -840,12 +567,12 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		// --- Got it and Drop ---
 
 		async gotIt(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const [item] = await db
 				.select()
 				.from(wishlistItems)
 				.where(eq(wishlistItems.id, Number(input.wishlistItemId)));
-			if (!item) throw new Error('Wishlist Item not found');
+			if (!item) throw new Error('Unknown wishlist item');
 			const fields = await checkJerseyFields(input.jersey);
 			const [[{ id }]] = await db.batch([
 				db
@@ -858,7 +585,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async drop(token, wishlistItemId) {
-			await owner(token);
+			await requireOwner(token);
 			await db.delete(wishlistItems).where(eq(wishlistItems.id, Number(wishlistItemId)));
 		},
 
@@ -876,18 +603,15 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.select({ key: pictures.key })
 				.from(pictures)
 				.where(eq(pictures.id, Number(pictureId)));
-			if (!picture) return null;
-			const object = await env.COVERS.get(picture.key);
-			if (!object) return null;
-			return { body: object.body, contentType: object.httpMetadata?.contentType ?? 'image/jpeg' };
+			return picture ? readImage(picture.key) : null;
 		},
 
 		async addPicture(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			checkImage(input.body, input.contentType);
 			const kitId = Number(input.kitId);
 			const [kit] = await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId));
-			if (!kit) throw new Error('Kit not found');
+			if (!kit) throw new Error('Unknown kit');
 			// R2 first: a failed put leaves no row without an image.
 			const key = `pictures/${kit.id}/${crypto.randomUUID()}`;
 			await env.COVERS.put(key, input.body, { httpMetadata: { contentType: input.contentType } });
@@ -903,9 +627,9 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async addCountry(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const { continent, leagueName, seasonFormat } = countryFields(input);
-			const name = await freeCountryName(input.name);
+			const name = await freeName(countries, 'Country', input.name);
 			// One batch is one transaction: the Country takes the League inserted just before it.
 			const [, [created]] = await db.batch([
 				db.insert(leagues).values({ name: leagueName, seasonFormat }),
@@ -918,11 +642,11 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async editCountry(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const [current] = await db.select().from(countries).where(eq(countries.id, input.id));
 			if (!current) throw new Error('Unknown country');
 			const { continent, leagueName, seasonFormat } = countryFields(input);
-			const name = await freeCountryName(input.name, input.id);
+			const name = await freeName(countries, 'Country', input.name, input.id);
 			const clubs = db
 				.select({ id: teams.id })
 				.from(teams)
@@ -944,15 +668,15 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async addStore(token, name) {
-			await owner(token);
-			const cleaned = await freeStoreName(name);
+			await requireOwner(token);
+			const cleaned = await freeName(stores, 'Store', name);
 			const [created] = await db.insert(stores).values({ name: cleaned }).returning();
 			return { id: created.id, name: created.name };
 		},
 
 		async renameStore(token, id, name) {
-			await owner(token);
-			const cleaned = await freeStoreName(name, id);
+			await requireOwner(token);
+			const cleaned = await freeName(stores, 'Store', name, id);
 			const [renamed] = await db
 				.update(stores)
 				.set({ name: cleaned })
@@ -967,15 +691,15 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		listKits: () => readKits(),
 
 		async editKit(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const [found] = await readKits(Number(input.kitId));
-			if (!found) throw new Error('Kit not found');
+			if (!found) throw new Error('Unknown kit');
 			const team = (await readTeams()).find((t) => t.id === found.team.id)!;
 			const season = parseSeason(input.season, team.seasonFormat);
 			const kitType = checkKitType(input.kitType);
 			const sameId = await findKitId(team.id, season.start, kitType);
 			if (sameId !== null && sameId !== found.id) {
-				const label = `${team.name} ${formatSeason(season.start, season.end)} ${kitTypeLabels[kitType]}`;
+				const label = kitLabel(team.name, formatSeason(season.start, season.end), kitType);
 				throw new Error(`The Kit ${label} already exists`);
 			}
 			await db
@@ -986,7 +710,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async editTeam(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const all = await readTeams();
 			const team = all.find((t) => t.id === Number(input.teamId));
 			if (!team) throw new Error('Unknown team');
@@ -1007,25 +731,22 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 					.from(kits)
 					.where(eq(kits.id, kitId))
 			)[0];
-			if (!kit?.mainPictureKey) return null;
-			const object = await env.COVERS.get(kit.mainPictureKey);
-			if (!object) return null;
-			return { body: object.body, contentType: object.httpMetadata?.contentType ?? 'image/jpeg' };
+			return kit?.mainPictureKey ? readImage(kit.mainPictureKey) : null;
 		},
 
 		async uploadMainPicture(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			await saveUpload(input.kitId, input.body, input.contentType);
 		},
 
 		async uploadMainPictureFromUrl(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const image = await fetchImage(input.url);
 			await saveUpload(input.kitId, image.body, image.contentType);
 		},
 
 		async listPictureCandidates(token, kitId) {
-			await owner(token);
+			await requireOwner(token);
 			const found = await kitWithTeam(lookup, kitId);
 			const sourceTeamId = await sourceTeamOf(lookup, found);
 			const pictures = sourceTeamId ? await listKitPictures(sportsDb, sourceTeamId) : [];
@@ -1043,7 +764,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async searchTeams(token, query) {
-			await owner(token);
+			await requireOwner(token);
 			const hits = await searchTeams(sportsDb, query);
 			return hits
 				.filter((hit) => hit.soccer)
@@ -1051,7 +772,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async setTeamSource(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const sourceTeamId = String(input.sourceTeamId ?? '').trim();
 			if (!sourceTeamId) throw new Error('Choose a TheSportsDB team');
 			const [updated] = await db
@@ -1063,16 +784,16 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async pickMainPicture(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const kit = (await db.select({ id: kits.id }).from(kits).where(eq(kits.id, input.kitId)))[0];
-			if (!kit) throw new Error('Kit not found');
+			if (!kit) throw new Error('Unknown kit');
 			const image = await fetchKitPicture(sportsDb, String(input.candidateId ?? ''));
 			checkImage(image.body, image.contentType);
 			await storeMainPicture(kit.id, image.body, image.contentType);
 		},
 
 		async lookupNext(token, input) {
-			await owner(token);
+			await requireOwner(token);
 			const size = Math.max(0, Math.floor(input.size));
 			const notChosen = eq(kits.mainPictureChosen, false);
 			const pending = await db
@@ -1112,7 +833,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async listKitsWithoutMainPicture(token) {
-			await owner(token);
+			await requireOwner(token);
 			const rows = await db
 				.select({
 					id: kits.id,
@@ -1124,34 +845,27 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.from(kits)
 				.innerJoin(teams, eq(kits.teamId, teams.id))
 				.where(isNull(kits.mainPictureKey));
-			return rows
-				.sort(
-					(a, b) =>
-						compare(a.teamName, b.teamName) ||
-						a.start - b.start ||
-						KIT_TYPE_ORDER.indexOf(a.kitType) - KIT_TYPE_ORDER.indexOf(b.kitType)
-				)
-				.map((r) => ({
-					id: r.id,
-					teamName: r.teamName,
-					season: formatSeason(r.start, r.end),
-					kitType: r.kitType
-				}));
+			return rows.sort(compareKits).map((r) => ({
+				id: r.id,
+				teamName: r.teamName,
+				season: formatSeason(r.start, r.end),
+				kitType: r.kitType
+			}));
 		},
 
 		// --- Delete ---
 
 		async deleteJersey(token, jerseyId) {
-			await owner(token);
+			await requireOwner(token);
 			const [deleted] = await db
 				.delete(jerseys)
 				.where(eq(jerseys.id, Number(jerseyId)))
 				.returning({ id: jerseys.id });
-			if (!deleted) throw new Error('Jersey not found');
+			if (!deleted) throw new Error('Unknown jersey');
 		},
 
 		async deleteStore(token, storeId) {
-			await owner(token);
+			await requireOwner(token);
 			const [store] = await db
 				.select()
 				.from(stores)
@@ -1168,7 +882,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async deleteCountry(token, countryId) {
-			await owner(token);
+			await requireOwner(token);
 			const [country] = await db
 				.select()
 				.from(countries)
@@ -1187,7 +901,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async deleteTeam(token, teamId) {
-			await owner(token);
+			await requireOwner(token);
 			const [team] = await db
 				.select()
 				.from(teams)
@@ -1202,14 +916,14 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async deleteKit(token, kitId) {
-			await owner(token);
+			await requireOwner(token);
 			const [kit] = await readKits(Number(kitId));
-			if (!kit) throw new Error('Kit not found');
+			if (!kit) throw new Error('Unknown kit');
 			const [[{ owned }], [{ wanted }]] = await db.batch([
 				db.select({ owned: count() }).from(jerseys).where(eq(jerseys.kitId, kit.id)),
 				db.select({ wanted: count() }).from(wishlistItems).where(eq(wishlistItems.kitId, kit.id))
 			]);
-			refuseWhileUsed(`${kit.team.name} ${kit.season} ${kitTypeLabels[kit.kitType]}`, [
+			refuseWhileUsed(kitLabel(kit.team.name, kit.season, kit.kitType), [
 				[owned, 'Jersey'],
 				[wanted, 'Wishlist Item']
 			]);
@@ -1224,68 +938,20 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		},
 
 		async deletePicture(token, pictureId) {
-			await owner(token);
+			await requireOwner(token);
 			const [deleted] = await db
 				.delete(pictures)
 				.where(eq(pictures.id, Number(pictureId)))
 				.returning({ key: pictures.key });
-			if (!deleted) throw new Error('Picture not found');
+			if (!deleted) throw new Error('Unknown picture');
 			await env.COVERS.delete(deleted.key);
 		},
 
 		// --- Import (once) ---
 
 		async importRows(token, rows) {
-			await owner(token);
-			const [{ held }] = await db
-				.select({
-					held: sql<number>`(SELECT count(*) FROM ${jerseys}) + (SELECT count(*) FROM ${wishlistItems})`
-				})
-				.from(sql`(SELECT 1)`);
-			if (held > 0) throw new Error('The Collection or the Wishlist already has entries');
-			const checked = await checkImport(rows);
-			// Rows find their Country, Team, Store and Kit by name, so one batch (one transaction) does it.
-			const statements = [
-				...checked.countries.flatMap((c) => [
-					db.insert(leagues).values({ name: c.league, seasonFormat: c.seasonFormat }),
-					db
-						.insert(countries)
-						.values({ name: c.name, continent: c.continent, leagueId: sql`last_insert_rowid()` })
-				]),
-				...checked.stores.map((s) => db.insert(stores).values({ name: s.name })),
-				...checked.teams.map((t) =>
-					db
-						.insert(teams)
-						.values({ name: t.name, kind: t.kind, countryId: countryIdNamed(t.country) })
-				),
-				...checked.kits.map((k) =>
-					db.insert(kits).values({
-						teamId: teamIdNamed(k.team),
-						seasonStartYear: k.start,
-						seasonEndYear: k.end,
-						kitType: k.kitType
-					})
-				),
-				...checked.jerseys.map(({ kit, store, ...fields }) =>
-					db.insert(jerseys).values({
-						...fields,
-						kitId: kitIdOf(kit),
-						storeId: store === null ? null : storeIdNamed(store)
-					})
-				),
-				...checked.wishlist.map(({ kit, version, desire }) =>
-					db.insert(wishlistItems).values({ kitId: kitIdOf(kit), version, desire })
-				)
-			];
-			if (statements.length) await db.batch(statements as unknown as BatchStatements);
-			return {
-				countries: checked.countries.length,
-				stores: checked.stores.length,
-				teams: checked.teams.length,
-				kits: checked.kits.length,
-				jerseys: checked.jerseys.length,
-				wishlistItems: checked.wishlist.length
-			};
+			await requireOwner(token);
+			return importRows(db, rows, { readCountries, readTeams });
 		},
 
 		async login(password) {

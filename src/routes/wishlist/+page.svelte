@@ -101,7 +101,7 @@
 	let open = $state(false);
 	const pictures = kitPictures(() => selected?.kit.id ?? null);
 
-	// Owner: "Got it" turns the Popup into the GotItForm; "Drop" removes the Wishlist Item at once.
+	// Owner: "Got it" turns the Popup into the GotItForm; "Drop" takes the Wishlist Item off the Wishlist at once.
 	let gettingIt = $state(false);
 	let dropping = $state(false);
 	let actionError = $state<string | null>(null);
@@ -209,7 +209,7 @@
 	<DeleteAction
 		what="this picture"
 		text="Every Jersey and the Wishlist Item of this Kit lose it."
-		onDelete={() => pictures.remove(index)}
+		onDelete={() => pictures.delete(index)}
 	/>
 {/snippet}
 
@@ -236,7 +236,7 @@
 				/>
 			{:else}
 				<dl
-					class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-[15px] [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
+					class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-md [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
 				>
 					<dt class="text-muted-foreground">Version</dt>
 					<dd>{selected.version ? versionLabels[selected.version] : 'Any version'}</dd>

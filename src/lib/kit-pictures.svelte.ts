@@ -3,7 +3,7 @@ import { pictureUrl } from '#lib/pictures';
 
 /**
  * The extra Picture URLs of the Kit that `kitId` returns, fetched when it changes. Call it while a
- * component initialises. `reload` fetches them again, after the Owner added some. `remove`
+ * component initialises. `reload` fetches them again, after the Owner added some. `delete`
  * deletes one (Owner) and answers an error message, or null.
  */
 export function kitPictures(kitId: () => number | null) {
@@ -35,7 +35,7 @@ export function kitPictures(kitId: () => number | null) {
 			if (id !== null) await load(id);
 		},
 		/** `index` is the Picture's place in `urls`. */
-		remove: async (index: number) => {
+		delete: async (index: number) => {
 			const picture = list[index];
 			if (!picture) return null;
 			try {

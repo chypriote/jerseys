@@ -5,7 +5,7 @@
 </script>
 
 <span class="inline-flex items-center">
-	<span aria-hidden="true" class="inline-flex gap-[3px]">
+	<span aria-hidden="true" class="inline-flex gap-desire">
 		{#each { length: 5 }, i (i)}
 			<span class="size-1.5 rounded-full {i < value ? 'bg-icon-accent' : 'bg-border'}"></span>
 		{/each}
