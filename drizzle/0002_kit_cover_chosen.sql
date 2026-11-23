@@ -1,0 +1,1 @@
+ALTER TABLE `kit` ADD `cover_chosen` integer DEFAULT false NOT NULL;

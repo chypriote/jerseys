@@ -57,7 +57,9 @@ export const kits = sqliteTable(
 		/** Cover key in R2. */
 		coverKey: text('cover_key'),
 		/** Bumped when the Cover image changes, so that its cached URL changes too. */
-		coverVersion: integer('cover_version').notNull().default(0)
+		coverVersion: integer('cover_version').notNull().default(0),
+		/** True once the Owner picked, uploaded or pasted the Cover: a lookup keeps it. */
+		coverChosen: integer('cover_chosen', { mode: 'boolean' }).notNull().default(false)
 	},
 	// A Team's Seasons all follow one Season Format, so the start year names the Season.
 	(t) => [uniqueIndex('kit_team_season_type_unique').on(t.teamId, t.seasonStartYear, t.kitType)]
