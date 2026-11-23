@@ -42,7 +42,7 @@ _Avoid_: Cover, artwork, photo
 When a Kit is worn. A National Team's Season is one year (2024). A Club's Season follows its League's Season Format.
 
 **Season Format**:
-How a League counts Seasons: Season (start and end year, 2023-24) or Calendar (one year, 2024).
+How a League counts Seasons: Season (start and end year, 2023-24) or Calendar (one year, 2024). Changing a Country's Season Format converts its Clubs' Kit Seasons, keeping the start year (2024 becomes 2024-25).
 
 **Kit Type**:
 Which kit of the Season it is: Home, Away, Third, Fourth, Cup or Special.

@@ -2503,12 +2503,20 @@ describe('Teams and Kits admin', () => {
 		expect(await teamNamed('Lyon')).toEqual(lyon);
 	});
 
-	it('refuses a Country Season Format that a Kit Season of one of its Clubs does not fit', async () => {
+	it('converts the Kit Seasons of a Country Clubs when its Season Format changes', async () => {
 		const league = 'Ligue 1';
 		await insertKit({
 			team: 'Lyon',
 			start: 2023,
 			end: 2024,
+			kitType: 'home',
+			country: 'France',
+			league
+		});
+		await insertKit({
+			team: 'Lyon',
+			start: 2024,
+			end: 2025,
 			kitType: 'home',
 			country: 'France',
 			league
@@ -2530,12 +2538,13 @@ describe('Teams and Kits admin', () => {
 				leagueName: league,
 				seasonFormat
 			});
-		await expect(edit('calendar')).rejects.toThrow(
-			'Lyon has a Kit of Season 2023-24, which does not fit the Calendar format'
-		);
-		expect((await catalog.listCountries())[0].league.seasonFormat).toBe('split');
-		// A National Team keeps the Calendar format, so its Kits never block the League.
+		const seasons = async () =>
+			(await catalog.listKits()).map((k) => `${k.team.name} ${k.season}`).sort();
+		expect((await edit('calendar')).league.seasonFormat).toBe('calendar');
+		expect(await seasons()).toEqual(['France 2024', 'Lyon 2023', 'Lyon 2024']);
 		expect((await edit('split')).league.seasonFormat).toBe('split');
+		// The National Team keeps its one-year Season.
+		expect(await seasons()).toEqual(['France 2024', 'Lyon 2023-24', 'Lyon 2024-25']);
 	});
 
 	it('changes a Kit Season and Kit Type, and its Jerseys and Wishlist Item follow', async () => {
