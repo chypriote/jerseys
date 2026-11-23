@@ -5,8 +5,16 @@
 	import { kitLabel } from '#lib/labels';
 	import { mapCountries, mapCountryNamed, mapViewBox } from '#lib/map';
 
-	let { countries, jerseys }: { countries: CoverageCountry[]; jerseys: CollectionJersey[] } =
-		$props();
+	let {
+		countries,
+		jerseys,
+		onSelect
+	}: {
+		countries: CoverageCountry[];
+		jerseys: CollectionJersey[];
+		/** A covered Country was clicked. */
+		onSelect?: (countryId: number) => void;
+	} = $props();
 
 	const [x, y, width, height] = mapViewBox;
 	// Where Europe sits across the map, from 0 (west) to 1 (east).
@@ -34,6 +42,12 @@
 		return byShape;
 	});
 	const appShapes = $derived(new Set(drawn.filter((c) => c.inApp).map((c) => c.name)));
+
+	function pickCountry(e: MouseEvent) {
+		const shape = (e.target as Element).getAttribute('data-shape');
+		const country = countries.find((c) => c.covered && mapCountryNamed(c.name)?.name === shape);
+		if (country) onSelect?.(country.id);
+	}
 
 	// Hover only: a touch screen scrolls the map, so a tap shows nothing.
 	let innerWidth = $state(0);
@@ -109,10 +123,13 @@
 	<div id={panelId} hidden={!open}>
 		<div bind:this={scroller} class="overflow-x-auto overscroll-x-contain">
 			<div class="min-w-(--map-width-min)" bind:clientWidth={drawnWidth}>
+				<!-- A pointer shortcut: the Country filter does the same by keyboard. -->
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 				<svg
 					viewBox="{x} {y} {width} {height}"
 					role="img"
 					aria-label="Countries covered: {coveredNames.join(', ')}"
+					onclick={pickCountry}
 					onpointermove={showTip}
 					onpointerleave={() => (tip = null)}
 					class="block h-auto w-full [&_path]:stroke-(--map-country-border) [&_path]:stroke-(length:--map-country-border-width) [&_path]:[stroke-linejoin:round] [&_path]:[vector-effect:non-scaling-stroke]"
@@ -122,7 +139,7 @@
 							d={country.d}
 							data-shape={country.name}
 							class={country.covered
-								? 'fill-(--map-country-covered)'
+								? 'cursor-pointer fill-(--map-country-covered)'
 								: country.inApp
 									? 'fill-(--map-country-empty)'
 									: 'fill-(--map-country-absent)'}
@@ -135,7 +152,7 @@
 							data-shape={country.name}
 							r={DOT_RADIUS_PX / pxPerUnit}
 							class="stroke-(--map-country-border) stroke-1 [vector-effect:non-scaling-stroke] {country.covered
-								? 'fill-(--map-country-covered)'
+								? 'cursor-pointer fill-(--map-country-covered)'
 								: 'fill-(--map-country-empty)'}"
 						/>
 					{/each}
