@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { CoverageCountry } from '#lib/server/catalog/types';
-	import { mapCountries, mapCountryNamed, mapLand, mapViewBox } from '#lib/map';
+	import { mapCountries, mapCountryNamed, mapViewBox } from '#lib/map';
 
 	let { countries }: { countries: CoverageCountry[] } = $props();
 
@@ -49,7 +49,6 @@
 				aria-label="Countries covered: {coveredNames.join(', ')}"
 				class="block h-auto w-full [&_path]:stroke-(--map-country-border) [&_path]:stroke-[0.5px] [&_path]:[stroke-linejoin:round] [&_path]:[vector-effect:non-scaling-stroke]"
 			>
-				<path d={mapLand} class="fill-(--map-country-empty)" />
 				{#each drawn as country (country.name)}
 					<path
 						d={country.d}
