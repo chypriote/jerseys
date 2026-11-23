@@ -15,6 +15,13 @@
 	$effect(() => {
 		if (img && img.complete && img.naturalWidth === 0) failed = true;
 	});
+
+	// Hydration keeps the `src` of the server-rendered image even when the page state now asks for
+	// another one (a browser that restores the search field on reload filters the list while the
+	// page hydrates). Set it again once hydrated.
+	$effect(() => {
+		if (img && url && img.getAttribute('src') !== url) img.src = url;
+	});
 </script>
 
 {#if url && !failed}
