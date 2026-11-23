@@ -23,7 +23,7 @@
 		src={url}
 		alt=""
 		loading="lazy"
-		class="size-full object-contain p-[8%]"
+		class="size-full object-contain p-[8%] mix-blend-multiply dark:mix-blend-normal"
 		onerror={() => (failed = true)}
 	/>
 {:else}
