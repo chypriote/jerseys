@@ -1,0 +1,40 @@
+{
+	"equipment": [
+		{
+			"idEquipment": "2210",
+			"idTeam": "134502",
+			"date": "2022-10-31 15:05:10",
+			"strSeason": "2022",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/q2vtay1667228710.png",
+			"strType": "1st",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "2211",
+			"idTeam": "134502",
+			"date": "2022-10-31 15:05:44",
+			"strSeason": "2022",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/c7lhmm1667228744.png",
+			"strType": "2nd",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "4802",
+			"idTeam": "134502",
+			"date": "2024-03-25 16:00:33",
+			"strSeason": "2024",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/mmr9ub1711382433.png",
+			"strType": "1st",
+			"strUsername": "kitcollector"
+		},
+		{
+			"idEquipment": "4803",
+			"idTeam": "134502",
+			"date": "2024-03-25 16:01:00",
+			"strSeason": "2024",
+			"strEquipment": "https://r2.thesportsdb.com/images/media/team/equipment/vfq3t71711382460.png",
+			"strType": "2nd",
+			"strUsername": "kitcollector"
+		}
+	]
+}

@@ -1,6 +1,12 @@
 import { env } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCatalog } from './index';
+import searchLyon from './fixtures/thesportsdb/searchteams-lyon.json';
+import searchJapan from './fixtures/thesportsdb/searchteams-japan.json';
+import searchNone from './fixtures/thesportsdb/searchteams-none.json';
+import equipmentLyon from './fixtures/thesportsdb/lookupequipment-lyon.json';
+import equipmentJapan from './fixtures/thesportsdb/lookupequipment-japan.json';
+import equipmentNone from './fixtures/thesportsdb/lookupequipment-none.json';
 
 describe('Catalog', () => {
 	it('has the Official Store from day one', async () => {
@@ -97,7 +103,13 @@ describe('Owner login', () => {
 					body: new ArrayBuffer(1),
 					contentType: 'image/png'
 				}),
-			() => catalog.uploadMainPictureFromUrl(bad, { kitId: 1, url: 'https://images.example/a.png' })
+			() =>
+				catalog.uploadMainPictureFromUrl(bad, { kitId: 1, url: 'https://images.example/a.png' }),
+			() => catalog.listPictureCandidates(bad, 1),
+			() => catalog.searchTeams(bad, 'Lyon'),
+			() => catalog.setTeamSource(bad, { teamId: 1, sourceTeamId: '133713' }),
+			() =>
+				catalog.pickMainPicture(bad, { kitId: 1, candidateId: 'https://r2.thesportsdb.com/a.png' })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -297,15 +309,18 @@ async function insertKit(kit: {
 	end?: number;
 	kitType: string;
 	mainPictureKey?: string;
+	country?: string;
+	league?: string;
 }) {
-	const country = `Country of ${kit.team}`;
+	const country = kit.country ?? `Country of ${kit.team}`;
+	const league = kit.league ?? `League of ${kit.team}`;
 	await env.DB.batch([
 		env.DB.prepare(
 			'INSERT OR IGNORE INTO league (id, name, season_format) VALUES ((SELECT id FROM league WHERE name = ?1), ?1, ?2)'
-		).bind(`League of ${kit.team}`, kit.end ? 'split' : 'calendar'),
+		).bind(league, kit.end ? 'split' : 'calendar'),
 		env.DB.prepare(
 			"INSERT OR IGNORE INTO country (name, continent, league_id) VALUES (?1, 'europe', (SELECT id FROM league WHERE name = ?2))"
-		).bind(country, `League of ${kit.team}`),
+		).bind(country, league),
 		env.DB.prepare(
 			'INSERT OR IGNORE INTO team (name, kind, country_id) VALUES (?1, ?2, (SELECT id FROM country WHERE name = ?3))'
 		).bind(kit.team, kit.kind ?? 'club', country)
@@ -525,5 +540,299 @@ describe('Kit Main Pictures', () => {
 				main_picture_chosen: 0
 			});
 		});
+	});
+});
+
+// --- Picture candidates from TheSportsDB ---------------------------------------------
+
+/** A 1×1 PNG, as TheSportsDB serves kit pictures. */
+const PNG = Uint8Array.from(
+	atob(
+		'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+	),
+	(c) => c.charCodeAt(0)
+);
+
+describe('Picture candidates', () => {
+	const catalog = createCatalog(env, { lookupIntervalMs: 0 });
+	let token: string;
+
+	/** Fake TheSportsDB at the fetch boundary: saved answers keyed by search text and Team id. */
+	let searches: Record<string, unknown>;
+	let equipment: Record<string, unknown>;
+	let calls: { url: URL; at: number }[];
+	let failing: boolean;
+	const sportsDbCalls = (file: string) => calls.filter((c) => c.url.pathname.endsWith(file));
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const listed = await env.COVERS.list();
+		await Promise.all(listed.objects.map((o) => env.COVERS.delete(o.key)));
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+
+		searches = { 'Olympique Lyonnais': searchLyon, Lyon: searchLyon, Japan: searchJapan };
+		equipment = { '133713': equipmentLyon, '134502': equipmentJapan };
+		calls = [];
+		failing = false;
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+			const url = new URL(new Request(input as RequestInfo, init).url);
+			calls.push({ url, at: Date.now() });
+			if (url.host === 'www.thesportsdb.com') {
+				if (failing) return new Response('Too Many Requests', { status: 429 });
+				if (url.pathname === '/api/v1/json/test-sportsdb-key/searchteams.php') {
+					return Response.json(searches[url.searchParams.get('t') ?? ''] ?? searchNone);
+				}
+				if (url.pathname === '/api/v1/json/test-sportsdb-key/lookupequipment.php') {
+					return Response.json(equipment[url.searchParams.get('id') ?? ''] ?? equipmentNone);
+				}
+			}
+			if (url.host === 'r2.thesportsdb.com') {
+				const png = { headers: { 'content-type': 'image/png' } };
+				if (url.pathname.endsWith('/big.png')) {
+					return new Response(new Uint8Array(2 * 1024 * 1024), png);
+				}
+				if (url.pathname.endsWith('/page.png')) {
+					return new Response('<html>', { headers: { 'content-type': 'text/html' } });
+				}
+				if (url.pathname.endsWith('/missing.png')) return new Response('', { status: 404 });
+				return new Response(PNG, png);
+			}
+			throw new Error(`Unexpected fetch to ${url.href}`);
+		});
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	const lyon = (over: { start?: number; kitType?: string } = {}) =>
+		insertKit({
+			team: 'Olympique Lyonnais',
+			start: over.start ?? 2023,
+			end: (over.start ?? 2023) + 1,
+			kitType: over.kitType ?? 'home',
+			country: 'France',
+			league: 'Ligue 1'
+		});
+
+	const equipmentUrl = (name: string) =>
+		`https://r2.thesportsdb.com/images/media/team/equipment/${name}.png`;
+
+	it('finds the TheSportsDB Team, stores it, and lists the Kit Season first', async () => {
+		const kit = await lyon();
+		const listing = await catalog.listPictureCandidates(token, kit);
+		expect(listing.sourceTeamId).toBe('133713');
+		expect(listing.candidates.map((c) => [c.season, c.kitType])).toEqual([
+			['2023-24', 'home'],
+			['2023-24', 'away'],
+			['2023-24', 'third'],
+			['2024-25', 'home'],
+			['2022-23', 'home'],
+			['2022-23', 'away']
+		]);
+		expect(listing.candidates[0]).toEqual({
+			id: equipmentUrl('2tpd4i1689433133'),
+			imageUrl: equipmentUrl('2tpd4i1689433133'),
+			season: '2023-24',
+			kitType: 'home'
+		});
+		expect(sportsDbCalls('searchteams.php')[0].url.searchParams.get('t')).toBe(
+			'Olympique Lyonnais'
+		);
+	});
+
+	it('skips the Team search once the TheSportsDB Team is stored', async () => {
+		const kit = await lyon();
+		await catalog.listPictureCandidates(token, kit);
+		const other = await lyon({ start: 2022 });
+		const listing = await catalog.listPictureCandidates(token, other);
+		expect(sportsDbCalls('searchteams.php')).toHaveLength(1);
+		expect(sportsDbCalls('lookupequipment.php')).toHaveLength(2);
+		expect(listing.candidates.slice(0, 2).map((c) => c.season)).toEqual(['2022-23', '2022-23']);
+	});
+
+	it('matches a Calendar Season to a one-year TheSportsDB Season', async () => {
+		const kit = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'away',
+			country: 'Japan'
+		});
+		const listing = await catalog.listPictureCandidates(token, kit);
+		expect(listing.sourceTeamId).toBe('134502');
+		expect(listing.candidates.map((c) => [c.season, c.kitType])).toEqual([
+			['2024', 'home'],
+			['2024', 'away'],
+			['2022', 'home'],
+			['2022', 'away']
+		]);
+	});
+
+	describe('Team match', () => {
+		const hit = (over: object) => ({
+			idTeam: '1',
+			strTeam: 'Olympique Lyonnais',
+			strTeamAlternate: '',
+			strSport: 'Soccer',
+			strLeague: 'French Ligue 1',
+			strCountry: 'Elsewhere',
+			...over
+		});
+		let start = 2000;
+		/** The TheSportsDB Team found for a new Lyon Kit when the search answers `hits`. */
+		const matched = async (hits: object[]) => {
+			searches['Olympique Lyonnais'] = { teams: hits };
+			await env.DB.prepare('UPDATE team SET source_team_id = NULL').run();
+			const kit = await lyon({ start: start++ });
+			return (await catalog.listPictureCandidates(token, kit)).sourceTeamId;
+		};
+
+		it('keeps Soccer hits only', async () => {
+			expect(await matched([hit({ idTeam: '9', strSport: 'Rugby', strCountry: 'France' })])).toBe(
+				null
+			);
+			expect(sportsDbCalls('lookupequipment.php')).toHaveLength(0);
+		});
+
+		it('compares names without case, accents or outer spaces, on the name and alternate names', async () => {
+			expect(await matched([hit({ idTeam: '2', strTeam: 'OLYMPIQUE LYONNAIS ' })])).toBe('2');
+			expect(
+				await matched([
+					hit({ idTeam: '3', strTeam: 'OL', strTeamAlternate: 'Lyon, Olympique Lyonnaìs' })
+				])
+			).toBe('3');
+		});
+
+		it('prefers the hit whose Country or League matches', async () => {
+			const hits = [hit({ idTeam: '4' }), hit({ idTeam: '5', strCountry: 'france' })];
+			expect(await matched(hits)).toBe('5');
+			expect(
+				await matched([hit({ idTeam: '6' }), hit({ idTeam: '7', strLeague: 'Ligue 1' })])
+			).toBe('7');
+		});
+
+		it('gives no match when no hit agrees', async () => {
+			expect(await matched([hit({ strTeam: 'Lyon Duchère' })])).toBe(null);
+			expect(await matched([hit({ idTeam: '4' }), hit({ idTeam: '5' })])).toBe(null);
+			expect(await matched([])).toBe(null);
+		});
+
+		it('matches a National Team to a national-team hit only', async () => {
+			const japan = (over: object) => hit({ strTeam: 'Japan', strCountry: 'Japan', ...over });
+			const nationalKit = () =>
+				insertKit({
+					team: 'Japan',
+					kind: 'national',
+					start: start++,
+					kitType: 'home',
+					country: 'Japan'
+				});
+			searches.Japan = { teams: [japan({ idTeam: '8', strLeague: 'Japanese J1 League' })] };
+			expect((await catalog.listPictureCandidates(token, await nationalKit())).sourceTeamId).toBe(
+				null
+			);
+			searches.Japan = {
+				teams: [
+					japan({ idTeam: '8', strLeague: 'Japanese J1 League' }),
+					japan({ idTeam: '10', strLeague: 'International Friendlies' })
+				]
+			};
+			expect((await catalog.listPictureCandidates(token, await nationalKit())).sourceTeamId).toBe(
+				'10'
+			);
+		});
+	});
+
+	it('searches Soccer Teams by typed text, with the key in the path', async () => {
+		expect(await catalog.searchTeams(token, '  Lyon ')).toEqual([
+			{ id: '133713', name: 'Lyon', country: 'France', league: 'French Ligue 1' },
+			{ id: '140152', name: 'Lyon Women', country: 'France', league: 'French Division 1 Feminine' }
+		]);
+		expect(sportsDbCalls('searchteams.php')[0].url.href).toBe(
+			'https://www.thesportsdb.com/api/v1/json/test-sportsdb-key/searchteams.php?t=Lyon'
+		);
+		expect(await catalog.searchTeams(token, 'Nobody FC')).toEqual([]);
+		expect(await catalog.searchTeams(token, '   ')).toEqual([]);
+		expect(sportsDbCalls('searchteams.php')).toHaveLength(2);
+	});
+
+	it('replaces the TheSportsDB Team of a Team, and the candidates follow it', async () => {
+		const kit = await lyon();
+		const { teamId } = await catalog.listPictureCandidates(token, kit);
+		await catalog.setTeamSource(token, { teamId, sourceTeamId: '134502' });
+		const listing = await catalog.listPictureCandidates(token, kit);
+		expect(listing.sourceTeamId).toBe('134502');
+		expect(listing.candidates.map((c) => c.season)).toEqual(['2024', '2024', '2022', '2022']);
+		expect(sportsDbCalls('searchteams.php')).toHaveLength(1);
+		await expect(
+			catalog.setTeamSource(token, { teamId: 99999, sourceTeamId: '1' })
+		).rejects.toThrow('Unknown team');
+		await expect(catalog.setTeamSource(token, { teamId, sourceTeamId: ' ' })).rejects.toThrow(
+			/^Choose a TheSportsDB team$/
+		);
+	});
+
+	it('picks a candidate: its image goes to R2 as a chosen Main Picture with a new version', async () => {
+		const kit = await lyon();
+		const [first] = (await catalog.listPictureCandidates(token, kit)).candidates;
+		await catalog.pickMainPicture(token, { kitId: kit, candidateId: first.id });
+		expect(await mainPictureOf(kit)).toEqual({
+			main_picture_key: `main-pictures/${kit}`,
+			main_picture_version: 1,
+			main_picture_chosen: 1
+		});
+		const picture = await catalog.getMainPicture(kit);
+		expect(picture?.contentType).toBe('image/png');
+		expect(new Uint8Array(await new Response(picture!.body).arrayBuffer())).toEqual(PNG);
+		await catalog.pickMainPicture(token, { kitId: kit, candidateId: first.id });
+		expect((await mainPictureOf(kit))?.main_picture_version).toBe(2);
+	});
+
+	it('refuses a candidate from another host, of another type, of 2 MB or more, or missing', async () => {
+		const kit = await lyon();
+		const pick = (candidateId: string, kitId = kit) =>
+			catalog.pickMainPicture(token, { kitId, candidateId });
+		await expect(pick('https://images.example/a.png')).rejects.toThrow('Unknown candidate');
+		await expect(pick('http://r2.thesportsdb.com/a.png')).rejects.toThrow('Unknown candidate');
+		await expect(pick('nonsense')).rejects.toThrow('Unknown candidate');
+		await expect(pick(equipmentUrl('page'))).rejects.toThrow('Use a JPEG, PNG or WebP image');
+		await expect(pick(equipmentUrl('big'))).rejects.toThrow('The image must be under 2 MB');
+		await expect(pick(equipmentUrl('missing'))).rejects.toThrow('TheSportsDB answered 404');
+		await expect(pick(equipmentUrl('ok'), 99999)).rejects.toThrow('Kit not found');
+		expect(await mainPictureOf(kit)).toEqual({
+			main_picture_key: null,
+			main_picture_version: 0,
+			main_picture_chosen: 0
+		});
+	});
+
+	it('reports a TheSportsDB error and stores no Team', async () => {
+		const kit = await lyon();
+		failing = true;
+		await expect(catalog.listPictureCandidates(token, kit)).rejects.toThrow(
+			'TheSportsDB answered 429'
+		);
+		await expect(catalog.listPictureCandidates(token, 99999)).rejects.toThrow('Kit not found');
+		failing = false;
+		expect((await catalog.listPictureCandidates(token, kit)).sourceTeamId).toBe('133713');
+	});
+
+	it('sends at most one TheSportsDB request per interval, images included', async () => {
+		const slow = createCatalog(env, { lookupIntervalMs: 60 });
+		const kit = await lyon();
+		const [first] = (await slow.listPictureCandidates(token, kit)).candidates;
+		await slow.pickMainPicture(token, { kitId: kit, candidateId: first.id });
+		const times = calls.map((c) => c.at);
+		expect(times).toHaveLength(3);
+		expect(times[1] - times[0]).toBeGreaterThanOrEqual(55);
+		expect(times[2] - times[1]).toBeGreaterThanOrEqual(55);
 	});
 });

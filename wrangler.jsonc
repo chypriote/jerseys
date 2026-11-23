@@ -17,6 +17,9 @@
 			"binding": "COVERS",
 			"bucket_name": "jerseys-covers"
 		}
-	]
-	// Secrets (not in this file): OWNER_PASSWORD and JWT_SECRET. See README.
+	],
+	// Values are not in this file: set them with `wrangler secret put` (see README).
+	"secrets": {
+		"required": ["OWNER_PASSWORD", "JWT_SECRET", "THESPORTSDB_KEY"]
+	}
 }
