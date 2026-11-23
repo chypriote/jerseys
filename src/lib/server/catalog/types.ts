@@ -205,6 +205,8 @@ export interface KitInput {
 	 * Main Picture of the Kit. A new Kit sent with one skips the TheSportsDB lookup.
 	 */
 	mainPicture?: MainPictureFile | null;
+	/** An image address to fetch as the Main Picture, when no file is sent. Same rules. */
+	mainPictureUrl?: string | null;
 }
 
 /** A Kit by Team, formatted Season and Kit Type: what the forms compare their fields to. */

@@ -57,7 +57,8 @@
 	let fit = $state<Fit>(start?.fit ?? 'good');
 	let print = $state(start?.print ?? '');
 	let acquisition = $state(start ? acquisitionState(start.acquisition) : emptyAcquisition());
-	let mainPicture = $state<FileList | null>(null);
+	let mainPicture = $state<File | null>(null);
+	let mainPictureUrl = $state('');
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
 	let busy = $state(false);
@@ -82,6 +83,7 @@
 			team,
 			season,
 			kitType,
+			mainPictureUrl: mainPictureUrl.trim() || undefined,
 			version,
 			size,
 			fit,
@@ -104,6 +106,7 @@
 		bind:season
 		bind:kitType
 		bind:mainPicture
+		bind:mainPictureUrl
 		{teams}
 		{countries}
 		{pictured}

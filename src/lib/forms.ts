@@ -46,8 +46,7 @@ export async function deleteRow(action: string, id: number, onDone: () => void) 
 }
 
 /** The chosen Main picture file, shrunk to a JPEG for the upload, or an error message to show. */
-export async function mainPictureUpload(files: FileList | null | undefined) {
-	const file = files?.[0];
+export async function mainPictureUpload(file: File | null) {
 	if (!file) return null;
 	try {
 		return await shrinkImage(file);

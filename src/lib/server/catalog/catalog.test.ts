@@ -2108,6 +2108,23 @@ describe('Main Picture of a new Kit', () => {
 		expect(calls).toEqual([]);
 	});
 
+	it('fetches a Main picture address sent with a new Jersey, chosen, and runs no lookup', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(
+			async () => new Response(PNG.slice(), { headers: { 'content-type': 'image/png' } })
+		);
+		try {
+			const added = await catalog.addJersey(token, {
+				...jersey,
+				...lyonKit(),
+				mainPictureUrl: 'https://images.example/lyon.png'
+			});
+			expect(await mainPictureOf(added.kit.id)).toMatchObject({ main_picture_chosen: 1 });
+			expect(calls).toEqual([]);
+		} finally {
+			vi.restoreAllMocks();
+		}
+	});
+
 	it('stores a Main picture sent with a Wishlist Item on a Kit that has none', async () => {
 		const kit = await insertKit({
 			team: 'Japan',
