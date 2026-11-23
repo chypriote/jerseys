@@ -44,6 +44,16 @@ THESPORTSDB_KEY=123
 
 Bindings: `DB` (D1), `COVERS` (R2).
 
+## Sheet import (once)
+
+`import/rows.json` (git-ignored) holds the Collection and Wishlist converted from the Google Sheet. With the app running, send it:
+
+```
+JERSEYS_URL=http://localhost:5173 OWNER_PASSWORD=... node scripts/import.mjs import/rows.json
+```
+
+The import is refused once the app has a Jersey or a Wishlist Item. An invalid row fails with its index (`jerseys[12]: ...`) and saves nothing. Main Pictures come after, with "Look up pictures" on the admin page.
+
 ## Layout
 
 - `src/lib/server/db/schema.ts`: Drizzle schema. `drizzle/`: migrations.

@@ -38,6 +38,10 @@ import type {
 	CountryInput,
 	Desire,
 	GotItInput,
+	ImportCountryRow,
+	ImportKitRow,
+	ImportRows,
+	ImportTeam,
 	JerseyInput,
 	KitInput,
 	KitType,
@@ -191,6 +195,59 @@ function refuseWhileUsed(name: string, uses: [number, string][]) {
 const isCents = (value: unknown): value is number =>
 	Number.isInteger(value) && (value as number) >= 0;
 
+/** Version, Size, Fit and Print of a Jersey. */
+function checkCut(input: Pick<JerseyInput, 'version' | 'size' | 'fit' | 'print'>) {
+	return {
+		version: oneOf(
+			input.version,
+			['fan', 'player', 'tracksuit'],
+			'Version must be Fan, Player or Tracksuit'
+		),
+		size: nullableOneOf(input.size, ['S', 'M', 'L'], 'Size must be S, M or L'),
+		fit: nullableOneOf(
+			input.fit,
+			['too-small', 'good', 'too-big'],
+			'Fit must be Too small, Good or Too big'
+		),
+		print: cleanOrNull(input.print)
+	};
+}
+
+const checkWishVersion = (value: unknown) =>
+	nullableOneOf(
+		value,
+		['fan', 'player', 'tracksuit'],
+		'Version must be Any, Fan, Player or Tracksuit'
+	);
+
+function checkDesire(value: unknown) {
+	const desire = Number(value);
+	if (!Number.isInteger(desire) || desire < 1 || desire > 5)
+		throw new Error('Desire must be 1 to 5');
+	return desire;
+}
+
+/** The Purchase dates, from the form or the import. */
+const purchaseDates = (input: { bought: unknown; sent?: unknown; received?: unknown }) => ({
+	acquisitionKind: 'purchase' as const,
+	acquisitionDate: checkDate(input.bought, 'Bought date'),
+	sentDate: optionalDate(input.sent, 'Sent date'),
+	receivedDate: optionalDate(input.received, 'Received date'),
+	giver: null
+});
+
+const giftFields = (input: { date: unknown; giver?: unknown }) => ({
+	acquisitionKind: 'gift' as const,
+	acquisitionDate: checkDate(input.date, 'Gift date'),
+	sentDate: null,
+	receivedDate: null,
+	storeId: null,
+	priceCents: null,
+	giver: cleanOrNull(input.giver)
+});
+
+type BatchStatements = Parameters<ReturnType<typeof drizzle>['batch']>[0];
+
 export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Catalog {
 	const db = drizzle(env.DB);
 	const sportsDb: SportsDbConfig = {
@@ -341,27 +398,9 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			)[0];
 			if (!store) throw new Error('A Purchase needs a Store');
 			if (!isCents(input.priceCents)) throw new Error('A Purchase needs a price in euros');
-			return {
-				acquisitionKind: 'purchase' as const,
-				acquisitionDate: checkDate(input.bought, 'Bought date'),
-				sentDate: optionalDate(input.sent, 'Sent date'),
-				receivedDate: optionalDate(input.received, 'Received date'),
-				storeId: store.id,
-				priceCents: input.priceCents,
-				giver: null
-			};
+			return { ...purchaseDates(input), storeId: store.id, priceCents: input.priceCents };
 		}
-		if (input?.kind === 'gift') {
-			return {
-				acquisitionKind: 'gift' as const,
-				acquisitionDate: checkDate(input.date, 'Gift date'),
-				sentDate: null,
-				receivedDate: null,
-				storeId: null,
-				priceCents: null,
-				giver: cleanOrNull(input.giver)
-			};
-		}
+		if (input?.kind === 'gift') return giftFields(input);
 		throw new Error('Acquisition must be a Purchase or a Gift');
 	}
 
@@ -434,21 +473,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 
 	/** Checks the Jersey fields that are not the Kit, writing nothing. */
 	async function checkJerseyFields(input: GotItInput['jersey']) {
-		return {
-			version: oneOf(
-				input.version,
-				['fan', 'player', 'tracksuit'],
-				'Version must be Fan, Player or Tracksuit'
-			),
-			size: nullableOneOf(input.size, ['S', 'M', 'L'], 'Size must be S, M or L'),
-			fit: nullableOneOf(
-				input.fit,
-				['too-small', 'good', 'too-big'],
-				'Fit must be Too small, Good or Too big'
-			),
-			print: cleanOrNull(input.print),
-			...(await checkAcquisition(input.acquisition))
-		};
+		return { ...checkCut(input), ...(await checkAcquisition(input.acquisition)) };
 	}
 
 	/** Checks the whole input, then creates the new Team and the Kit if needed. Returns the jersey row. */
@@ -530,6 +555,162 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			.sort((a, b) => compareDates(b, a) || b.id - a.id);
 	}
 
+	// --- Import (once) ---------------------------------------------------------
+
+	/** Checks every row, writing nothing. Returns what the one write batch needs. */
+	async function checkImport(rows: ImportRows) {
+		if (![rows?.countries, rows?.jerseys, rows?.wishlist].every(Array.isArray))
+			throw new Error('The rows need countries, jerseys and wishlist lists');
+		const named = <T extends { name: string }>(list: T[], name: string) =>
+			list.find((item) => compare(item.name, name) === 0);
+		const row = <T>(list: string, index: number, check: () => T): T => {
+			try {
+				return check();
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				throw new Error(`${list}[${index}]: ${message}`, { cause: error });
+			}
+		};
+
+		const countryList: (ImportCountryRow & { created: boolean })[] = (await readCountries()).map(
+			(c) => ({ ...c, league: c.league.name, seasonFormat: c.league.seasonFormat, created: false })
+		);
+		rows.countries.forEach((input, i) =>
+			row('countries', i, () => {
+				const name = required(String(input?.name ?? ''), 'Country name');
+				const fields = countryFields({ ...input, leagueName: input.league });
+				const found = named(countryList, name);
+				if (found?.created) throw new Error(`${name} is twice in the countries`);
+				if (!found)
+					countryList.push({
+						name,
+						continent: fields.continent,
+						league: fields.leagueName,
+						seasonFormat: fields.seasonFormat,
+						created: true
+					});
+			})
+		);
+
+		const storeList = (await db.select().from(stores)).map((s) => ({
+			name: s.name,
+			created: false
+		}));
+		const teamList = (await readTeams()).map((t) => ({
+			name: t.name,
+			kind: t.kind,
+			country: t.country.name,
+			seasonFormat: t.seasonFormat,
+			created: false
+		}));
+		const kitList = (
+			await db
+				.select({ team: teams.name, start: kits.seasonStartYear, kitType: kits.kitType })
+				.from(kits)
+				.innerJoin(teams, eq(kits.teamId, teams.id))
+		).map((k) => ({ ...k, end: null as number | null, created: false }));
+
+		function teamOf(input: ImportTeam) {
+			const name = required(String(input?.name ?? ''), 'Team name');
+			const kind = oneOf(input.kind, ['club', 'national'], 'A team is a Club or a National Team');
+			const country = named(countryList, String(input.country ?? ''));
+			if (!country) throw new Error(`Unknown country: ${input.country}`);
+			const found = named(teamList, name);
+			if (found) {
+				if (found.kind !== kind || found.country !== country.name)
+					throw new Error(`${found.name} is a ${found.kind} of ${found.country}`);
+				return found;
+			}
+			const national = teamList.find((t) => t.kind === 'national' && t.country === country.name);
+			if (kind === 'national' && national)
+				throw new Error(`${country.name} already has a National Team: ${national.name}`);
+			const team = {
+				name,
+				kind,
+				country: country.name,
+				seasonFormat: kind === 'national' ? ('calendar' as const) : country.seasonFormat,
+				created: true
+			};
+			teamList.push(team);
+			return team;
+		}
+
+		function kitOf(input: ImportKitRow) {
+			const team = teamOf(input.team);
+			const season = parseSeason(input.season, team.seasonFormat);
+			const kitType = checkKitType(input.kitType);
+			const found = kitList.find(
+				(k) => k.team === team.name && k.start === season.start && k.kitType === kitType
+			);
+			if (found) return found;
+			const kit = { team: team.name, start: season.start, end: season.end, kitType, created: true };
+			kitList.push(kit);
+			return kit;
+		}
+
+		const jerseyRows = rows.jerseys.map((input, i) =>
+			row('jerseys', i, () => {
+				const kit = kitOf(input);
+				const cut = checkCut(input);
+				const acquisition = input.acquisition;
+				if (acquisition?.kind === 'gift')
+					return { kit, store: null, ...cut, ...giftFields(acquisition) };
+				if (acquisition?.kind !== 'purchase')
+					throw new Error('Acquisition must be a Purchase or a Gift');
+				if (acquisition.priceCents !== null && !isCents(acquisition.priceCents))
+					throw new Error('A price is euro cents, or null when unknown');
+				const storeName = cleanOrNull(acquisition.store);
+				let store = storeName === null ? null : named(storeList, storeName);
+				if (storeName !== null && !store)
+					storeList.push((store = { name: storeName, created: true }));
+				return {
+					kit,
+					store: store?.name ?? null,
+					...cut,
+					...purchaseDates(acquisition),
+					priceCents: acquisition.priceCents
+				};
+			})
+		);
+
+		const wished = new Set<object>();
+		const wishlistRows = rows.wishlist.map((input, i) =>
+			row('wishlist', i, () => {
+				const kit = kitOf(input);
+				const version = checkWishVersion(input.version);
+				const desire = checkDesire(input.desire);
+				if (wished.has(kit)) {
+					const season = formatSeason(kit.start, kit.end);
+					throw new Error(
+						`${kit.team} ${season} ${kitTypeLabels[kit.kitType]} is twice on the Wishlist`
+					);
+				}
+				wished.add(kit);
+				return { kit, version, desire };
+			})
+		);
+
+		return {
+			countries: countryList.filter((c) => c.created),
+			stores: storeList.filter((s) => s.created),
+			teams: teamList.filter((t) => t.created),
+			kits: kitList.filter((k) => k.created),
+			jerseys: jerseyRows,
+			wishlist: wishlistRows
+		};
+	}
+
+	const countryIdNamed = (name: string) =>
+		sql`(SELECT ${countries.id} FROM ${countries} WHERE ${countries.name} = ${name})`;
+	const teamIdNamed = (name: string) =>
+		sql`(SELECT ${teams.id} FROM ${teams} WHERE ${teams.name} = ${name})`;
+	const storeIdNamed = (name: string) =>
+		sql`(SELECT ${stores.id} FROM ${stores} WHERE ${stores.name} = ${name})`;
+	const kitIdOf = (kit: { team: string; start: number; kitType: KitType }) =>
+		sql`(SELECT ${kits.id} FROM ${kits} JOIN ${teams} ON ${teams.id} = ${kits.teamId}
+			WHERE ${teams.name} = ${kit.team} AND ${kits.seasonStartYear} = ${kit.start}
+			AND ${kits.kitType} = ${kit.kitType})`;
+
 	return {
 		listCountries: readCountries,
 
@@ -586,14 +767,8 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		async addWishlistItem(token, input) {
 			await owner(token);
 			const kit = await checkKit(input);
-			const version = nullableOneOf(
-				input.version,
-				['fan', 'player', 'tracksuit'],
-				'Version must be Any, Fan, Player or Tracksuit'
-			);
-			const desire = Number(input.desire);
-			if (!Number.isInteger(desire) || desire < 1 || desire > 5)
-				throw new Error('Desire must be 1 to 5');
+			const version = checkWishVersion(input.version);
+			const desire = checkDesire(input.desire);
 			if (kit.existingId !== null) {
 				const [listed] = await db
 					.select({ id: wishlistItems.id })
@@ -1025,6 +1200,61 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.returning({ key: pictures.key });
 			if (!deleted) throw new Error('Picture not found');
 			await env.COVERS.delete(deleted.key);
+		},
+
+		// --- Import (once) ---
+
+		async importRows(token, rows) {
+			await owner(token);
+			const [{ held }] = await db
+				.select({
+					held: sql<number>`(SELECT count(*) FROM ${jerseys}) + (SELECT count(*) FROM ${wishlistItems})`
+				})
+				.from(sql`(SELECT 1)`);
+			if (held > 0) throw new Error('The Collection or the Wishlist already has entries');
+			const checked = await checkImport(rows);
+			// Rows find their Country, Team, Store and Kit by name, so one batch (one transaction) does it.
+			const statements = [
+				...checked.countries.flatMap((c) => [
+					db.insert(leagues).values({ name: c.league, seasonFormat: c.seasonFormat }),
+					db
+						.insert(countries)
+						.values({ name: c.name, continent: c.continent, leagueId: sql`last_insert_rowid()` })
+				]),
+				...checked.stores.map((s) => db.insert(stores).values({ name: s.name })),
+				...checked.teams.map((t) =>
+					db
+						.insert(teams)
+						.values({ name: t.name, kind: t.kind, countryId: countryIdNamed(t.country) })
+				),
+				...checked.kits.map((k) =>
+					db.insert(kits).values({
+						teamId: teamIdNamed(k.team),
+						seasonStartYear: k.start,
+						seasonEndYear: k.end,
+						kitType: k.kitType
+					})
+				),
+				...checked.jerseys.map(({ kit, store, ...fields }) =>
+					db.insert(jerseys).values({
+						...fields,
+						kitId: kitIdOf(kit),
+						storeId: store === null ? null : storeIdNamed(store)
+					})
+				),
+				...checked.wishlist.map(({ kit, version, desire }) =>
+					db.insert(wishlistItems).values({ kitId: kitIdOf(kit), version, desire })
+				)
+			];
+			if (statements.length) await db.batch(statements as unknown as BatchStatements);
+			return {
+				countries: checked.countries.length,
+				stores: checked.stores.length,
+				teams: checked.teams.length,
+				kits: checked.kits.length,
+				jerseys: checked.jerseys.length,
+				wishlistItems: checked.wishlist.length
+			};
 		},
 
 		async login(password) {
