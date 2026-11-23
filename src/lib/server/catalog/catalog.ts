@@ -182,6 +182,27 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		return { body: body.buffer as ArrayBuffer, contentType };
 	}
 
+	async function storePicture(kitId: number, body: ArrayBuffer, contentType: string) {
+		checkImage(body, contentType);
+		const [kit] = await db
+			.select({ id: kits.id })
+			.from(kits)
+			.where(eq(kits.id, Number(kitId)));
+		if (!kit) throw new Error('Unknown kit');
+		// R2 first: a failed put leaves no row without an image.
+		const key = `pictures/${kit.id}/${crypto.randomUUID()}`;
+		await env.COVERS.put(key, body, { httpMetadata: { contentType } });
+		const [created] = await db
+			.insert(pictures)
+			.values({
+				kitId: kit.id,
+				key,
+				position: sql`(SELECT coalesce(max(${pictures.position}), 0) + 1 FROM ${pictures} WHERE ${pictures.kitId} = ${kit.id})`
+			})
+			.returning({ id: pictures.id, kitId: pictures.kitId, position: pictures.position });
+		return created;
+	}
+
 	async function saveUpload(kitId: number, body: ArrayBuffer, contentType: string) {
 		checkImage(body, contentType);
 		const kit = (await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId)))[0];
@@ -610,22 +631,13 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 
 		async addPicture(token, input) {
 			await requireOwner(token);
-			checkImage(input.body, input.contentType);
-			const kitId = Number(input.kitId);
-			const [kit] = await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId));
-			if (!kit) throw new Error('Unknown kit');
-			// R2 first: a failed put leaves no row without an image.
-			const key = `pictures/${kit.id}/${crypto.randomUUID()}`;
-			await env.COVERS.put(key, input.body, { httpMetadata: { contentType: input.contentType } });
-			const [created] = await db
-				.insert(pictures)
-				.values({
-					kitId: kit.id,
-					key,
-					position: sql`(SELECT coalesce(max(${pictures.position}), 0) + 1 FROM ${pictures} WHERE ${pictures.kitId} = ${kit.id})`
-				})
-				.returning({ id: pictures.id, kitId: pictures.kitId, position: pictures.position });
-			return created;
+			return storePicture(input.kitId, input.body, input.contentType);
+		},
+
+		async addPictureFromUrl(token, input) {
+			await requireOwner(token);
+			const image = await fetchImage(input.url);
+			return storePicture(input.kitId, image.body, image.contentType);
 		},
 
 		async addCountry(token, input) {
