@@ -1,12 +1,32 @@
-import { eq, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
 import { countries, jerseys, kits, leagues, stores, teams } from '../db/schema';
-import { kitSeasonFirst, matchTeam } from './matching';
-import { fetchKitPicture, listKitPictures, searchTeams, type SportsDbConfig } from './thesportsdb';
+import { kitSeasonFirst } from './matching';
+import {
+	fetchKitPicture,
+	listKitPictures,
+	RateLimitError,
+	searchTeams,
+	type SportsDbConfig
+} from './thesportsdb';
+import {
+	kitWithTeam,
+	lookUpMainPicture,
+	putMainPicture,
+	sourceTeamOf,
+	type LookupContext
+} from './lookup';
 import { checkImage, MAX_UPLOAD_BYTES, readBody } from './images';
 import { issueToken, passwordMatches, tokenIsValid, UnauthorizedError } from './auth';
-import type { Acquisition, Catalog, CollectionJersey, Country, CountryInput } from './types';
+import type {
+	Acquisition,
+	Catalog,
+	CollectionJersey,
+	Country,
+	CountryInput,
+	LookupProgress
+} from './types';
 
 export interface CatalogEnv {
 	DB: D1Database;
@@ -69,19 +89,9 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			throw new UnauthorizedError();
 	}
 
-	/** Writes the image as the Main Picture of the Kit, marks it Owner-chosen and changes its URL. */
-	async function storeMainPicture(kitId: number, body: ArrayBuffer, contentType: string) {
-		const mainPictureKey = `main-pictures/${kitId}`;
-		await env.COVERS.put(mainPictureKey, body, { httpMetadata: { contentType } });
-		await db
-			.update(kits)
-			.set({
-				mainPictureKey,
-				mainPictureChosen: true,
-				mainPictureVersion: sql`${kits.mainPictureVersion} + 1`
-			})
-			.where(eq(kits.id, kitId));
-	}
+	const lookup: LookupContext = { db, covers: env.COVERS, sportsDb };
+	const storeMainPicture = (kitId: number, body: ArrayBuffer, contentType: string) =>
+		putMainPicture(lookup, kitId, { body, contentType, chosen: true });
 
 	/** Fetches the image at an http(s) address. The caller checks it as an upload. */
 	async function fetchImage(address: string) {
@@ -109,36 +119,14 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		await storeMainPicture(kit.id, body, contentType);
 	}
 
-	/** A Kit with its Team, Country and League, or a readable error. */
-	async function kitWithTeam(kitId: number) {
-		const found = (
-			await db
-				.select({ kit: kits, team: teams, country: countries.name, league: leagues.name })
-				.from(kits)
-				.innerJoin(teams, eq(kits.teamId, teams.id))
-				.innerJoin(countries, eq(teams.countryId, countries.id))
-				.innerJoin(leagues, eq(countries.leagueId, leagues.id))
-				.where(eq(kits.id, kitId))
-		)[0];
-		if (!found) throw new Error('Kit not found');
-		return found;
-	}
-
-	/** The stored TheSportsDB Team of a Team, or the one the Team match finds (then stored). */
-	async function sourceTeamOf(found: Awaited<ReturnType<typeof kitWithTeam>>) {
-		if (found.team.sourceTeamId) return found.team.sourceTeamId;
-		const hit = matchTeam(
-			{
-				name: found.team.name,
-				national: found.team.kind === 'national',
-				country: found.country,
-				league: found.league
-			},
-			await searchTeams(sportsDb, found.team.name)
-		);
-		if (!hit) return null;
-		await db.update(teams).set({ sourceTeamId: hit.id }).where(eq(teams.id, found.team.id));
-		return hit.id;
+	/** Lookup progress: Kits looked up or with an Owner-chosen Main Picture are done. */
+	async function lookupProgress(): Promise<LookupProgress> {
+		const [{ total }] = await db.select({ total: count() }).from(kits);
+		const [{ done }] = await db
+			.select({ done: count() })
+			.from(kits)
+			.where(or(eq(kits.mainPictureLookedUp, true), eq(kits.mainPictureChosen, true)));
+		return { total, done };
 	}
 
 	/** The trimmed name, or a readable error when it is empty or another Store has it. */
@@ -310,8 +298,8 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 
 		async listPictureCandidates(token, kitId) {
 			await owner(token);
-			const found = await kitWithTeam(kitId);
-			const sourceTeamId = await sourceTeamOf(found);
+			const found = await kitWithTeam(lookup, kitId);
+			const sourceTeamId = await sourceTeamOf(lookup, found);
 			const pictures = sourceTeamId ? await listKitPictures(sportsDb, sourceTeamId) : [];
 			const season = { start: found.kit.seasonStartYear, end: found.kit.seasonEndYear };
 			return {
@@ -353,6 +341,46 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			const image = await fetchKitPicture(sportsDb, String(input.candidateId ?? ''));
 			checkImage(image.body, image.contentType);
 			await storeMainPicture(kit.id, image.body, image.contentType);
+		},
+
+		async lookupNext(token, input) {
+			await owner(token);
+			const size = Math.max(0, Math.floor(input.size));
+			const notChosen = eq(kits.mainPictureChosen, false);
+			const pending = await db
+				.select({ id: kits.id })
+				.from(kits)
+				.where(
+					input.rerun
+						? and(notChosen, gt(kits.id, input.after ?? 0))
+						: and(notChosen, eq(kits.mainPictureLookedUp, false))
+				)
+				.orderBy(kits.id)
+				.limit(size);
+			let last = input.after ?? 0;
+			let rateLimited = false;
+			for (const kit of pending) {
+				try {
+					await lookUpMainPicture(lookup, kit.id);
+				} catch (error) {
+					if (error instanceof RateLimitError) {
+						rateLimited = true;
+						break;
+					}
+					// Any other error: the Kit stays not looked up, a later batch retries it.
+				}
+				last = kit.id;
+			}
+			const stopped = rateLimited ? { rateLimited } : {};
+			if (!input.rerun) return { ...(await lookupProgress()), ...stopped };
+			// The rerun has no marker to count: done is every not-chosen Kit up to the last one taken.
+			const end = rateLimited || pending.length === size ? last : Number.MAX_SAFE_INTEGER;
+			const [{ total }] = await db.select({ total: count() }).from(kits).where(notChosen);
+			const [{ done }] = await db
+				.select({ done: count() })
+				.from(kits)
+				.where(and(notChosen, lte(kits.id, end)));
+			return { total, done, after: last, ...stopped };
 		},
 
 		async listKitsWithoutMainPicture(token) {

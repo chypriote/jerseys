@@ -130,6 +130,24 @@ export interface CollectionJersey {
 	acquisition: Acquisition;
 }
 
+export interface LookupBatchInput {
+	/** Kits to look up in this request. Keep small: subrequest limit and one TheSportsDB request every 2 s. */
+	size: number;
+	/** Look up again every Kit whose Main Picture the Owner did not choose. */
+	rerun?: boolean;
+	/** Rerun only: continue after this Kit id (the `after` of the previous batch). */
+	after?: number;
+}
+
+export interface LookupProgress {
+	total: number;
+	done: number;
+	/** Rerun only: the last Kit id looked up. Pass it back as `after` for the next batch. */
+	after?: number;
+	/** True when TheSportsDB answered 429: the batch stopped early. Try again later. */
+	rateLimited?: boolean;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -171,6 +189,11 @@ export interface Catalog {
 	setTeamSource(token: string, input: { teamId: number; sourceTeamId: string }): Promise<void>;
 	/** Copies a candidate image (same checks as an upload) into R2 as the Main Picture. */
 	pickMainPicture(token: string, input: { kitId: number; candidateId: string }): Promise<void>;
+	/**
+	 * Looks up the Main Pictures of the next `size` Kits not looked up yet (with `rerun`: every Kit
+	 * whose Main Picture the Owner did not choose). Repeat until `done` reaches `total`.
+	 */
+	lookupNext(token: string, input: LookupBatchInput): Promise<LookupProgress>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;

@@ -109,7 +109,8 @@ describe('Owner login', () => {
 			() => catalog.searchTeams(bad, 'Lyon'),
 			() => catalog.setTeamSource(bad, { teamId: 1, sourceTeamId: '133713' }),
 			() =>
-				catalog.pickMainPicture(bad, { kitId: 1, candidateId: 'https://r2.thesportsdb.com/a.png' })
+				catalog.pickMainPicture(bad, { kitId: 1, candidateId: 'https://r2.thesportsdb.com/a.png' }),
+			() => catalog.lookupNext(bad, { size: 1 })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -836,6 +837,179 @@ describe('Picture candidates', () => {
 		expect(times).toHaveLength(3);
 		expect(times[1] - times[0]).toBeGreaterThanOrEqual(55);
 		expect(times[2] - times[1]).toBeGreaterThanOrEqual(55);
+	});
+
+	describe('lookup in batches', () => {
+		it('stores the matching picture as a Main Picture the Owner did not choose', async () => {
+			const kit = await lyon();
+			expect(await catalog.lookupNext(token, { size: 5 })).toEqual({ total: 1, done: 1 });
+			expect(await mainPictureOf(kit)).toEqual({
+				main_picture_key: `main-pictures/${kit}`,
+				main_picture_version: 1,
+				main_picture_chosen: 0
+			});
+			expect(sportsDbCalls('2tpd4i1689433133.png')).toHaveLength(1);
+		});
+
+		it('matches Away, Third and Fourth to 2nd, 3rd and 4th, and never Cup or Special', async () => {
+			equipment['133713'] = {
+				equipment: [
+					...equipmentLyon.equipment,
+					{
+						strSeason: '2023-2024',
+						strType: '4th',
+						strEquipment: equipmentUrl('fourth')
+					}
+				]
+			};
+			const away = await lyon({ kitType: 'away' });
+			const third = await lyon({ kitType: 'third' });
+			const fourth = await lyon({ kitType: 'fourth' });
+			const cup = await lyon({ kitType: 'cup' });
+			const special = await lyon({ kitType: 'special' });
+			expect(await catalog.lookupNext(token, { size: 10 })).toEqual({ total: 5, done: 5 });
+			expect(sportsDbCalls('.png').map((c) => c.url.pathname.split('/').at(-1))).toEqual([
+				'y0wcw71689433160.png',
+				'5qb1ec1694430205.png',
+				'fourth.png'
+			]);
+			for (const kit of [away, third, fourth]) {
+				expect((await mainPictureOf(kit))?.main_picture_version).toBe(1);
+			}
+			for (const kit of [cup, special]) {
+				expect((await mainPictureOf(kit))?.main_picture_key).toBe(null);
+			}
+		});
+
+		it('matches a Calendar Season, and leaves the Main Picture empty with no Season match', async () => {
+			const japan = (start: number) =>
+				insertKit({
+					team: 'Japan',
+					kind: 'national',
+					start,
+					kitType: 'home',
+					country: 'Japan',
+					league: 'J1 League'
+				});
+			const matched = await japan(2024);
+			const unmatched = await japan(2018);
+			await catalog.lookupNext(token, { size: 10 });
+			expect((await mainPictureOf(matched))?.main_picture_key).toBe(`main-pictures/${matched}`);
+			expect(await mainPictureOf(unmatched)).toEqual({
+				main_picture_key: null,
+				main_picture_version: 0,
+				main_picture_chosen: 0
+			});
+		});
+
+		it('leaves the Main Picture empty when no TheSportsDB Team matches', async () => {
+			const kit = await insertKit({ team: 'Nowhere FC', start: 2023, end: 2024, kitType: 'home' });
+			expect(await catalog.lookupNext(token, { size: 10 })).toEqual({ total: 1, done: 1 });
+			expect((await mainPictureOf(kit))?.main_picture_key).toBe(null);
+			expect(sportsDbCalls('lookupequipment.php')).toHaveLength(0);
+		});
+
+		it('takes only Kits not looked up yet, and counts across batches', async () => {
+			await lyon();
+			await lyon({ kitType: 'away' });
+			await lyon({ kitType: 'cup' });
+			expect(await catalog.lookupNext(token, { size: 2 })).toEqual({ total: 3, done: 2 });
+			expect(await catalog.lookupNext(token, { size: 2 })).toEqual({ total: 3, done: 3 });
+			const before = calls.length;
+			expect(await catalog.lookupNext(token, { size: 2 })).toEqual({ total: 3, done: 3 });
+			expect(calls).toHaveLength(before);
+		});
+
+		it('counts a Kit with an Owner-chosen Main Picture as done and never looks it up', async () => {
+			const kit = await lyon();
+			await catalog.uploadMainPicture(token, {
+				kitId: kit,
+				body: PNG.buffer,
+				contentType: 'image/png'
+			});
+			const before = await mainPictureOf(kit);
+			expect(await catalog.lookupNext(token, { size: 5 })).toEqual({ total: 1, done: 1 });
+			expect(calls).toHaveLength(0);
+			expect(await mainPictureOf(kit)).toEqual(before);
+		});
+
+		describe('rerun', () => {
+			const lookUpEverything = async () => {
+				let progress = await catalog.lookupNext(token, { size: 1, rerun: true });
+				while (progress.done < progress.total) {
+					progress = await catalog.lookupNext(token, {
+						size: 1,
+						rerun: true,
+						after: progress.after
+					});
+				}
+				return progress;
+			};
+
+			it('looks up again every Kit whose Main Picture the Owner did not choose', async () => {
+				const home = await lyon();
+				const cup = await lyon({ kitType: 'cup' });
+				await catalog.lookupNext(token, { size: 10 });
+				const before = calls.length;
+				expect(await catalog.lookupNext(token, { size: 10 })).toEqual({ total: 2, done: 2 });
+				expect(calls).toHaveLength(before);
+
+				const first = await catalog.lookupNext(token, { size: 1, rerun: true });
+				expect(first).toEqual({ total: 2, done: 1, after: home });
+				expect(await catalog.lookupNext(token, { size: 1, rerun: true, after: home })).toEqual({
+					total: 2,
+					done: 2,
+					after: cup
+				});
+				expect(await mainPictureOf(home)).toMatchObject({
+					main_picture_version: 2,
+					main_picture_chosen: 0
+				});
+				expect((await mainPictureOf(cup))?.main_picture_key).toBe(null);
+			});
+
+			it('keeps an Owner-chosen Main Picture', async () => {
+				const chosen = await lyon();
+				const other = await lyon({ kitType: 'away' });
+				await catalog.uploadMainPicture(token, {
+					kitId: chosen,
+					body: new Uint8Array([...PNG, 1]).buffer,
+					contentType: 'image/png'
+				});
+				expect(await lookUpEverything()).toMatchObject({ total: 1, done: 1 });
+				expect(await mainPictureOf(chosen)).toEqual({
+					main_picture_key: `main-pictures/${chosen}`,
+					main_picture_version: 1,
+					main_picture_chosen: 1
+				});
+				const kept = await catalog.getMainPicture(chosen);
+				expect(new Uint8Array(await new Response(kept!.body).arrayBuffer())).toEqual(
+					new Uint8Array([...PNG, 1])
+				);
+				expect((await mainPictureOf(other))?.main_picture_version).toBe(1);
+			});
+		});
+
+		it('stops at a 429 with no retry and reports the progress so far', async () => {
+			const first = await lyon();
+			const second = await lyon({ kitType: 'away' });
+			await lyon({ kitType: 'third' });
+			let answered = 0;
+			const fake = vi.mocked(globalThis.fetch).getMockImplementation()!;
+			vi.mocked(globalThis.fetch).mockImplementation(async (input, init) => {
+				// The first Kit takes 3 requests (search, equipment, image); the second's equipment is refused.
+				failing = ++answered > 3;
+				return fake(input, init);
+			});
+			expect(await catalog.lookupNext(token, { size: 3 })).toEqual({
+				total: 3,
+				done: 1,
+				rateLimited: true
+			});
+			expect(calls).toHaveLength(4);
+			expect((await mainPictureOf(first))?.main_picture_version).toBe(1);
+			expect((await mainPictureOf(second))?.main_picture_key).toBe(null);
+		});
 	});
 });
 

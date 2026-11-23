@@ -61,7 +61,11 @@ export const kits = sqliteTable(
 		/** Bumped when the Main Picture changes, so that its cached URL changes too. */
 		mainPictureVersion: integer('main_picture_version').notNull().default(0),
 		/** True once the Owner picked, uploaded or pasted the Main Picture: a lookup keeps it. */
-		mainPictureChosen: integer('main_picture_chosen', { mode: 'boolean' }).notNull().default(false)
+		mainPictureChosen: integer('main_picture_chosen', { mode: 'boolean' }).notNull().default(false),
+		/** True once a lookup ran for the Kit (matched or not): a batch without rerun skips it. */
+		mainPictureLookedUp: integer('main_picture_looked_up', { mode: 'boolean' })
+			.notNull()
+			.default(false)
 	},
 	// A Team's Seasons all follow one Season Format, so the start year names the Season.
 	(t) => [uniqueIndex('kit_team_season_type_unique').on(t.teamId, t.seasonStartYear, t.kitType)]
