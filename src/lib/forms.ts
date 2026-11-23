@@ -2,13 +2,22 @@ import { deserialize } from '$app/forms';
 import { invalidateAll } from '$app/navigation';
 import type { Acquisition, AcquisitionInput, Store, TeamChoice } from '#lib/server/catalog/types';
 import { centsToEuros, eurosToCents } from '#lib/money';
+import { shrinkImage } from '#lib/pictures';
 
 export type Outcome = { ok: true; alreadyOwned: boolean } | { ok: false; error: string };
 
-/** Posts one JSON payload to a form action of the current page and reloads the page data on success. */
-export async function postAction(action: string, payload: unknown): Promise<Outcome> {
+/**
+ * Posts one JSON payload (and the form's Main picture, if any) to a form action of the current
+ * page and reloads the page data on success.
+ */
+export async function postAction(
+	action: string,
+	payload: unknown,
+	mainPicture: Blob | null = null
+): Promise<Outcome> {
 	const body = new FormData();
 	body.set('payload', JSON.stringify(payload));
+	if (mainPicture) body.set('mainPicture', mainPicture, 'main-picture');
 	try {
 		const response = await fetch(action, {
 			method: 'POST',
@@ -25,6 +34,17 @@ export async function postAction(action: string, payload: unknown): Promise<Outc
 		return { ok: false, error: typeof message === 'string' ? message : 'Something went wrong' };
 	} catch {
 		return { ok: false, error: 'Network error' };
+	}
+}
+
+/** The chosen Main picture file, shrunk to a JPEG for the upload, or an error message to show. */
+export async function mainPictureUpload(files: FileList | null | undefined) {
+	const file = files?.[0];
+	if (!file) return null;
+	try {
+		return await shrinkImage(file);
+	} catch {
+		return 'Could not read this image';
 	}
 }
 

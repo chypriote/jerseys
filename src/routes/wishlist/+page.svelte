@@ -137,7 +137,12 @@
 			{@const lists = data.form}
 			<AddAction title="Add a wishlist item">
 				{#snippet form(close)}
-					<WishlistItemForm teams={lists.teams} countries={lists.countries} onDone={close} />
+					<WishlistItemForm
+						teams={lists.teams}
+						countries={lists.countries}
+						pictured={lists.pictured}
+						onDone={close}
+					/>
 				{/snippet}
 			</AddAction>
 		{/if}

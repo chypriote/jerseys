@@ -5,12 +5,14 @@ import type {
 	Catalog,
 	CountryInput,
 	GotItInput,
-	JerseyInput
+	JerseyInput,
+	MainPictureFile
 } from '#lib/server/catalog';
 import { ownerToken } from '#lib/server/owner';
 
 /**
- * Thin form actions over the Catalog. The forms send one JSON `payload` field.
+ * Thin form actions over the Catalog. The forms send one JSON `payload` field, and the Kit forms
+ * may add a `mainPicture` file, passed on as `payload.mainPicture`.
  * Each action passes the Owner cookie token, so a write without login is refused by the Catalog.
  */
 async function run<T>(
@@ -19,7 +21,16 @@ async function run<T>(
 ) {
 	let payload: T;
 	try {
-		payload = JSON.parse(String((await event.request.formData()).get('payload') ?? ''));
+		const form = await event.request.formData();
+		payload = JSON.parse(String(form.get('payload') ?? ''));
+		const file = form.get('mainPicture');
+		if (file instanceof File) {
+			const mainPicture: MainPictureFile = {
+				body: await file.arrayBuffer(),
+				contentType: file.type
+			};
+			payload = { ...payload, mainPicture };
+		}
 	} catch {
 		return fail(400, { error: 'Unreadable form' });
 	}

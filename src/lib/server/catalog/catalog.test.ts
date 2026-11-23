@@ -1347,8 +1347,17 @@ describe('Coverage', () => {
 	});
 });
 
+/** A new Kit runs the Main Picture lookup: this fake TheSportsDB finds no Team, so nothing goes out. */
+function stubSportsDbWithoutTeams() {
+	vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+		const url = new URL(new Request(input as RequestInfo, init).url);
+		if (url.host === 'www.thesportsdb.com') return Response.json(searchNone);
+		throw new Error(`Unexpected fetch to ${url.href}`);
+	});
+}
+
 describe('Add and edit a Jersey', () => {
-	const catalog = createCatalog(env);
+	const catalog = createCatalog(env, { lookupIntervalMs: 0 });
 	let token: string;
 	let france: number;
 
@@ -1360,7 +1369,12 @@ describe('Add and edit a Jersey', () => {
 	} as const;
 	const jersey = { version: 'fan', size: 'M', fit: 'good', acquisition: purchase } as const;
 
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	beforeEach(async () => {
+		stubSportsDbWithoutTeams();
 		await env.DB.batch([
 			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
@@ -1712,11 +1726,16 @@ describe('Add and edit a Jersey', () => {
 });
 
 describe('Add a Wishlist Item', () => {
-	const catalog = createCatalog(env);
+	const catalog = createCatalog(env, { lookupIntervalMs: 0 });
 	let token: string;
 	let france: number;
 
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	beforeEach(async () => {
+		stubSportsDbWithoutTeams();
 		await env.DB.batch([
 			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
@@ -1831,11 +1850,16 @@ describe('Add a Wishlist Item', () => {
 });
 
 describe('Got it and Drop', () => {
-	const catalog = createCatalog(env);
+	const catalog = createCatalog(env, { lookupIntervalMs: 0 });
 	let token: string;
 	let france: number;
 
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	beforeEach(async () => {
+		stubSportsDbWithoutTeams();
 		await env.DB.batch([
 			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
@@ -1938,5 +1962,208 @@ describe('Got it and Drop', () => {
 		expect(await catalog.listKitsWithoutMainPicture(token)).toEqual([
 			{ id: item.kit.id, teamName: 'Lyon', season: '2023-24', kitType: 'away' }
 		]);
+	});
+});
+
+describe('Main Picture of a new Kit', () => {
+	const catalog = createCatalog(env, { lookupIntervalMs: 0, lookupTimeoutMs: 100 });
+	let token: string;
+	let france: number;
+	/** Fake TheSportsDB: 'ok' answers the Lyon fixtures, 'error' answers 500, 'hang' never answers. */
+	let sportsDb: 'ok' | 'error' | 'hang';
+	let calls: URL[];
+	let logged: ReturnType<typeof vi.spyOn>;
+
+	const purchase = {
+		kind: 'purchase',
+		storeId: 1,
+		priceCents: 8990,
+		bought: '2024-05-12'
+	} as const;
+	const jersey = { version: 'fan', size: 'M', fit: 'good', acquisition: purchase } as const;
+	const lyonKit = () =>
+		({
+			team: { name: 'Lyon', kind: 'club', countryId: france },
+			season: '2023-24',
+			kitType: 'home'
+		}) as const;
+	const wish = { version: null, desire: 3 } as const;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const listed = await env.COVERS.list();
+		await Promise.all(listed.objects.map((o) => env.COVERS.delete(o.key)));
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+		france = (
+			await catalog.addCountry(token, {
+				name: 'France',
+				continent: 'europe',
+				leagueName: 'Ligue 1',
+				seasonFormat: 'split'
+			})
+		).id;
+
+		sportsDb = 'ok';
+		calls = [];
+		logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+			const url = new URL(new Request(input as RequestInfo, init).url);
+			calls.push(url);
+			if (sportsDb === 'hang') return new Promise<Response>(() => {});
+			if (sportsDb === 'error') return new Response('Server Error', { status: 500 });
+			if (url.host === 'www.thesportsdb.com') {
+				if (url.pathname.endsWith('/searchteams.php')) {
+					return Response.json(url.searchParams.get('t') === 'Lyon' ? searchLyon : searchNone);
+				}
+				if (url.pathname.endsWith('/lookupequipment.php')) {
+					return Response.json(
+						url.searchParams.get('id') === '133713' ? equipmentLyon : equipmentNone
+					);
+				}
+			}
+			if (url.host === 'r2.thesportsdb.com') {
+				return new Response(PNG, { headers: { 'content-type': 'image/png' } });
+			}
+			throw new Error(`Unexpected fetch to ${url.href}`);
+		});
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('looks up the Main Picture of the Kit a new Jersey creates', async () => {
+		const added = await catalog.addJersey(token, { ...jersey, ...lyonKit() });
+		expect(await mainPictureOf(added.kit.id)).toEqual({
+			main_picture_key: `main-pictures/${added.kit.id}`,
+			main_picture_version: 1,
+			main_picture_chosen: 0
+		});
+		const stored = await env.COVERS.get(`main-pictures/${added.kit.id}`);
+		expect(new Uint8Array(await stored!.arrayBuffer())).toEqual(PNG);
+	});
+
+	it('looks up the Main Picture of the Kit a new Wishlist Item creates', async () => {
+		const result = await catalog.addWishlistItem(token, { ...lyonKit(), ...wish });
+		if (result.status !== 'added') throw new Error('not added');
+		expect((await mainPictureOf(result.item.kit.id))?.main_picture_key).toBe(
+			`main-pictures/${result.item.kit.id}`
+		);
+	});
+
+	for (const failure of ['error', 'hang'] as const) {
+		it(`saves the Jersey and the Wishlist Item when TheSportsDB fails (${failure})`, async () => {
+			sportsDb = failure;
+			const added = await catalog.addJersey(token, { ...jersey, ...lyonKit() });
+			expect(await catalog.listCollection()).toEqual([added]);
+			expect((await mainPictureOf(added.kit.id))?.main_picture_key).toBe(null);
+
+			const result = await catalog.addWishlistItem(token, {
+				...lyonKit(),
+				team: { teamId: added.kit.team.id },
+				kitType: 'away',
+				...wish
+			});
+			if (result.status !== 'added') throw new Error('not added');
+			expect(await catalog.listWishlist()).toEqual([result.item]);
+			expect((await mainPictureOf(result.item.kit.id))?.main_picture_key).toBe(null);
+			expect(logged).toHaveBeenCalledTimes(2);
+		});
+	}
+
+	const photo = { body: PNG.slice().buffer as ArrayBuffer, contentType: 'image/png' };
+
+	it('stores a Main picture sent with a new Jersey, chosen, and runs no lookup', async () => {
+		const added = await catalog.addJersey(token, { ...jersey, ...lyonKit(), mainPicture: photo });
+		expect(await mainPictureOf(added.kit.id)).toEqual({
+			main_picture_key: `main-pictures/${added.kit.id}`,
+			main_picture_version: 1,
+			main_picture_chosen: 1
+		});
+		expect(calls).toEqual([]);
+	});
+
+	it('stores a Main picture sent with a Wishlist Item on a Kit that has none', async () => {
+		const kit = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'away',
+			country: 'Japan'
+		});
+		const team = (await env.DB.prepare('SELECT id FROM team').first<{ id: number }>())!.id;
+		await catalog.addWishlistItem(token, {
+			team: { teamId: team },
+			season: '2024',
+			kitType: 'away',
+			...wish,
+			mainPicture: photo
+		});
+		expect(await mainPictureOf(kit)).toMatchObject({ main_picture_chosen: 1 });
+		expect(calls).toEqual([]);
+	});
+
+	it('refuses a Main picture of another type or of 2 MB, and saves nothing', async () => {
+		const bad = [
+			[
+				{ body: PNG.slice().buffer as ArrayBuffer, contentType: 'image/gif' },
+				'Use a JPEG, PNG or WebP image'
+			],
+			[
+				{ body: new ArrayBuffer(2 * 1024 * 1024), contentType: 'image/png' },
+				'The image must be under 2 MB'
+			]
+		] as const;
+		for (const [mainPicture, message] of bad) {
+			await expect(
+				catalog.addJersey(token, { ...jersey, ...lyonKit(), mainPicture })
+			).rejects.toThrow(message);
+			await expect(
+				catalog.addWishlistItem(token, { ...lyonKit(), ...wish, mainPicture })
+			).rejects.toThrow(message);
+		}
+		expect(await catalog.listTeams()).toEqual([]);
+		expect(await catalog.listCollection()).toEqual([]);
+		expect(await catalog.listWishlist()).toEqual([]);
+		expect((await env.COVERS.list()).objects).toEqual([]);
+		expect(calls).toEqual([]);
+	});
+
+	it('lists the Kits that have a Main Picture, for the forms', async () => {
+		const added = await catalog.addJersey(token, { ...jersey, ...lyonKit() });
+		sportsDb = 'error';
+		await catalog.addJersey(token, {
+			...jersey,
+			...lyonKit(),
+			team: { teamId: added.kit.team.id },
+			kitType: 'away'
+		});
+		expect(await catalog.listPicturedKits()).toEqual([
+			{ teamId: added.kit.team.id, season: '2023-24', kitType: 'home' }
+		]);
+	});
+
+	it('runs no lookup for a save on an existing Kit', async () => {
+		const first = await catalog.addJersey(token, { ...jersey, ...lyonKit() });
+		calls = [];
+		const kit = {
+			team: { teamId: first.kit.team.id },
+			season: '2023-24',
+			kitType: 'home'
+		} as const;
+		const second = await catalog.addJersey(token, { ...jersey, ...kit });
+		await catalog.editJersey(token, { ...jersey, ...kit, id: second.id, version: 'player' });
+		await catalog.addWishlistItem(token, { ...kit, ...wish, addAnyway: true });
+		expect(second.kit.id).toBe(first.kit.id);
+		expect(calls).toEqual([]);
 	});
 });

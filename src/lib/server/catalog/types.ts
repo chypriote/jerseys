@@ -201,6 +201,23 @@ export interface KitInput {
 	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
 	season: string;
 	kitType: KitType;
+	/**
+	 * The form's "Main picture" (same rules as `uploadMainPicture`): stored as the Owner-chosen
+	 * Main Picture of the Kit. A new Kit sent with one skips the TheSportsDB lookup.
+	 */
+	mainPicture?: MainPictureFile | null;
+}
+
+/** A Kit by Team, formatted Season and Kit Type: what the forms compare their fields to. */
+export interface KitKey {
+	teamId: number;
+	season: string;
+	kitType: KitType;
+}
+
+export interface MainPictureFile {
+	body: ArrayBuffer;
+	contentType: string;
 }
 
 export interface JerseyInput extends KitInput {
@@ -250,6 +267,8 @@ export interface Catalog {
 	listCoverage(): Promise<CoverageCountry[]>;
 	/** Every Wishlist Item with its Kit, Team and Country, most wanted first. */
 	listWishlist(): Promise<WishlistItem[]>;
+	/** Kits that have a Main Picture: the forms hide their "Main picture" input for these. */
+	listPicturedKits(): Promise<KitKey[]>;
 	/** The Main Picture image of a Kit, or null when it has none. */
 	getMainPicture(kitId: number): Promise<MainPictureImage | null>;
 

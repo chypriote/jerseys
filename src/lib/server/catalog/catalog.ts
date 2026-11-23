@@ -1,4 +1,4 @@
-import { and, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, count, eq, gt, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
 import { kitTypeLabels } from '../../labels';
@@ -52,6 +52,8 @@ export interface CatalogEnv {
 export interface CatalogOptions {
 	/** Minimum gap between TheSportsDB requests. Default 2000 (their limit). */
 	lookupIntervalMs?: number;
+	/** How long a save waits for the Main Picture lookup of a new Kit. Default 8000. */
+	lookupTimeoutMs?: number;
 }
 
 function required(value: string, what: string) {
@@ -348,11 +350,23 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			'Kit Type must be Home, Away, Third, Fourth, Cup or Special'
 		);
 		const existingId = team.id === null ? null : await findKitId(team.id, season.start, kitType);
-		return { team, season, kitType, existingId };
+		if (input.mainPicture) checkImage(input.mainPicture.body, input.mainPicture.contentType);
+		return { team, season, kitType, existingId, mainPicture: input.mainPicture ?? null };
 	}
 
-	/** Creates the new Team and the Kit if needed. Call it only after every check passed. */
-	async function writeKit({ team, season, kitType }: Awaited<ReturnType<typeof checkKit>>) {
+	/**
+	 * Creates the new Team and the Kit if needed, then stores the sent Main picture, or looks up
+	 * the Main Picture of a new Kit. Call it only after every check passed.
+	 */
+	async function writeKit(checked: Awaited<ReturnType<typeof checkKit>>) {
+		const kit = await writeTeamAndKit(checked);
+		if (checked.mainPicture) {
+			await storeMainPicture(kit.id, checked.mainPicture.body, checked.mainPicture.contentType);
+		} else if (kit.created) await lookUpNewKit(kit.id);
+		return kit.id;
+	}
+
+	async function writeTeamAndKit({ team, season, kitType }: Awaited<ReturnType<typeof checkKit>>) {
 		const teamId =
 			team.id ?? (await db.insert(teams).values(team.create).returning({ id: teams.id }))[0].id;
 		const kit = { teamId, seasonStartYear: season.start, seasonEndYear: season.end, kitType };
@@ -361,7 +375,26 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			.values(kit)
 			.onConflictDoNothing()
 			.returning({ id: kits.id });
-		return created?.id ?? (await findKitId(teamId, season.start, kitType))!;
+		if (created) return { id: created.id, created: true };
+		return { id: (await findKitId(teamId, season.start, kitType))!, created: false };
+	}
+
+	/** Runs the Main Picture lookup of a new Kit. A failure or a timeout is logged, never thrown. */
+	async function lookUpNewKit(kitId: number) {
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const timeout = new Promise<never>((_, reject) => {
+			timer = setTimeout(
+				() => reject(new Error('Main Picture lookup timed out')),
+				options.lookupTimeoutMs ?? 8000
+			);
+		});
+		try {
+			await Promise.race([lookUpMainPicture(lookup, kitId), timeout]);
+		} catch (error) {
+			console.error(`Main Picture lookup of Kit ${kitId} failed`, error);
+		} finally {
+			clearTimeout(timer);
+		}
 	}
 
 	/** Checks the Jersey fields that are not the Kit, writing nothing. */
@@ -449,6 +482,23 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		listCollection: () => readCollection(),
 
 		listTeams: readTeams,
+
+		async listPicturedKits() {
+			const rows = await db
+				.select({
+					teamId: kits.teamId,
+					start: kits.seasonStartYear,
+					end: kits.seasonEndYear,
+					kitType: kits.kitType
+				})
+				.from(kits)
+				.where(isNotNull(kits.mainPictureKey));
+			return rows.map(({ teamId, start, end, kitType }) => ({
+				teamId,
+				season: formatSeason(start, end),
+				kitType
+			}));
+		},
 
 		async addJersey(token, input) {
 			await owner(token);

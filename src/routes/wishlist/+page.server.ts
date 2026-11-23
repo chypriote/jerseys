@@ -9,10 +9,18 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const [items, form] = await Promise.all([
 		catalog.listWishlist(),
 		isOwner
-			? Promise.all([catalog.listTeams(), catalog.listCountries(), catalog.listStores()])
+			? Promise.all([
+					catalog.listTeams(),
+					catalog.listCountries(),
+					catalog.listStores(),
+					catalog.listPicturedKits()
+				])
 			: null
 	]);
-	return { items, form: form && { teams: form[0], countries: form[1], stores: form[2] } };
+	return {
+		items,
+		form: form && { teams: form[0], countries: form[1], stores: form[2], pictured: form[3] }
+	};
 };
 
 export const actions: Actions = {
