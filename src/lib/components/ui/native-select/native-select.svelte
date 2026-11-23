@@ -29,7 +29,7 @@
 		bind:this={ref}
 		data-slot="native-select"
 		data-size={size}
-		class="min-h-11 w-full min-w-0 cursor-pointer appearance-none rounded-control bg-card py-0 ps-4 pe-10 text-sm font-medium text-foreground shadow-(--shadow-raised) outline-ring focus-visible:outline-3 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
+		class="min-h-11 w-full min-w-0 cursor-pointer appearance-none rounded-control border-2 border-field-border bg-field py-0 ps-4 pe-10 text-sm font-medium text-foreground shadow-(--shadow-raised) outline-ring focus-visible:outline-3 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
 		{...restProps}
 	>
 		{@render children?.()}

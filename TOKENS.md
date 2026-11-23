@@ -97,10 +97,12 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | Semantic token | Light → | Dark → | Used for |
 |---|---|---|---|
 | color.bg.page | sky.50 | navy.950 | Page background |
-| color.bg.surface | white | navy.900 | Tiles, popup, inputs |
+| color.bg.surface | white | navy.900 | Tiles, popup |
 | color.text.primary | navy.800 | sky.50 | Ink |
 | color.text.muted | navy.600 | navy.300 | Season and Kit Type caption |
 | color.border.subtle | sky.100 | navy.700 | "line" |
+| color.bg.field | sky.50 | navy.950 | Input, select and search fill (the page colour: darker than the dark popup) |
+| color.border.field | navy.600 | navy.300 | Input, select and search border, 2px. 3:1 or more against the fill and the surface (WCAG 1.4.11): 5.4:1 on white, 5.0:1 on sky.50, 7.0:1 on navy.900, 8.0:1 on navy.950 |
 | color.bg.accent | green.500 | green.400 | Active tab pill |
 | color.text.on-accent | navy.950 | navy.950 | Text on accent |
 | color.icon.accent | green.700 | green.400 | Covered country on the CoverageMap |

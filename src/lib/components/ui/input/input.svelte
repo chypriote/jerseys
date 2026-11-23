@@ -25,7 +25,7 @@
 		bind:this={ref}
 		data-slot={dataSlot}
 		class={cn(
-			'flex min-h-11 w-full min-w-0 rounded-control bg-card px-4 text-sm font-medium text-foreground shadow-(--shadow-raised) outline-ring placeholder:text-muted-foreground focus-visible:outline-3 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:outline-3 aria-invalid:outline-destructive file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
+			'flex min-h-11 w-full min-w-0 rounded-control border-2 border-field-border bg-field px-4 text-sm font-medium text-foreground shadow-(--shadow-raised) outline-ring placeholder:text-muted-foreground focus-visible:outline-3 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:outline-3 aria-invalid:outline-destructive file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
 			className
 		)}
 		type="file"
@@ -38,7 +38,7 @@
 		bind:this={ref}
 		data-slot={dataSlot}
 		class={cn(
-			'flex min-h-11 w-full min-w-0 rounded-control bg-card px-4 text-sm font-medium text-foreground shadow-(--shadow-raised) outline-ring placeholder:text-muted-foreground focus-visible:outline-3 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:outline-3 aria-invalid:outline-destructive file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
+			'flex min-h-11 w-full min-w-0 rounded-control border-2 border-field-border bg-field px-4 text-sm font-medium text-foreground shadow-(--shadow-raised) outline-ring placeholder:text-muted-foreground focus-visible:outline-3 focus-visible:outline-solid disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:outline-3 aria-invalid:outline-destructive file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
 			className
 		)}
 		{type}
