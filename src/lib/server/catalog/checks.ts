@@ -83,6 +83,10 @@ export function parseSeason(value: unknown, format: SeasonFormat) {
 	throw new Error('Season must be two years in a row, like 2024-25');
 }
 
+/** The Comment of a Special Kit: undefined stays undefined (keep), blank becomes null (clear). */
+export const kitComment = (value: unknown) =>
+	value === undefined ? undefined : cleanOrNull(value);
+
 export const checkKitType = (value: unknown) =>
 	oneOf(value, KIT_TYPES, `Kit Type must be ${orList(KIT_TYPES.map((t) => kitTypeLabels[t]))}`);
 

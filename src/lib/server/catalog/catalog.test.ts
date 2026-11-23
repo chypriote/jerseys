@@ -1435,6 +1435,49 @@ describe('Add and edit a Jersey', () => {
 		).id;
 	});
 
+	it('keeps the Comment of a Special Kit, and no Comment for another Kit Type', async () => {
+		const team = { name: 'Lyon', kind: 'club', countryId: france } as const;
+		const special = await catalog.addJersey(token, {
+			...jersey,
+			team,
+			season: '2023-24',
+			kitType: 'special',
+			comment: ' Anniversary '
+		});
+		expect(special.kit.comment).toBe('Anniversary');
+		const home = await catalog.addJersey(token, {
+			...jersey,
+			team: { teamId: special.kit.team.id },
+			season: '2023-24',
+			kitType: 'home',
+			comment: 'Ignored'
+		});
+		expect(home.kit.comment).toBeUndefined();
+	});
+
+	it('keeps the Comment of an existing Kit unless the Jersey sends one', async () => {
+		const team = { name: 'Lyon', kind: 'club', countryId: france } as const;
+		const first = await catalog.addJersey(token, {
+			...jersey,
+			team,
+			season: '2023-24',
+			kitType: 'special',
+			comment: 'Anniversary'
+		});
+		const input = {
+			...jersey,
+			team: { teamId: first.kit.team.id },
+			season: '2023-24',
+			kitType: 'special'
+		} as const;
+		const again = await catalog.addJersey(token, input);
+		expect(again.kit.comment).toBe('Anniversary');
+		const changed = await catalog.addJersey(token, { ...input, comment: 'Pride' });
+		expect(changed.kit.comment).toBe('Pride');
+		const cleared = await catalog.addJersey(token, { ...input, comment: ' ' });
+		expect(cleared.kit.comment).toBeUndefined();
+	});
+
 	it('adds a Jersey of a new Club, with its Kit', async () => {
 		const added = await catalog.addJersey(token, {
 			...jersey,
@@ -2601,6 +2644,24 @@ describe('Teams and Kits admin', () => {
 		expect(owned).toMatchObject({ id: jersey, kit: { id: kitId, season: '2022-23' } });
 		const [wanted] = await catalog.listWishlist();
 		expect(wanted).toMatchObject({ id: item, kit: { id: kitId, kitType: 'away' } });
+	});
+
+	it('sets and clears the Comment of a Kit when it is edited', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'special' });
+		const set = await catalog.editKit(token, {
+			kitId,
+			season: '2023-24',
+			kitType: 'special',
+			comment: ' Pride '
+		});
+		expect(set.comment).toBe('Pride');
+		const home = await catalog.editKit(token, {
+			kitId,
+			season: '2023-24',
+			kitType: 'home',
+			comment: 'Pride'
+		});
+		expect(home.comment).toBeUndefined();
 	});
 
 	it('sets the Main Picture of a Kit when it is edited, from a file or an address', async () => {

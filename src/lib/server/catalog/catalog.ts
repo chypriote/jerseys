@@ -29,6 +29,7 @@ import {
 import {
 	checkCut,
 	checkKitType,
+	kitComment,
 	checkWishVersion,
 	compare,
 	countryFields,
@@ -105,6 +106,7 @@ function kitView(
 		id: kit.id,
 		season: formatSeason(kit.seasonStartYear, kit.seasonEndYear),
 		kitType: kit.kitType,
+		comment: kit.comment ?? undefined,
 		mainPictureKey: kit.mainPictureKey,
 		mainPictureVersion: kit.mainPictureVersion,
 		team: {
@@ -378,11 +380,12 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		const team = await checkTeam(input.team);
 		const season = parseSeason(input.season, team.seasonFormat);
 		const kitType = checkKitType(input.kitType);
+		const comment = kitType === 'special' ? kitComment(input.comment) : undefined;
 		const existingId = team.id === null ? null : await findKitId(team.id, season.start, kitType);
 		const address = input.mainPictureUrl?.trim();
 		const mainPicture = input.mainPicture ?? (address ? await fetchImage(address) : null);
 		if (mainPicture) checkImage(mainPicture.body, mainPicture.contentType);
-		return { team, season, kitType, existingId, mainPicture };
+		return { team, season, kitType, comment, existingId, mainPicture };
 	}
 
 	/**
@@ -397,17 +400,30 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		return kit.id;
 	}
 
-	async function writeTeamAndKit({ team, season, kitType }: Awaited<ReturnType<typeof checkKit>>) {
+	async function writeTeamAndKit({
+		team,
+		season,
+		kitType,
+		comment
+	}: Awaited<ReturnType<typeof checkKit>>) {
 		const teamId =
 			team.id ?? (await db.insert(teams).values(team.create).returning({ id: teams.id }))[0].id;
-		const kit = { teamId, seasonStartYear: season.start, seasonEndYear: season.end, kitType };
+		const kit = {
+			teamId,
+			seasonStartYear: season.start,
+			seasonEndYear: season.end,
+			kitType,
+			comment: comment ?? null
+		};
 		const [created] = await db
 			.insert(kits)
 			.values(kit)
 			.onConflictDoNothing()
 			.returning({ id: kits.id });
 		if (created) return { id: created.id, created: true };
-		return { id: (await findKitId(teamId, season.start, kitType))!, created: false };
+		const id = (await findKitId(teamId, season.start, kitType))!;
+		if (comment !== undefined) await db.update(kits).set({ comment }).where(eq(kits.id, id));
+		return { id, created: false };
 	}
 
 	/** Runs the Main Picture lookup of a new Kit. A failure or a timeout is logged, never thrown. */
@@ -759,7 +775,12 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			if (picture) checkImage(picture.body, picture.contentType);
 			await db
 				.update(kits)
-				.set({ seasonStartYear: season.start, seasonEndYear: season.end, kitType })
+				.set({
+					seasonStartYear: season.start,
+					seasonEndYear: season.end,
+					kitType,
+					comment: kitType === 'special' ? (kitComment(input.comment) ?? null) : null
+				})
 				.where(eq(kits.id, found.id));
 			if (picture) await storeMainPicture(found.id, picture.body, picture.contentType);
 			return (await readKits(found.id))[0];

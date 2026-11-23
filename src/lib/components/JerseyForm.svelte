@@ -51,6 +51,7 @@
 	let team = $state<TeamChoice | null>(start ? { teamId: start.kit.team.id } : null);
 	let season = $state(start?.kit.season ?? '');
 	let kitType = $state<KitType>(start?.kit.kitType ?? 'home');
+	let comment = $state(start?.kit.comment ?? '');
 	let version = $state<Version>(start?.version ?? 'fan');
 	// Imported Jerseys may have no Size or Fit: the form then asks for one.
 	let size = $state<Size>(start?.size ?? 'M');
@@ -83,6 +84,8 @@
 			team,
 			season,
 			kitType,
+			// Editing a Jersey clears a blank Comment; adding one keeps the Comment of an existing Kit.
+			comment: comment.trim() || (jersey ? null : undefined),
 			mainPictureUrl: mainPictureUrl.trim() || undefined,
 			version,
 			size,
@@ -105,6 +108,7 @@
 		bind:team
 		bind:season
 		bind:kitType
+		bind:comment
 		bind:mainPicture
 		bind:mainPictureUrl
 		{teams}

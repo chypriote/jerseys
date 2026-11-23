@@ -14,6 +14,10 @@ export const kitTypeLabels: Record<KitType, string> = {
 export const kitLabel = (team: string, season: string, kitType: KitType) =>
 	`${team} ${season} ${kitTypeLabels[kitType]}`;
 
+/** "Special (Pride)": the Kit Type, with the Comment of a Special Kit. */
+export const kitTypeText = (kit: { kitType: KitType; comment?: string }) =>
+	kit.comment ? `${kitTypeLabels[kit.kitType]} (${kit.comment})` : kitTypeLabels[kit.kitType];
+
 export const versionLabels: Record<Version, string> = {
 	fan: 'Fan',
 	player: 'Player',

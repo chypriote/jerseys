@@ -3,7 +3,7 @@
 	import type { CollectionJersey } from '#lib/server/catalog/types';
 	import { continents } from '#lib/countries';
 	import { formatCents, formatDate } from '#lib/format';
-	import { fitLabels, kitTypeLabels, versionLabels } from '#lib/labels';
+	import { fitLabels, kitTypeText, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
 	import { deleteRow } from '#lib/forms';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
@@ -100,7 +100,7 @@
 		selectedCountries = [];
 	}
 
-	const caption = (j: CollectionJersey) => `${j.kit.season} · ${kitTypeLabels[j.kit.kitType]}`;
+	const caption = (j: CollectionJersey) => `${j.kit.season} · ${kitTypeText(j.kit)}`;
 
 	let selectedId = $state<number | null>(null);
 	const selected = $derived(data.jerseys.find((j) => j.id === selectedId) ?? null);
@@ -184,7 +184,7 @@
 					<Tile
 						team={jersey.kit.team.name}
 						season={jersey.kit.season}
-						kitType={kitTypeLabels[jersey.kit.kitType]}
+						kitType={kitTypeText(jersey.kit)}
 						mainPictureUrl={mainPictureUrl(jersey.kit)}
 						onSelect={(el) => select(jersey, el)}
 					/>

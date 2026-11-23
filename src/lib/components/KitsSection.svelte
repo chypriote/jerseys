@@ -4,7 +4,7 @@
 	import { mainPictureUrl as pictureUrlOf } from '#lib/pictures';
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { matchesSearch } from '#lib/search';
-	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
+	import { kitLabel, kitTypeLabels, kitTypeText, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
@@ -38,6 +38,7 @@
 	let editing = $state<KitView | null>(null);
 	let season = $state('');
 	let kitType = $state<KitType>('home');
+	let comment = $state('');
 	let mainPicture = $state<File | null>(null);
 	let mainPictureUrl = $state('');
 	let error = $state<string | null>(null);
@@ -54,6 +55,7 @@
 		editing = kit;
 		season = kit.season;
 		kitType = kit.kitType;
+		comment = kit.comment ?? '';
 		mainPicture = null;
 		mainPictureUrl = '';
 		error = null;
@@ -72,7 +74,13 @@
 		}
 		const outcome = await postAction(
 			'?/editKit',
-			{ kitId: editing.id, season, kitType, mainPictureUrl: mainPictureUrl.trim() || undefined },
+			{
+				kitId: editing.id,
+				season,
+				kitType,
+				comment: comment.trim() || null,
+				mainPictureUrl: mainPictureUrl.trim() || undefined
+			},
 			upload
 		);
 		busy = false;
@@ -104,7 +112,7 @@
 							>
 								<MainPicture url={pictureUrlOf(kit)} />
 							</div>
-							<span class="font-medium">{kit.season} · {kitTypeLabels[kit.kitType]}</span>
+							<span class="font-medium">{kit.season} · {kitTypeText(kit)}</span>
 						</div>
 						<Button size="sm" onclick={() => show(kit)}>
 							Edit<span class="sr-only"> {label(kit)}</span>
@@ -130,6 +138,9 @@
 				<span class="text-sm font-bold">Kit Type</span>
 				<Select label="Kit Type" bind:value={kitType} options={labelOptions(kitTypeLabels)} />
 			</div>
+			{#if kitType === 'special'}
+				<Field label="Comment" placeholder="Anniversary, Pride…" bind:value={comment} />
+			{/if}
 			<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} />
 			<FormActions {busy}>
 				{#snippet remove()}

@@ -57,6 +57,13 @@
       "when": 1795429362815,
       "tag": "0007_rename_teams_to_kit_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1795431333915,
+      "tag": "0008_kit_comment",
+      "breakpoints": true
     }
   ]
 }

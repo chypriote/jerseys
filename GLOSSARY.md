@@ -48,6 +48,10 @@ How a League counts Seasons: Season (start and end year, 2023-24) or Calendar (o
 Which kit of the Season it is: Home, Away, Third, Fourth, Cup or Special.
 _Avoid_: Type (alone)
 
+**Comment**:
+What a Special Kit is, in a few words ("Anniversary", "Pride"). Only a Special Kit has one, and it is optional.
+_Avoid_: Note, description
+
 **Version**:
 The cut of a Jersey: Fan, Player or Tracksuit. One Kit covers all Versions.
 _Avoid_: Edition
