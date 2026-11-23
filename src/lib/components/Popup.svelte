@@ -33,7 +33,7 @@
 		details?: Snippet;
 		/** Owner only. */
 		actions?: Snippet;
-		/** Owner only: under the thumbnails while a Picture is shown, with its index in `pictureUrls`. */
+		/** Owner only: on the top right corner of each Picture thumbnail, with its index in `pictureUrls`. */
 		pictureAction?: Snippet<[number]>;
 		/** Owner only: a page to look for pictures of the Kit, linked at the bottom. */
 		findPicturesUrl?: string | null;
@@ -77,20 +77,22 @@
 					{#if pictureUrls.length}
 						<div class="flex flex-wrap gap-1" role="group" aria-label="Pictures">
 							{#each thumbnails as url, index (index)}
-								<button
-									type="button"
-									class="flex size-(--control-size-min) items-center justify-center overflow-hidden rounded-md bg-background outline-ring focus-visible:outline-3 focus-visible:outline-solid aria-pressed:outline-3 aria-pressed:outline-solid"
-									aria-label={index === 0 && offset ? 'Main picture' : `Picture ${index + 1}`}
-									aria-pressed={shown === index}
-									onclick={() => (shown = index)}
-								>
-									<MainPicture {url} />
-								</button>
+								<div class="relative">
+									<button
+										type="button"
+										class="flex size-(--control-size-min) items-center justify-center overflow-hidden rounded-md bg-background outline-ring focus-visible:outline-3 focus-visible:outline-solid aria-pressed:outline-3 aria-pressed:outline-solid"
+										aria-label={index === 0 && offset ? 'Main picture' : `Picture ${index + 1}`}
+										aria-pressed={shown === index}
+										onclick={() => (shown = index)}
+									>
+										<MainPicture {url} />
+									</button>
+									{#if pictureAction && index >= offset}
+										{@render pictureAction(index - offset)}
+									{/if}
+								</div>
 							{/each}
 						</div>
-						{#if pictureAction && shown >= offset}
-							{@render pictureAction(shown - offset)}
-						{/if}
 					{/if}
 				</div>
 				<div class="min-w-0">
