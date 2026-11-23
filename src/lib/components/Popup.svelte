@@ -46,7 +46,8 @@
 		void mainPictureUrl;
 		void open;
 		void pictureUrls.length;
-		shown = 0;
+		// Without a Main Picture, the first added Picture shows in its place.
+		shown = !mainPictureUrl && pictureUrls.length ? 1 : 0;
 	});
 
 	function onOpenChange(next: boolean) {
