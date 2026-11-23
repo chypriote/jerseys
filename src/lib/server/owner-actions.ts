@@ -4,6 +4,7 @@ import type {
 	AddWishlistItemInput,
 	Catalog,
 	CountryInput,
+	GotItInput,
 	JerseyInput,
 	MainPictureFile
 } from '#lib/server/catalog';
@@ -72,6 +73,14 @@ export const ownerActions = {
 		run<AddWishlistItemInput>(event, async (catalog, token, input) => {
 			const result = await catalog.addWishlistItem(token, input);
 			return { alreadyOwned: result.status === 'already-owned' };
+		}),
+	gotIt: (event: RequestEvent) =>
+		run<GotItInput>(event, async (catalog, token, input) => {
+			await catalog.gotIt(token, input);
+		}),
+	drop: (event: RequestEvent) =>
+		run<{ id: number }>(event, async (catalog, token, { id }) => {
+			await catalog.drop(token, Number(id));
 		})
 };
 

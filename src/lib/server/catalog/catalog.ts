@@ -28,6 +28,7 @@ import type {
 	Country,
 	CountryInput,
 	Desire,
+	GotItInput,
 	JerseyInput,
 	KitInput,
 	KitType,
@@ -396,10 +397,9 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 		}
 	}
 
-	/** Checks the whole input, then creates the new Team and the Kit if needed. Returns the jersey row. */
-	async function jerseyRow(input: JerseyInput) {
-		const kit = await checkKit(input);
-		const fields = {
+	/** Checks the Jersey fields that are not the Kit, writing nothing. */
+	async function checkJerseyFields(input: GotItInput['jersey']) {
+		return {
 			version: oneOf(
 				input.version,
 				['fan', 'player', 'tracksuit'],
@@ -414,6 +414,12 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			print: cleanOrNull(input.print),
 			...(await checkAcquisition(input.acquisition))
 		};
+	}
+
+	/** Checks the whole input, then creates the new Team and the Kit if needed. Returns the jersey row. */
+	async function jerseyRow(input: JerseyInput) {
+		const kit = await checkKit(input);
+		const fields = await checkJerseyFields(input);
 		return { kitId: await writeKit(kit), ...fields };
 	}
 
@@ -558,6 +564,31 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.values({ kitId, version, desire })
 				.returning({ id: wishlistItems.id });
 			return { status: 'added', item: (await readWishlist(id))[0] };
+		},
+
+		// --- Got it and Drop ---
+
+		async gotIt(token, input) {
+			await owner(token);
+			const [item] = await db
+				.select()
+				.from(wishlistItems)
+				.where(eq(wishlistItems.id, Number(input.wishlistItemId)));
+			if (!item) throw new Error('Wishlist Item not found');
+			const fields = await checkJerseyFields(input.jersey);
+			const [[{ id }]] = await db.batch([
+				db
+					.insert(jerseys)
+					.values({ kitId: item.kitId, ...fields })
+					.returning({ id: jerseys.id }),
+				db.delete(wishlistItems).where(eq(wishlistItems.id, item.id))
+			]);
+			return (await readCollection(id))[0];
+		},
+
+		async drop(token, wishlistItemId) {
+			await owner(token);
+			await db.delete(wishlistItems).where(eq(wishlistItems.id, Number(wishlistItemId)));
 		},
 
 		async addCountry(token, input) {
