@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import { tick } from 'svelte';
 	import { shrinkImage } from '#lib/pictures';
 	import LinkIcon from '@lucide/svelte/icons/link';
@@ -27,7 +28,8 @@
 			error = 'Network error';
 		} finally {
 			busy = false;
-			await onAdded();
+			// A first Picture may have become the Kit's Main Picture.
+			await Promise.all([invalidateAll(), onAdded()]);
 		}
 	}
 

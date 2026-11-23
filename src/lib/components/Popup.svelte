@@ -39,15 +39,16 @@
 		findPicturesUrl?: string | null;
 	} = $props();
 
-	/** The thumbnail shown in place of the Main Picture: 0 is the Main Picture. */
+	/** The thumbnail shown in place of the Main Picture. A Kit without a Main Picture has no placeholder thumbnail. */
 	let shown = $state(0);
-	const thumbnails = $derived([mainPictureUrl, ...pictureUrls]);
+	const thumbnails = $derived(mainPictureUrl ? [mainPictureUrl, ...pictureUrls] : pictureUrls);
+	/** The Main Picture is thumbnail 0, so a Picture's place in `pictureUrls` is its thumbnail minus this. */
+	const offset = $derived(mainPictureUrl ? 1 : 0);
 	$effect(() => {
 		void mainPictureUrl;
 		void open;
 		void pictureUrls.length;
-		// Without a Main Picture, the first added Picture shows in its place.
-		shown = !mainPictureUrl && pictureUrls.length ? 1 : 0;
+		shown = 0;
 	});
 
 	function onOpenChange(next: boolean) {
@@ -79,7 +80,7 @@
 								<button
 									type="button"
 									class="flex size-(--control-size-min) items-center justify-center overflow-hidden rounded-md bg-background outline-ring focus-visible:outline-3 focus-visible:outline-solid aria-pressed:outline-3 aria-pressed:outline-solid"
-									aria-label={index === 0 ? 'Main picture' : `Picture ${index + 1}`}
+									aria-label={index === 0 && offset ? 'Main picture' : `Picture ${index + 1}`}
 									aria-pressed={shown === index}
 									onclick={() => (shown = index)}
 								>
@@ -87,8 +88,8 @@
 								</button>
 							{/each}
 						</div>
-						{#if pictureAction && shown > 0}
-							{@render pictureAction(shown - 1)}
+						{#if pictureAction && shown >= offset}
+							{@render pictureAction(shown - offset)}
 						{/if}
 					{/if}
 				</div>
