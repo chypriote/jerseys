@@ -10,6 +10,7 @@
 		toAcquisitionInput
 	} from '#lib/forms';
 	import { fitLabels, labelOptions, versionLabels } from '#lib/labels';
+	import { newTeamName, unknownTeamMessage } from '#lib/team-name';
 	import type {
 		CollectionJersey,
 		Country,
@@ -63,11 +64,23 @@
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
 	let busy = $state(false);
+	/** The new Team name already checked on TheSportsDB: a second Save adds it anyway. */
+	let warned = '';
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
 		teamError = teamProblem(team);
 		if (!team || teamError) return;
+		error = null;
+		const newName = newTeamName(team);
+		if (newName && newName !== warned) {
+			warned = newName;
+			const message = await unknownTeamMessage(newName);
+			if (message) {
+				error = message;
+				return;
+			}
+		}
 		const acquisitionInput = toAcquisitionInput(acquisition);
 		if (typeof acquisitionInput === 'string') {
 			error = acquisitionInput;

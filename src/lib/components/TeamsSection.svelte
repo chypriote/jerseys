@@ -5,6 +5,7 @@
 	import { kitLabel, kitTypeLabels } from '#lib/labels';
 	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
+	import { unknownTeamMessage } from '#lib/team-name';
 	import type { Country, KitView, TeamKind, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
@@ -54,6 +55,8 @@
 	let countryId = $state('');
 	let error = $state<string | null>(null);
 	let busy = $state(false);
+	/** The new Team name already checked on TheSportsDB: a second Save adds it anyway. */
+	let warned = '';
 
 	/** `team` set: edits it. Null: adds a Team. */
 	function show(team: TeamView | null) {
@@ -67,6 +70,15 @@
 
 	async function save(event: SubmitEvent) {
 		event.preventDefault();
+		const typed = name.trim();
+		if (!editing && typed && typed !== warned) {
+			warned = typed;
+			const message = await unknownTeamMessage(typed);
+			if (message) {
+				error = message;
+				return;
+			}
+		}
 		busy = true;
 		const input = { name, kind, countryId: Number(countryId) };
 		const outcome = editing
