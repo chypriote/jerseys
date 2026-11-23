@@ -187,6 +187,7 @@
 						season={jersey.kit.season}
 						kitType={kitTypeText(jersey.kit)}
 						mainPictureUrl={mainPictureUrl(jersey.kit)}
+						print={jersey.print}
 						number={printNumber(jersey.print)}
 						onSelect={(el) => select(jersey, el)}
 					/>
