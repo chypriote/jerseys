@@ -469,15 +469,9 @@ function render() {
 const popup = $("popup");
 let anchor = null;
 function place() {
-  const w = popup.offsetWidth, h = popup.offsetHeight, clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
-  if (anchor) {
-    const r = anchor.getBoundingClientRect();
-    popup.style.left = clamp(r.left + r.width / 2 - w / 2, 12, innerWidth - w - 12) + "px";
-    popup.style.top = clamp(r.top, 12, innerHeight - h - 12) + "px";
-  } else {
-    popup.style.left = Math.max(12, (innerWidth - w) / 2) + "px";
-    popup.style.top = Math.max(12, (innerHeight - h) / 2) + "px";
-  }
+  const w = popup.offsetWidth, h = popup.offsetHeight;
+  popup.style.left = Math.max(12, (innerWidth - w) / 2) + "px";
+  popup.style.top = Math.max(12, (innerHeight - h) / 2) + "px";
 }
 function openPopup(html, el) {
   anchor = el;
