@@ -10,5 +10,10 @@
 <div class="flex flex-col gap-6">
 	<PictureCleaner kits={data.kits} />
 	<RemoveBackgrounds kits={data.kits} />
-	<KitsSection kits={data.kits} teams={data.teams} />
+	<KitsSection
+		kits={data.kits}
+		teams={data.teams}
+		countries={data.countries}
+		pictured={data.pictured}
+	/>
 </div>

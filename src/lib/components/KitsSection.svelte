@@ -6,18 +6,26 @@
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { matchesSearch } from '#lib/search';
 	import { kitLabel, kitTypeLabels, kitTypeText, labelOptions } from '#lib/labels';
-	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
+	import type { Country, KitKey, KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
 	import FormActions from './FormActions.svelte';
 	import MainPicture from './MainPicture.svelte';
 	import PictureInput from './PictureInput.svelte';
+	import KitAddForm from './KitAddForm.svelte';
 	import Popup from './Popup.svelte';
 	import SearchField from './SearchField.svelte';
 	import Select from './Select.svelte';
 
-	let { kits, teams }: { kits: KitView[]; teams: TeamView[] } = $props();
+	let {
+		kits,
+		teams,
+		countries,
+		pictured
+	}: { kits: KitView[]; teams: TeamView[]; countries: Country[]; pictured: KitKey[] } = $props();
+
+	let adding = $state(false);
 
 	// A link from the Edit team dialog arrives with the Kit in `?search=`.
 	let search = $state(page.url.searchParams.get('search') ?? '');
@@ -91,14 +99,17 @@
 </script>
 
 <section aria-labelledby="kits-heading" class="flex min-w-0 flex-col gap-3">
-	<h2 id="kits-heading" class="font-display text-xl font-extrabold uppercase italic">Kits</h2>
+	<div class="flex items-center justify-between gap-3">
+		<h2 id="kits-heading" class="font-display text-xl font-extrabold uppercase italic">Kits</h2>
+		<Button intent="success" size="sm" onclick={() => (adding = true)}>Add a kit</Button>
+	</div>
 	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
 	<div class="flex">
 		<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
 	</div>
 	{#if groups.length === 0}
 		<p class="text-sm text-muted-foreground">
-			{search.trim() ? 'No kit matches.' : 'No kits yet: the jersey forms add them.'}
+			{search.trim() ? 'No kit matches.' : 'No kits yet.'}
 		</p>
 	{/if}
 	{#each groups as group (group.team.id)}
@@ -164,6 +175,14 @@
 			>
 				Edit {editing.team.name}
 			</a>
+		{/if}
+	{/snippet}
+</Popup>
+
+<Popup bind:open={adding} wide title="Add a kit">
+	{#snippet details()}
+		{#if adding}
+			<KitAddForm {teams} {countries} {pictured} onSuccess={() => (adding = false)} />
 		{/if}
 	{/snippet}
 </Popup>
