@@ -134,13 +134,10 @@ export interface CollectionJersey {
 
 // --- Wishlist ----------------------------------------------------------------
 
-export type Desire = 1 | 2 | 3 | 4 | 5;
-
 export interface WishlistItem {
 	id: number;
 	/** Null: any Version. */
 	version: Version | null;
-	desire: Desire;
 	kit: KitView;
 }
 
@@ -235,7 +232,6 @@ export interface JerseyInput extends KitInput {
 export interface AddWishlistItemInput extends KitInput {
 	/** null = any Version. */
 	version: Version | null;
-	desire: Desire;
 	/** Set to true after the "Already owned" notice. */
 	addAnyway?: boolean;
 }
@@ -314,7 +310,6 @@ export interface ImportJerseyRow extends ImportKitRow {
 export interface ImportWishlistRow extends ImportKitRow {
 	/** null = any Version. */
 	version: Version | null;
-	desire: Desire;
 }
 
 /** The cleaned sheet rows (import/rows.json). */

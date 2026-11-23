@@ -103,11 +103,7 @@ All Kits that Nico wants and does not own yet.
 _Avoid_: WL
 
 **Wishlist Item**:
-A Kit that Nico wants, maybe in a given Version, with a Desire.
-
-**Desire**:
-How much Nico wants a Wishlist Item, from 1 to 5, where 5 is the most.
-_Avoid_: Priority, rating
+A Kit that Nico wants, maybe in a given Version. The Wishlist lists them by Season, newest first.
 
 **Got it**:
 Nico gets a Wishlist Item: it leaves the Wishlist and becomes a Jersey.

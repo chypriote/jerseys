@@ -125,8 +125,6 @@
 	/* text.label.tab, text.caption.team */
 	--tracking-label: 0.03em;
 	--tracking-caption: 0.02em;
-	/* desire.gap */
-	--spacing-desire: 3px;
 
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);

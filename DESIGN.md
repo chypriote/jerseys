@@ -23,7 +23,7 @@ Direction chosen by Nico on 2026-11-22. Reference: [visual direction page](https
 | line | #d6e4f7 | #2a3a6e |
 | accent (pitch green) | #1fbf75 | #3fd68c |
 | on-accent | #101a3a | #101a3a |
-| desire dots, covered country | #108a52 | #3fd68c |
+| covered country | #108a52 | #3fd68c |
 | focus ring | #258dff | #5aa9ff |
 | error (coral) | #c9342a | #ff6f63 |
 
@@ -59,7 +59,7 @@ The scale is ad-hoc: a size not in this table does not appear in the app.
 
 - **Tile:** square, surface colour, 14px radius, offset shadow. It shows the Kit's Main Picture, contained. If the Kit has no Main Picture: a shirt outline in the muted colour.
 - **Popup:** opens in the centre of the screen, as in Vinyles. Max width 420px, Main Picture 150px, X button at top right. Tap outside or Esc closes it. Forms use a wide Popup (672px), with the fields in two columns from 640px.
-- **CoverageMap:** a surface card with a static world map, Collection page only. Two states per Country: covered (desire dots colour) and empty (line colour).
+- **CoverageMap:** a surface card with a static world map, Collection page only. Two states per Country: covered (icon accent colour) and empty (line colour).
 - **StickyBar:** title, chips, tab pills, search, filters, sort.
 - **Controls:** Chip, Button, Tabs, SearchField, Select, ToggleGroup are pills.
 
@@ -73,7 +73,7 @@ Full catalog (all levels, props, states, Owner UI, empty states, import screen):
 - **Density:** packed.
 - **Page order:** StickyBar, then (Collection only) CoverageMap, then the tile grid.
 - **Sticky bar:** title, chips (Collection: jersey count and total spent; Wishlist: item count), tab pills (Collection, Wishlist), search, filters, sort.
-- **Caption under each tile:** Team (display face), then "{Season} · {Kit Type}" (muted). Wishlist adds 5 desire dots.
+- **Caption under each tile:** Team (display face), then "{Season} · {Kit Type}" (muted).
 
 ## 6. Depth
 
@@ -98,7 +98,7 @@ Layering, bottom to top:
 
 - Keep the Main Picture contained on a neutral surface tile, with padding.
 - Use the display face only for the roles in section 3.
-- Use the desire dots colour (#108a52 light) for icons and thin marks, not the accent.
+- Use the icon accent colour (#108a52 light) for icons and thin marks, not the accent.
 - Make every control at least 44px tall.
 - Show the focus ring (3px, focus ring colour) on `:focus-visible`.
 - Format numbers with tabular-nums.
@@ -132,7 +132,7 @@ Mobile first.
 
 ## 10. Voice and tone
 
-- Names come from [GLOSSARY.md](GLOSSARY.md): Jersey, Kit, Main Picture, Wishlist Item, Desire, Country. Use them in the UI and in code.
+- Names come from [GLOSSARY.md](GLOSSARY.md): Jersey, Kit, Main Picture, Wishlist Item, Country. Use them in the UI and in code.
 - Labels are short and plain: "Got it", "Drop", "Add", "Save", "Cancel", "Delete".
 - No "owner only" text in the UI.
 

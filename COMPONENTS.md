@@ -10,8 +10,8 @@ Stack: same as Vinyles, SvelteKit (Svelte 5) with shadcn-svelte and Tailwind CSS
 
 | Level | Components |
 |---|---|
-| Primitive | Chip, Button, DesireDots, SearchField, Select, Field, ToggleGroup |
-| Component | Tile, Tabs, Popup, ConfirmDialog, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, TeamLookup, EmptyState |
+| Primitive | Chip, Button, SearchField, Select, Field, ToggleGroup |
+| Component | Tile, Tabs, Popup, ConfirmDialog, CountryFilter, SortDirection, ThemeToggle, StoreSelect, TeamLookup, EmptyState |
 | Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, DeleteAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm |
 
 ## Shared rules
@@ -44,23 +44,13 @@ Same as Vinyles. Intents `success` (Got it, Save, Log in) and `neutral` (Drop, C
 
 States: default, hover (8% state layer of the text color), focus, pressed (shadow to 0, move down 3px), disabled (50% opacity, no shadow).
 
-### DesireDots
-
-Shows the Desire of a Wishlist Item. `desire.count` dots in total (5).
-
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| value | `1 \| 2 \| 3 \| 4 \| 5` | — | Filled dots |
-
-Filled dots: `color.icon.accent`. Visually hidden text: "Desire {value} of 5". The dots are `aria-hidden`. Same as the current Vinyles DesireDots.
-
 ### SearchField
 
 Native `<input type="search">`. Searches the Team name and the Print. Label (visually hidden): "Search team or print".
 
 ### Select
 
-Native `<select>`, styled as a pill. Used for sort and DesireSelect.
+Native `<select>`, styled as a pill. Used for sort.
 
 ### Field
 
@@ -86,7 +76,6 @@ The shadcn-svelte toggle group, as radio pills, `type="single"`. Used for Versio
 | season | string | — | Already formatted ("2023-24", "2024") |
 | kitType | string | — | "Home", "Away"… Caption line 2 is "{season} · {kitType}", `text.caption.kit` |
 | mainPictureUrl | string \| null | null | The Kit's Main Picture. Null shows the shirt outline |
-| desire | `1 \| 2 \| 3 \| 4 \| 5` | — | Wishlist only: DesireDots under the caption |
 | onSelect | `(el: HTMLElement) => void` | — | Gives the Popup the Tile to focus on close |
 
 - The whole Tile is one `<button>`. The image has `alt=""`, because the caption names the Kit.
@@ -133,10 +122,6 @@ Same as Vinyles: the shadcn-svelte alert dialog, over the Popup. Title "Delete {
 | text | string | — | What the delete removes |
 | actionLabel | string | — | "Delete" |
 | onConfirm | `() => void` | — | |
-
-### DesireSelect
-
-Same as the current Vinyles DesireSelect: a native Select with 5 to 1, "5 (most wanted)" and "1 (least wanted)". In the StickyBar it filters the Wishlist ("Any desire" placeholder = no filter). In WishlistItemForm it sets the Desire.
 
 ### CountryFilter
 
@@ -189,7 +174,7 @@ Same structure as the current Vinyles StickyBar (title row; tabs row; search and
 
 - Title: "Jerseys" in `text.heading.page`.
 - Collection chips: `highlight` jersey count, `success` total spent. Filters: CountryFilter. Sorts: Team, Season, Acquired (Bought date or Gift date). Default: Acquired, newest first.
-- Wishlist chips: `info` item count. Filters: CountryFilter, DesireSelect. Sorts: Desire, Team, Season. Default: Desire, highest first.
+- Wishlist chips: `info` item count. Filters: CountryFilter. Sorts: Team, Season. Default: Season, newest first.
 - Search covers Team name and Print.
 
 ### TileGrid
@@ -226,7 +211,7 @@ Contrast, covered against empty: 3.41 light, 5.81 dark (needs 3, non-text). Empt
 Rows are `<dt>` label, `<dd>` value, `text.body.detail`. A row with no value is not shown.
 
 - **Jersey:** Version, Print, Size, Fit, then the Acquisition. Purchase: Store, Price, Bought, Sent, Received. Gift: "Gift", Date, From. Dates show as stored: "2024" or "12 May 2024".
-- **Wishlist Item:** Version (or "Any version"), Desire (DesireDots). Owner `actions`: Button `success` "Got it", Button `neutral` "Drop". Drop acts at once, with no confirmation, as in Vinyles.
+- **Wishlist Item:** Version (or "Any version"). Owner `actions`: Button `success` "Got it", Button `neutral` "Drop". Drop acts at once, with no confirmation, as in Vinyles.
 - Owner on a Jersey: `neutral` Buttons "Edit" and "Delete" in `actions`. "Edit" opens JerseyForm in the same Popup. "Delete" (DeleteAction) removes the Jersey and closes the Popup; the Kit stays, even with no Jersey left.
 - **Pictures** (Jersey and Wishlist Item): when the Kit has extra Pictures, a row of small contained thumbnails (`control.size.min` square, `color.bg.page` tile) sits under the Main Picture: the Main Picture first, then the Pictures in the order they were added. A tap shows that Picture in place of the Main Picture; the shown thumbnail has the focus outline (`aria-pressed`). Every Jersey and the Wishlist Item of a Kit show the same Pictures.
 - Owner, while a Picture is shown: a `neutral` Button "Delete" under the thumbnails (DeleteAction, "Delete this picture?"). It removes the Picture and its image for every Jersey and the Wishlist Item of the Kit.
@@ -272,7 +257,7 @@ Buttons: `success` "Save", `neutral` "Cancel". Delete is in the Jersey Popup (se
 
 ### WishlistItemForm
 
-Team, Season, Kit Type (as in JerseyForm), Main Picture (same rule), Version (ToggleGroup Any / Fan / Player / Tracksuit), Desire (DesireSelect, required). If Nico already owns a Jersey of the Kit: notice "Already owned" and a Button "Add anyway" before it saves.
+Team, Season, Kit Type (as in JerseyForm), Main Picture (same rule), Version (ToggleGroup Any / Fan / Player / Tracksuit). If Nico already owns a Jersey of the Kit: notice "Already owned" and a Button "Add anyway" before it saves.
 
 ### GotItForm
 

@@ -101,7 +101,7 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | color.border.subtle | sky.100 | navy.700 | "line" |
 | color.bg.accent | green.500 | green.400 | Active tab pill |
 | color.text.on-accent | navy.950 | navy.950 | Text on accent |
-| color.icon.accent | green.700 | green.400 | Desire dots |
+| color.icon.accent | green.700 | green.400 | Covered country on the CoverageMap |
 | color.bg.highlight | sun.400 | sun.400 | Jersey count chip |
 | color.bg.success | mint.400 | mint.400 | Total spent chip, Got it |
 | color.bg.info | sky.400 | sky.400 | Wishlist count chip |
@@ -147,8 +147,6 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | tile.placeholder | text.muted | Shirt outline when the Kit has no Main Picture |
 | tile.hover.lift | -3px (translateY) | Tile, motion allowed only |
 | tile.hover.tilt | -1.5deg (rotate) | Tile, motion allowed only |
-| desire.count | 5 | Desire dots |
-| desire.gap | 3px | Desire dots |
 | popup.radius | radius.xl | Popup |
 | popup.width.max | 420px | Popup |
 | popup.width.wide | 672px | Form Popup |
