@@ -130,6 +130,18 @@ export interface CollectionJersey {
 	acquisition: Acquisition;
 }
 
+// --- Wishlist ----------------------------------------------------------------
+
+export type Desire = 1 | 2 | 3 | 4 | 5;
+
+export interface WishlistItem {
+	id: number;
+	/** Null: any Version. */
+	version: Version | null;
+	desire: Desire;
+	kit: KitView;
+}
+
 export interface LookupBatchInput {
 	/** Kits to look up in this request. Keep small: subrequest limit and one TheSportsDB request every 2 s. */
 	size: number;
@@ -162,6 +174,8 @@ export interface Catalog {
 	listCountries(): Promise<Country[]>;
 	/** Every Jersey with its Kit, Team, Country and Acquisition, newest Acquisition first. */
 	listCollection(): Promise<CollectionJersey[]>;
+	/** Every Wishlist Item with its Kit, Team and Country, most wanted first. */
+	listWishlist(): Promise<WishlistItem[]>;
 	/** The Main Picture image of a Kit, or null when it has none. */
 	getMainPicture(kitId: number): Promise<MainPictureImage | null>;
 
