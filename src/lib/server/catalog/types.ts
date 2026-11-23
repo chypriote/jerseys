@@ -20,6 +20,10 @@ export interface Catalog {
 	// Reads (Viewer and Owner)
 	listStores(): Promise<Store[]>;
 
+	// Stores (Owner). A name another Store has (any case) is refused.
+	addStore(token: string, name: string): Promise<Store>;
+	renameStore(token: string, id: number, name: string): Promise<Store>;
+
 	// Owner login
 	login(password: string): Promise<LoginResult>;
 	verifyToken(token: string): Promise<boolean>;

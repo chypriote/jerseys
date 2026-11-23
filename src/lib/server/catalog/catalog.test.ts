@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createCatalog } from './index';
 
 describe('Catalog', () => {
@@ -75,5 +75,74 @@ describe('Owner login', () => {
 		expect(await catalog.verifyToken(await signJwt({ exp: exp + 3600 }, 'test-jwt-secret'))).toBe(
 			true
 		);
+	});
+
+	it('refuses every write without a valid token', async () => {
+		const bad = 'not-a-token';
+		const calls = [() => catalog.addStore(bad, 'Shop'), () => catalog.renameStore(bad, 1, 'Shop')];
+		for (const call of calls) {
+			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
+		}
+	});
+});
+
+describe('Stores', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+
+	beforeEach(async () => {
+		await env.DB.prepare("DELETE FROM store WHERE name != 'Official Store'").run();
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	it('adds Stores, trimmed, and lists them by name', async () => {
+		const fnac = await catalog.addStore(token, '  Classic Football Shirts ');
+		expect(fnac.name).toBe('Classic Football Shirts');
+		await catalog.addStore(token, 'adidas');
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual([
+			'adidas',
+			'Classic Football Shirts',
+			'Official Store'
+		]);
+		expect(await catalog.listStores()).toContainEqual(fnac);
+	});
+
+	it('refuses a Store name that exists, in any case, with a readable error', async () => {
+		await catalog.addStore(token, 'Kitbag');
+		await expect(catalog.addStore(token, ' kitbag ')).rejects.toThrow(
+			'A store named “kitbag” already exists'
+		);
+		await expect(catalog.addStore(token, 'official store')).rejects.toThrow(
+			'A store named “official store” already exists'
+		);
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Kitbag', 'Official Store']);
+	});
+
+	it('refuses an empty Store name', async () => {
+		await expect(catalog.addStore(token, '   ')).rejects.toThrow('Store name is required');
+	});
+
+	it('renames a Store, and lets a rename change only the case', async () => {
+		const shop = await catalog.addStore(token, 'kitbag');
+		expect(await catalog.renameStore(token, shop.id, ' Kitbag ')).toEqual({
+			id: shop.id,
+			name: 'Kitbag'
+		});
+		await catalog.renameStore(token, shop.id, 'Subside Sports');
+		expect(await catalog.listStores()).toEqual([
+			{ id: 1, name: 'Official Store' },
+			{ id: shop.id, name: 'Subside Sports' }
+		]);
+	});
+
+	it('refuses a rename to a name another Store has, or of an unknown Store', async () => {
+		const shop = await catalog.addStore(token, 'Kitbag');
+		await expect(catalog.renameStore(token, shop.id, 'Official store')).rejects.toThrow(
+			'A store named “Official store” already exists'
+		);
+		await expect(catalog.renameStore(token, 9999, 'Elsewhere')).rejects.toThrow('Unknown store');
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Kitbag', 'Official Store']);
 	});
 });
