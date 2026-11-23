@@ -4,6 +4,7 @@
 	import { continents } from '#lib/countries';
 	import { kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
+	import { postAction } from '#lib/forms';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
 	import Chip from '#lib/components/Chip.svelte';
@@ -11,6 +12,7 @@
 	import DesireDots from '#lib/components/DesireDots.svelte';
 	import DesireSelect from '#lib/components/DesireSelect.svelte';
 	import EmptyState from '#lib/components/EmptyState.svelte';
+	import GotItForm from '#lib/components/GotItForm.svelte';
 	import LoginAction from '#lib/components/LoginAction.svelte';
 	import Popup from '#lib/components/Popup.svelte';
 	import SearchField from '#lib/components/SearchField.svelte';
@@ -95,7 +97,22 @@
 	let anchor = $state<HTMLElement | null>(null);
 	let open = $state(false);
 
+	// Owner: "Got it" turns the Popup into the GotItForm; "Drop" removes the Wishlist Item at once.
+	let gettingIt = $state(false);
+	let dropping = $state(false);
+	let actionError = $state<string | null>(null);
+
+	async function drop(item: WishlistItem) {
+		dropping = true;
+		const outcome = await postAction('?/drop', { id: item.id });
+		dropping = false;
+		if (outcome.ok) open = false;
+		else actionError = outcome.error;
+	}
+
 	function select(item: WishlistItem, el: HTMLElement) {
+		gettingIt = false;
+		actionError = null;
 		selectedId = item.id;
 		anchor = el;
 		open = true;
@@ -120,7 +137,7 @@
 			{@const lists = data.form}
 			<AddAction title="Add a wishlist item">
 				{#snippet form(close)}
-					<WishlistItemForm {...lists} onDone={close} />
+					<WishlistItemForm teams={lists.teams} countries={lists.countries} onDone={close} />
 				{/snippet}
 			</AddAction>
 		{/if}
@@ -170,23 +187,46 @@
 	{/if}
 </main>
 
+{#snippet itemActions()}
+	{#if selected}
+		{@const item = selected}
+		<Button intent="success" onclick={() => (gettingIt = true)}>Got it</Button>
+		<Button loading={dropping} onclick={() => drop(item)}>Drop</Button>
+	{/if}
+{/snippet}
+
 {#if selected}
 	<Popup
 		bind:open
 		{anchor}
-		title={selected.kit.team.name}
+		title={gettingIt ? 'Got it' : selected.kit.team.name}
 		subtitle={caption(selected)}
 		mainPictureUrl={mainPictureUrl(selected.kit)}
+		wide={gettingIt}
+		actions={data.form && !gettingIt ? itemActions : undefined}
 	>
 		{#snippet details()}
-			<dl
-				class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-[15px] [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
-			>
-				<dt class="text-muted-foreground">Version</dt>
-				<dd>{selected.version ? versionLabels[selected.version] : 'Any version'}</dd>
-				<dt class="text-muted-foreground">Desire</dt>
-				<dd><DesireDots value={selected.desire} /></dd>
-			</dl>
+			{#if gettingIt && data.form}
+				<GotItForm
+					wishlistItemId={selected.id}
+					version={selected.version}
+					stores={data.form.stores}
+					onDone={() => (open = false)}
+					onCancel={() => (gettingIt = false)}
+				/>
+			{:else}
+				<dl
+					class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-[15px] [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
+				>
+					<dt class="text-muted-foreground">Version</dt>
+					<dd>{selected.version ? versionLabels[selected.version] : 'Any version'}</dd>
+					<dt class="text-muted-foreground">Desire</dt>
+					<dd><DesireDots value={selected.desire} /></dd>
+				</dl>
+				{#if actionError}
+					<p class="text-sm font-bold text-destructive" role="alert">! {actionError}</p>
+				{/if}
+			{/if}
 		{/snippet}
 	</Popup>
 {/if}

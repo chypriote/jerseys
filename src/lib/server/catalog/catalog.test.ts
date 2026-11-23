@@ -139,7 +139,18 @@ describe('Owner login', () => {
 					kitType: 'home',
 					version: null,
 					desire: 3
-				})
+				}),
+			() =>
+				catalog.gotIt(bad, {
+					wishlistItemId: 1,
+					jersey: {
+						version: 'fan',
+						size: 'M',
+						fit: 'good',
+						acquisition: { kind: 'gift', date: '2024' }
+					}
+				}),
+			() => catalog.drop(bad, 1)
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -1816,5 +1827,116 @@ describe('Add a Wishlist Item', () => {
 		).rejects.toThrow('Version must be Any, Fan, Player or Tracksuit');
 		expect(await catalog.listTeams()).toEqual([]);
 		expect(await catalog.listWishlist()).toEqual([]);
+	});
+});
+
+describe('Got it and Drop', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+	let france: number;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+		france = (
+			await catalog.addCountry(token, {
+				name: 'France',
+				continent: 'europe',
+				leagueName: 'Ligue 1',
+				seasonFormat: 'split'
+			})
+		).id;
+	});
+
+	async function wanted() {
+		const result = await catalog.addWishlistItem(token, {
+			team: { name: 'Lyon', kind: 'club', countryId: france },
+			season: '2023-24',
+			kitType: 'away',
+			version: 'player',
+			desire: 4
+		});
+		if (result.status !== 'added') throw new Error('not added');
+		return result.item;
+	}
+
+	it('Got it removes the Wishlist Item and adds a Jersey of the same Kit', async () => {
+		const item = await wanted();
+
+		const jersey = await catalog.gotIt(token, {
+			wishlistItemId: item.id,
+			jersey: {
+				version: 'fan',
+				size: 'L',
+				fit: 'too-big',
+				print: ' Cherki 18 ',
+				acquisition: { kind: 'gift', date: '2024-12-25', giver: 'Léa' }
+			}
+		});
+
+		expect(jersey).toMatchObject({
+			version: 'fan',
+			size: 'L',
+			fit: 'too-big',
+			print: 'Cherki 18',
+			acquisition: { kind: 'gift', date: '2024-12-25', giver: 'Léa' }
+		});
+		expect(jersey.kit).toEqual(item.kit);
+		expect(await catalog.listCollection()).toEqual([jersey]);
+		expect(await catalog.listWishlist()).toEqual([]);
+	});
+
+	it('Got it with an invalid Jersey changes nothing', async () => {
+		const item = await wanted();
+		const jersey = {
+			version: 'fan',
+			size: 'M',
+			fit: 'good',
+			acquisition: { kind: 'purchase', storeId: 1, priceCents: 8999, bought: '2024-13-01' }
+		} as const;
+
+		await expect(catalog.gotIt(token, { wishlistItemId: item.id, jersey })).rejects.toThrow(
+			'Bought date is not a real date'
+		);
+		await expect(
+			catalog.gotIt(token, { wishlistItemId: item.id, jersey: { ...jersey, size: 'XL' } as never })
+		).rejects.toThrow('Size must be S, M or L');
+		expect(await catalog.listWishlist()).toEqual([item]);
+		expect(await catalog.listCollection()).toEqual([]);
+	});
+
+	it('Got it on an unknown Wishlist Item adds nothing', async () => {
+		await expect(
+			catalog.gotIt(token, {
+				wishlistItemId: 999,
+				jersey: {
+					version: 'fan',
+					size: 'M',
+					fit: 'good',
+					acquisition: { kind: 'gift', date: '2024' }
+				}
+			})
+		).rejects.toThrow('Wishlist Item not found');
+		expect(await catalog.listCollection()).toEqual([]);
+	});
+
+	it('Drop removes the Wishlist Item and keeps the Kit', async () => {
+		const item = await wanted();
+
+		await catalog.drop(token, item.id);
+
+		expect(await catalog.listWishlist()).toEqual([]);
+		expect(await catalog.listKitsWithoutMainPicture(token)).toEqual([
+			{ id: item.kit.id, teamName: 'Lyon', season: '2023-24', kitType: 'away' }
+		]);
 	});
 });
