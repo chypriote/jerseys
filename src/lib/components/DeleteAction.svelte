@@ -40,7 +40,7 @@
 		<span class="sr-only">{label} {what}</span>
 	</button>
 {:else}
-	<Button onclick={() => (confirming = true)}>
+	<Button intent="danger" onclick={() => (confirming = true)}>
 		{label}<span class="sr-only"> {what}</span>
 	</Button>
 {/if}

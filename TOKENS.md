@@ -107,6 +107,8 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | color.bg.info | sky.400 | sky.400 | Wishlist count chip |
 | color.text.on-chip | navy.800 | navy.800 | Text on sun, mint, sky |
 | color.text.error | coral.600 | coral.400 | Field error text |
+| color.bg.danger | coral.600 | coral.400 | Delete Button |
+| color.text.on-danger | white | navy.950 | Text on danger (5.2:1 light, 6.3:1 dark) |
 | color.outline.focus | sky.600 | sky.400 | Focus ring |
 | color.bg.overlay | scrim | scrim | Behind the popup |
 
