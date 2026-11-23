@@ -144,14 +144,14 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | tile.bg | bg.surface | Tile |
 | tile.radius | radius.md | Tile |
 | tile.shadow | shadow.raised | Tile |
-| tile.placeholder | text.muted | Shirt outline when the Kit has no Cover |
+| tile.placeholder | text.muted | Shirt outline when the Kit has no Main Picture |
 | tile.hover.lift | -3px (translateY) | Tile, motion allowed only |
 | tile.hover.tilt | -1.5deg (rotate) | Tile, motion allowed only |
 | desire.count | 5 | Desire dots |
 | popup.radius | radius.xl | Popup |
 | popup.width.max | 420px | Popup |
 | popup.width.wide | 672px | Form Popup |
-| popup.cover.size | 150px | Popup |
+| popup.picture.size | 150px | Popup |
 | control.size.min | 44px | All controls (touch target) |
 | grid.columns | 3; 5 from breakpoint.sm; 7 from breakpoint.md; 8 from breakpoint.lg | Tile grid |
 | map.country.covered | icon.accent | CoverageMap |

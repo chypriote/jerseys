@@ -54,16 +54,16 @@ export const kits = sqliteTable(
 		kitType: text('kit_type', {
 			enum: ['home', 'away', 'third', 'fourth', 'cup', 'special']
 		}).notNull(),
-		/** Cover key in R2. */
-		coverKey: text('cover_key'),
-		/** Bumped when the Cover image changes, so that its cached URL changes too. */
-		coverVersion: integer('cover_version').notNull().default(0)
+		/** Main Picture key in R2. */
+		mainPictureKey: text('main_picture_key'),
+		/** Bumped when the Main Picture changes, so that its cached URL changes too. */
+		mainPictureVersion: integer('main_picture_version').notNull().default(0)
 	},
 	// A Team's Seasons all follow one Season Format, so the start year names the Season.
 	(t) => [uniqueIndex('kit_team_season_type_unique').on(t.teamId, t.seasonStartYear, t.kitType)]
 );
 
-/** Extra Pictures of a Kit, beyond its Cover. */
+/** Extra Pictures of a Kit, beyond its Main Picture. */
 export const pictures = sqliteTable('picture', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	kitId: integer('kit_id')

@@ -85,16 +85,16 @@ The shadcn-svelte toggle group, as radio pills, `type="single"`. Used for Versio
 | team | string | — | Caption line 1, `text.caption.team` |
 | season | string | — | Already formatted ("2023-24", "2024") |
 | kitType | string | — | "Home", "Away"… Caption line 2 is "{season} · {kitType}", `text.caption.kit` |
-| coverUrl | string \| null | null | The Kit's Cover. Null shows the shirt outline |
+| mainPictureUrl | string \| null | null | The Kit's Main Picture. Null shows the shirt outline |
 | desire | `1 \| 2 \| 3 \| 4 \| 5` | — | Wishlist only: DesireDots under the caption |
 | onSelect | `(el: HTMLElement) => void` | — | Gives the Popup the Tile to focus on close |
 
 - The whole Tile is one `<button>`. The image has `alt=""`, because the caption names the Kit.
-- Square box: `tile.bg`, `tile.radius`, `tile.shadow`. The Cover is `object-fit: contain` with padding, so a shirt photo on any background reads on the neutral tile. `loading="lazy"`.
-- No Cover, or the image fails to load: a shirt outline SVG in `tile.placeholder`, `aria-hidden`.
+- Square box: `tile.bg`, `tile.radius`, `tile.shadow`. The Main Picture is `object-fit: contain` with padding, so a shirt photo on any background reads on the neutral tile. `loading="lazy"`.
+- No Main Picture, or the image fails to load: a shirt outline SVG in `tile.placeholder`, `aria-hidden`.
 - Never fill the tile with a kit colour (DESIGN.md).
 
-States: default, hover and focus (`tile.hover.lift`, `tile.hover.tilt`, motion allowed only; focus also shows the ring), no Cover.
+States: default, hover and focus (`tile.hover.lift`, `tile.hover.tilt`, motion allowed only; focus also shows the ring), no Main Picture.
 
 ### Tabs
 
@@ -110,8 +110,8 @@ Same as Vinyles: native `<dialog>` with `showModal()`, centred on the screen. Fo
 | anchor | HTMLElement \| null | null | The Tile. Gets the focus back on close |
 | title | string | — | The Team name |
 | subtitle | string | — | "{season} · {kitType}", `text.body.detail`, muted |
-| coverUrl | string \| null | null | `popup.cover.size`, contained, or the shirt outline |
-| wide | boolean | false | Form Popup: width `popup.width.wide`, no Cover. From `breakpoint.sm` the fields sit in two columns |
+| mainPictureUrl | string \| null | null | `popup.picture.size`, contained, or the shirt outline |
+| wide | boolean | false | Form Popup: width `popup.width.wide`, no Main Picture. From `breakpoint.sm` the fields sit in two columns |
 | onDismiss | `() => void` | — | X button, Esc, tap on the backdrop |
 
 Vinyles names the title prop `album`. Here it is `title`, because a Popup also holds forms.
@@ -180,7 +180,7 @@ Same structure as the current Vinyles StickyBar (title row; tabs row; search and
 
 ### TileGrid
 
-Same as the Vinyles CoverGrid: `grid.columns` per breakpoint, gaps `space.grid.gap-x` and `space.grid.gap-y`, gutter `space.gutter` plus safe-area insets. Key each Tile by Jersey id or Wishlist Item id. Two Jerseys of one Kit are two Tiles with the same Cover.
+Same as the Vinyles CoverGrid: `grid.columns` per breakpoint, gaps `space.grid.gap-x` and `space.grid.gap-y`, gutter `space.gutter` plus safe-area insets. Key each Tile by Jersey id or Wishlist Item id. Two Jerseys of one Kit are two Tiles with the same Main Picture.
 
 ### CoverageMap
 
@@ -233,7 +233,7 @@ Add and edit a Jersey. Fields, in order:
 1. Team: TeamLookup.
 2. Season: Field. Placeholder from the Team's Season Format: "2024-25" (Split) or "2024" (Calendar).
 3. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
-4. Cover: file input "Cover picture", shown when the Kit has no Cover yet. One Cover per Kit.
+4. Main Picture: file input "Main picture", shown when the Kit has no Main Picture yet. One Main Picture per Kit.
 5. Version: ToggleGroup Fan / Player / Tracksuit.
 6. Size: ToggleGroup S / M / L.
 7. Fit: ToggleGroup Too small / Good / Too big.
@@ -244,7 +244,7 @@ Buttons: `success` "Save", `neutral` "Cancel". No delete: Jerseys never leave th
 
 ### WishlistItemForm
 
-Team, Season, Kit Type (as in JerseyForm), Cover (same rule), Version (ToggleGroup Any / Fan / Player / Tracksuit), Desire (DesireSelect, required). If Nico already owns a Jersey of the Kit: notice "Already owned" and a Button "Add anyway" before it saves.
+Team, Season, Kit Type (as in JerseyForm), Main Picture (same rule), Version (ToggleGroup Any / Fan / Player / Tracksuit), Desire (DesireSelect, required). If Nico already owns a Jersey of the Kit: notice "Already owned" and a Button "Add anyway" before it saves.
 
 ### GotItForm
 

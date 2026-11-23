@@ -225,7 +225,7 @@ footer { margin-top: 24px; color: var(--text-muted); }
   <div class="map-scroll" id="map-scroll"></div>
 </section>
 
-<p class="note">Mockup. Collection rows come from the sheet; Desire values and the Country list are examples. Covers are drawn shirts, the app shows each Kit's Cover picture. Four Kits have no Cover, to show the outline.</p>
+<p class="note">Mockup. Collection rows come from the sheet; Desire values and the Country list are examples. Main Pictures are drawn shirts, the app shows each Kit's Main Picture. Four Kits have no Main Picture, to show the outline.</p>
 <main class="grid" id="grid"></main>
 <footer>Tap a tile for details. The lock button shows the Owner view.</footer>
 
@@ -266,7 +266,7 @@ const TEAMS = {
   "Red Star Belgrade":["Serbia","#d71920","#ffffff","stripes"], "Partizan":["Serbia","#111111","#ffffff","stripes"],
   "Shandong Taishan":["China","#f47b20","#ffffff"]
 };
-const NO_COVER = new Set(["Guangxi Pingguo Haliao","Atletico Ottawa","Apollon Limassol","Guangzhou E-Power"]);
+const NO_MAIN_PICTURE = new Set(["Guangxi Pingguo Haliao","Atletico Ottawa","Apollon Limassol","Guangzhou E-Power"]);
 
 // Collection rows from the sheet: Team, Season, Kit Type, Print, Size, Bought, Store, Price, Version, Fit
 const J = [
@@ -362,11 +362,11 @@ const ALL_COUNTRIES = Object.values(CONTINENTS).flat();
 const jerseys = J.map((r, i) => ({ id:"j"+i, team:r[0], season:r[1], kitType:r[2], print:r[3], size:r[4], bought:r[5], store:r[6], price:r[7], version:r[8], fit:r[9], country:TEAMS[r[0]][0] }));
 const items = W.map((r, i) => ({ id:"w"+i, team:r[0], season:r[1], kitType:r[2], version:r[3], desire:r[4], country:TEAMS[r[0]][0] }));
 
-// Drawn shirt Cover: the shirt keeps its colours, the tile stays neutral.
+// Drawn shirt Main Picture: the shirt keeps its colours, the tile stays neutral.
 const SHIRT = "M30 12 L42 8 Q50 15 58 8 L70 12 L91 29 L80 42 L72 35 L72 92 L28 92 L28 35 L20 42 L9 29 Z";
 let uid = 0;
-function cover(k) {
-  if (NO_COVER.has(k.team)) return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SHIRT}" fill="none" stroke="var(--text-muted)" stroke-width="3" stroke-linejoin="round"/></svg>`;
+function mainPicture(k) {
+  if (NO_MAIN_PICTURE.has(k.team)) return `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SHIRT}" fill="none" stroke="var(--text-muted)" stroke-width="3" stroke-linejoin="round"/></svg>`;
   let [, a, b, pat] = TEAMS[k.team];
   if (k.kitType !== "Home" && k.kitType !== "Special") [a, b] = [b, a];
   if (k.kitType === "Third" || k.kitType === "Fourth" || k.kitType === "Cup") { a = b === "#111111" ? "#f8d200" : "#111111"; }
@@ -444,7 +444,7 @@ function renderDir() {
 function renderGrid() {
   const rows = list();
   $("grid").innerHTML = rows.length ? rows.map(k => `<button class="tile" type="button" data-id="${k.id}">
-      <span class="box">${cover(k)}</span>
+      <span class="box">${mainPicture(k)}</span>
       <span class="cap"><span class="team">${esc(k.team)}</span><span class="kit">${esc(k.season)} · ${esc(k.kitType)}</span>${k.desire ? dots(k.desire) : ""}</span>
     </button>`).join("")
     : `<div class="empty-state"><span>No match</span><button class="pill btn-neutral" type="button" id="clear">Clear filters</button></div>`;
@@ -551,7 +551,7 @@ function openTile(id, el) {
     rows = row("Version", k.version || "Any version") + row("Desire", dots(k.desire));
     if (state.owner) actions = `<button class="pill btn-success" type="button" data-action="gotit" data-id="${k.id}">Got it</button><button class="pill btn-neutral" type="button" data-close>Drop</button>`;
   }
-  openPopup(`<div class="pop"><span class="box">${cover(k)}</span><div><h2 id="pop-title">${esc(k.team)}</h2><p class="sub">${esc(k.season)} · ${esc(k.kitType)}</p><dl>${rows}</dl></div>${actions ? `<div class="actions">${actions}</div>` : ""}</div>`, el);
+  openPopup(`<div class="pop"><span class="box">${mainPicture(k)}</span><div><h2 id="pop-title">${esc(k.team)}</h2><p class="sub">${esc(k.season)} · ${esc(k.kitType)}</p><dl>${rows}</dl></div>${actions ? `<div class="actions">${actions}</div>` : ""}</div>`, el);
 }
 
 // Forms (Owner)
@@ -575,16 +575,16 @@ const teamLookup = k => `<div class="full fields" style="grid-template-columns:m
   </div></div>`;
 const kitFields = k => teamLookup(k) +
   `<div class="two">${field("Season", `placeholder="2024-25" value="${k ? k.season : ""}"`)}<label class="field"><span>Kit Type</span><select>${["Home","Away","Third","Fourth","Cup","Special"].map(t => `<option ${k && k.kitType === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>`;
-const coverField = k => (!k || NO_COVER.has(k.team)) ? field("Cover picture", `type="file" accept="image/*"`) : "";
+const mainPictureField = k => (!k || NO_MAIN_PICTURE.has(k.team)) ? field("Main picture", `type="file" accept="image/*"`) : "";
 function openForm(kind, k) {
   let title, body;
   if (kind === "jersey") {
     title = k ? "Edit jersey" : "Add jersey";
-    body = kitFields(k) + coverField(k) + tg("Version", ["Fan","Player","Tracksuit"], k?.version) + tg("Size", ["S","M","L"], k?.size) +
+    body = kitFields(k) + mainPictureField(k) + tg("Version", ["Fan","Player","Tracksuit"], k?.version) + tg("Size", ["S","M","L"], k?.size) +
       tg("Fit", ["Too small","Good","Too big"], k?.fit) + field("Print", `value="${k ? esc(k.print) : ""}" placeholder="NICOLAS 4"`) + acquisition(k);
   } else if (kind === "item") {
     title = "Add to wishlist";
-    body = kitFields(null) + coverField(null) + tg("Version", ["Any","Fan","Player","Tracksuit"], "Any") +
+    body = kitFields(null) + mainPictureField(null) + tg("Version", ["Any","Fan","Player","Tracksuit"], "Any") +
       `<label class="field"><span>Desire</span><select>${[5,4,3,2,1].map(n => `<option>${n === 5 ? "5 (most wanted)" : n === 1 ? "1 (least wanted)" : n}</option>`).join("")}</select></label>`;
   } else {
     title = "Got it: " + k.team;
