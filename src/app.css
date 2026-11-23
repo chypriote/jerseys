@@ -25,9 +25,11 @@
 	--white: #ffffff;
 	--sky-50: #eef6ff;
 	--sky-100: #d6e4f7;
+	--sky-200: #c9daf1;
 	--sky-400: #5aa9ff;
 	--sky-600: #258dff;
 	--navy-300: #a3b1d9;
+	--navy-500: #3a4d88;
 	--navy-600: #5a6a8e;
 	--navy-700: #2a3a6e;
 	--navy-800: #1a2f6b;
@@ -98,7 +100,8 @@
 	--tile-hover-lift: -3px;
 	--tile-hover-tilt: -1.5deg;
 	--map-country-covered: var(--icon-accent);
-	--map-country-empty: var(--border);
+	--map-country-empty: light-dark(var(--sky-200), var(--navy-500));
+	--map-country-absent: var(--border);
 	--map-country-border: var(--card);
 	--map-width-min: 900px;
 	--map-country-border-width: 0.5px;

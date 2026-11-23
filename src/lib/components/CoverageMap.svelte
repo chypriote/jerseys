@@ -123,7 +123,9 @@
 							data-shape={country.name}
 							class={country.covered
 								? 'fill-(--map-country-covered)'
-								: 'fill-(--map-country-empty)'}
+								: country.inApp
+									? 'fill-(--map-country-empty)'
+									: 'fill-(--map-country-absent)'}
 						/>
 					{/each}
 					{#each dots as country (country.name)}

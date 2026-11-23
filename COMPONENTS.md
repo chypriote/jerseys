@@ -189,7 +189,7 @@ Same as the Vinyles CoverGrid: `grid.columns` per breakpoint, gaps `space.grid.g
 - A surface card (`color.bg.surface`, `tile.radius`, `tile.shadow`) with an inline SVG world map. Height follows the map's aspect ratio.
 - Size: small Countries must be easy to see (Nico, 2026-11-22). The map is cropped to 56°S–72°N (no Antarctica, no far north). It is drawn at least `map.width.min` (900px) wide. On a narrower screen the card scrolls sideways (`overflow-x: auto`) and opens centred on Europe; the page itself never scrolls sideways.
 - Small Countries: a Country less than 8px across at the drawn size also gets a dot (r 4px) at its centre, in its state colour, with a 1px `map.country.border` ring. This covers Hong Kong, Luxembourg, Malta and the like.
-- Two states per Country (jerseys-model): covered fills `map.country.covered`, empty fills `map.country.empty`. Country borders: `map.country.border`, 0.5px.
+- Two states per Country (jerseys-model): covered fills `map.country.covered`; empty (a Country of the app with no Jersey) fills `map.country.empty`, a bit darker than land that is not a Country of the app (`map.country.absent`). Country borders: `map.country.border`, 0.5px.
 - The UK is four Countries: England, Scotland, Wales, Northern Ireland.
 - Heading above the map: "{covered} of {total} countries", `text.body`, value in extrabold. It is the button of an accordion with a chevron: it opens and closes the map (`aria-expanded`). The map starts open; the choice is kept in `localStorage` (`coverage-map-open`) and applied after mount. `total` is the number of Countries in the app, not in the world.
 - The SVG is `role="img"` with `aria-label` "Countries covered: {names}". No tap and no zoom in v1: sideways scroll only.
@@ -201,7 +201,8 @@ New component tokens (add to TOKENS.md):
 | Token | → Semantic | Scope |
 |---|---|---|
 | map.country.covered | color.icon.accent | CoverageMap |
-| map.country.empty | color.border.subtle | CoverageMap |
+| map.country.empty | sky.200 / navy.500 | CoverageMap |
+| map.country.absent | color.border.subtle | CoverageMap |
 | map.country.border | color.bg.surface | CoverageMap |
 | map.width.min | 900px | CoverageMap drawing |
 

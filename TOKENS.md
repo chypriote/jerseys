@@ -13,9 +13,11 @@ Modes: light and dark swap the semantic → primitive bindings. Primitives stay 
 | color.white | #ffffff | |
 | color.sky.50 | #eef6ff | |
 | color.sky.100 | #d6e4f7 | |
+| color.sky.200 | #c9daf1 | |
 | color.sky.400 | #5aa9ff | |
 | color.sky.600 | #258dff | |
 | color.navy.300 | #a3b1d9 | |
+| color.navy.500 | #3a4d88 | |
 | color.navy.600 | #5a6a8e | |
 | color.navy.700 | #2a3a6e | |
 | color.navy.800 | #1a2f6b | |
@@ -156,7 +158,8 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | control.size.min | 44px | All controls (touch target) |
 | grid.columns | 3; 5 from breakpoint.sm; 7 from breakpoint.md; 8 from breakpoint.lg | Tile grid |
 | map.country.covered | icon.accent | CoverageMap |
-| map.country.empty | border.subtle | CoverageMap |
+| map.country.empty | sky.200 (light), navy.500 (dark) | CoverageMap, Country of the app with no Jersey |
+| map.country.absent | border.subtle | CoverageMap, land that is not a Country of the app |
 | map.country.border | bg.surface | CoverageMap |
 | map.country.border.width | 0.5px | CoverageMap |
 | map.width.min | 900px | CoverageMap drawing |
@@ -178,6 +181,6 @@ Tabs, search, selects, chips and buttons use `radius.control`. Chips and buttons
 | text.on-chip on sun, mint, sky | 8.17, 6.60, 5.14 | same | 4.5 |
 | text.error on bg.page | 4.81 | 6.26 | 4.5 |
 | text.error on bg.surface | 5.24 | 5.45 | 4.5 |
-| map.country.covered on map.country.empty | 3.41 | 5.81 | 3 (non-text) |
+| map.country.covered on map.country.empty | 3.09 | 4.32 | 3 (non-text) |
 
 green.500 on the light page is 2.2:1. Use it only as a fill under on-accent text, never for icons or thin marks: those use `color.icon.accent`.
