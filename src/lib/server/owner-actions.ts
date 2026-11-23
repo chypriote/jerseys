@@ -7,6 +7,7 @@ import type {
 	GotItInput,
 	JerseyInput,
 	KitEditInput,
+	KitInput,
 	MainPictureFile,
 	TeamEditInput,
 	TeamInput
@@ -71,6 +72,10 @@ export const ownerActions = {
 	editTeam: (event: RequestEvent) =>
 		run<TeamEditInput>(event, async (catalog, token, input) => {
 			await catalog.editTeam(token, input);
+		}),
+	addKit: (event: RequestEvent) =>
+		run<KitInput>(event, async (catalog, token, input) => {
+			await catalog.addKit(token, input);
 		}),
 	editKit: (event: RequestEvent) =>
 		run<KitEditInput>(event, async (catalog, token, input) => {
