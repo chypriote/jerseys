@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import type { CollectionJersey, CoverageCountry } from '#lib/server/catalog/types';
 	import { kitLabel } from '#lib/labels';
 	import { mapCountries, mapCountryNamed, mapViewBox } from '#lib/map';
@@ -57,46 +58,87 @@
 
 	const headingId = $props.id();
 
-	// Opens centred on Europe when the map is wider than the card.
+	const STORAGE_KEY = 'coverage-map-open';
+	let open = $state(true);
+	const panelId = `${headingId}-panel`;
+
+	// The saved choice applies after mount, so the server render and first paint match.
 	onMount(() => {
-		if (scroller) scroller.scrollLeft = scroller.scrollWidth * EUROPE - scroller.clientWidth / 2;
+		try {
+			open = localStorage.getItem(STORAGE_KEY) !== 'false';
+		} catch {
+			// Storage blocked: the map stays open.
+		}
+	});
+
+	function toggle() {
+		open = !open;
+		try {
+			localStorage.setItem(STORAGE_KEY, String(open));
+		} catch {
+			// Storage blocked: the choice lasts until reload.
+		}
+	}
+
+	// Opens centred on Europe when the map is wider than the card; runs each time the map is shown.
+	$effect(() => {
+		if (open && scroller)
+			scroller.scrollLeft = scroller.scrollWidth * EUROPE - scroller.clientWidth / 2;
 	});
 </script>
 
 <section class="rounded-md bg-card pt-3 pb-2 shadow-(--shadow-raised)" aria-labelledby={headingId}>
-	<p id={headingId} class="mx-4 mb-2">
-		<b class="font-extrabold tabular-nums">{coveredNames.length}</b> of
-		<span class="tabular-nums">{countries.length}</span> countries
-	</p>
-	<div bind:this={scroller} class="overflow-x-auto overscroll-x-contain">
-		<div class="min-w-(--map-width-min)" bind:clientWidth={drawnWidth}>
-			<svg
-				viewBox="{x} {y} {width} {height}"
-				role="img"
-				aria-label="Countries covered: {coveredNames.join(', ')}"
-				onpointermove={showTip}
-				onpointerleave={() => (tip = null)}
-				class="block h-auto w-full [&_path]:stroke-(--map-country-border) [&_path]:stroke-(length:--map-country-border-width) [&_path]:[stroke-linejoin:round] [&_path]:[vector-effect:non-scaling-stroke]"
-			>
-				{#each drawn as country (country.name)}
-					<path
-						d={country.d}
-						data-shape={country.name}
-						class={country.covered ? 'fill-(--map-country-covered)' : 'fill-(--map-country-empty)'}
-					/>
-				{/each}
-				{#each dots as country (country.name)}
-					<circle
-						cx={country.centre[0]}
-						cy={country.centre[1]}
-						data-shape={country.name}
-						r={DOT_RADIUS_PX / pxPerUnit}
-						class="stroke-(--map-country-border) stroke-1 [vector-effect:non-scaling-stroke] {country.covered
-							? 'fill-(--map-country-covered)'
-							: 'fill-(--map-country-empty)'}"
-					/>
-				{/each}
-			</svg>
+	<h2 id={headingId} class="text-base font-normal">
+		<button
+			type="button"
+			onclick={toggle}
+			aria-expanded={open}
+			aria-controls={panelId}
+			class="flex w-full cursor-pointer items-center justify-between gap-2 px-4 pb-2 text-start"
+		>
+			<span>
+				<b class="font-extrabold tabular-nums">{coveredNames.length}</b> of
+				<span class="tabular-nums">{countries.length}</span> countries
+			</span>
+			<ChevronDownIcon
+				aria-hidden="true"
+				class="size-5 shrink-0 transition-transform {open ? 'rotate-180' : ''}"
+			/>
+		</button>
+	</h2>
+	<div id={panelId} hidden={!open}>
+		<div bind:this={scroller} class="overflow-x-auto overscroll-x-contain">
+			<div class="min-w-(--map-width-min)" bind:clientWidth={drawnWidth}>
+				<svg
+					viewBox="{x} {y} {width} {height}"
+					role="img"
+					aria-label="Countries covered: {coveredNames.join(', ')}"
+					onpointermove={showTip}
+					onpointerleave={() => (tip = null)}
+					class="block h-auto w-full [&_path]:stroke-(--map-country-border) [&_path]:stroke-(length:--map-country-border-width) [&_path]:[stroke-linejoin:round] [&_path]:[vector-effect:non-scaling-stroke]"
+				>
+					{#each drawn as country (country.name)}
+						<path
+							d={country.d}
+							data-shape={country.name}
+							class={country.covered
+								? 'fill-(--map-country-covered)'
+								: 'fill-(--map-country-empty)'}
+						/>
+					{/each}
+					{#each dots as country (country.name)}
+						<circle
+							cx={country.centre[0]}
+							cy={country.centre[1]}
+							data-shape={country.name}
+							r={DOT_RADIUS_PX / pxPerUnit}
+							class="stroke-(--map-country-border) stroke-1 [vector-effect:non-scaling-stroke] {country.covered
+								? 'fill-(--map-country-covered)'
+								: 'fill-(--map-country-empty)'}"
+						/>
+					{/each}
+				</svg>
+			</div>
 		</div>
 	</div>
 
