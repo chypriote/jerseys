@@ -63,18 +63,14 @@
 <header
 	class="sticky top-0 z-(--layer-sticky) flex flex-col gap-3 bg-background pt-[max(0.75rem,env(safe-area-inset-top))] pe-[max(1rem,env(safe-area-inset-right))] pb-3 ps-[max(1rem,env(safe-area-inset-left))]"
 >
-	<div class="flex flex-wrap items-center gap-2">
-		<h1 class="me-2">Jerseys</h1>
-		<!-- Below `sm` the chips take their own line under the title. -->
-		<div
-			class="order-last flex basis-full flex-wrap gap-2 sm:order-none sm:me-auto sm:basis-auto"
-			aria-live="polite"
-		>
-			{@render chips?.()}
-		</div>
-		<div class="ms-auto flex items-center gap-2 sm:ms-0">
-			<ThemeToggle />
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<h1>Jerseys</h1>
+		<div class="flex flex-wrap items-center justify-end gap-2">
+			<div class="flex flex-wrap gap-2" aria-live="polite">
+				{@render chips?.()}
+			</div>
 			{@render login?.()}
+			<ThemeToggle />
 		</div>
 	</div>
 	<div class="flex flex-wrap items-center gap-2">

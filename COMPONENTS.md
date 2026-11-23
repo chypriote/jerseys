@@ -172,7 +172,7 @@ Same as Vinyles. Messages: "No jerseys yet", "Nothing on the wishlist", "No matc
 
 Same structure as the current Vinyles StickyBar (title row; tabs row; search and filters row, behind icon toggles below `breakpoint.sm`).
 
-- Title: "Jerseys" in `text.heading.page`.
+- Title: "Jerseys" in `text.heading.page`, on the left of the title row. The chips, the LoginAction and the ThemeToggle sit on the right of it, as in Vinyles; they wrap under the title when the row is too narrow.
 - Collection chips: `highlight` jersey count, `success` total spent. Filters: CountryFilter. Sorts: Team, Season, Acquired (Bought date or Gift date). Default: Acquired, newest first.
 - Wishlist chips: `info` item count. Filters: CountryFilter. Sorts: Team, Season. Default: Season, newest first.
 - Search covers Team name and Print.
