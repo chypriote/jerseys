@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { deleteRow, postAction } from '#lib/forms';
+	import { kitLabel, kitTypeLabels } from '#lib/labels';
 	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
-	import type { Country, TeamKind, TeamView } from '#lib/server/catalog/types';
+	import type { Country, KitView, TeamKind, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
@@ -14,8 +16,14 @@
 	let {
 		teams,
 		countries,
+		kits,
 		counts
-	}: { teams: TeamView[]; countries: Country[]; counts: Record<number, number> } = $props();
+	}: {
+		teams: TeamView[];
+		countries: Country[];
+		kits: KitView[];
+		counts: Record<number, number>;
+	} = $props();
 
 	const kinds: { value: TeamKind; label: string }[] = [
 		{ value: 'club', label: 'Club' },
@@ -119,6 +127,28 @@
 			</div>
 			<Button intent="success" type="submit" loading={busy}>Save</Button>
 		</form>
+		{#if editing}
+			{@const teamKits = kits.filter((k) => k.team.id === editing!.id)}
+			{#if teamKits.length > 0}
+				<div class="flex flex-col gap-1.5">
+					<span class="text-sm font-bold">Kits</span>
+					<ul class="flex flex-col gap-1">
+						{#each teamKits as kit (kit.id)}
+							<li>
+								<a
+									class="underline"
+									href="{resolve('/admin/kits')}?search={encodeURIComponent(
+										kitLabel(kit.team.name, kit.season, kit.kitType)
+									)}"
+								>
+									{kit.season} · {kitTypeLabels[kit.kitType]}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
+		{/if}
 	{/snippet}
 	{#snippet actions()}
 		{#if editing}

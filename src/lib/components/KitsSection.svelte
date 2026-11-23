@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { deleteRow, postAction } from '#lib/forms';
 	import { matchesSearch } from '#lib/search';
 	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
@@ -12,7 +13,8 @@
 
 	let { kits, teams }: { kits: KitView[]; teams: TeamView[] } = $props();
 
-	let search = $state('');
+	// A link from the Edit team dialog arrives with the Kit in `?search=`.
+	let search = $state(page.url.searchParams.get('search') ?? '');
 	const shown = $derived(
 		kits.filter((k) => matchesSearch(search, k.team.name, k.season, kitTypeLabels[k.kitType]))
 	);
