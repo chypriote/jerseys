@@ -70,7 +70,12 @@
 	// The Season is chosen from the Team's Season Format.
 	const seasonOptions = $derived.by(() => {
 		const format = teams.find((t) => t.id === editing?.team.id)?.seasonFormat ?? 'split';
-		return seasonChoices(format, new Date(), editing?.season).map((s) => ({ value: s, label: s }));
+		return seasonChoices(
+			format,
+			new Date(),
+			kits.map((k) => k.season),
+			editing?.season
+		).map((s) => ({ value: s, label: s }));
 	});
 
 	function show(kit: KitView) {
@@ -217,6 +222,7 @@
 				{teams}
 				{countries}
 				{pictured}
+				{kits}
 				teamId={addingFor}
 				onSuccess={() => (adding = false)}
 			/>

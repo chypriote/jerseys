@@ -2,28 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { fitsSeasonFormat, seasonChoices } from './seasons';
 
 describe('seasonChoices', () => {
-	it('lists split Seasons newest first, up to the next one', () => {
-		const seasons = seasonChoices('split', new Date('2026-11-23'));
-		expect(seasons.slice(0, 3)).toEqual(['2027-28', '2026-27', '2025-26']);
-		expect(seasons.at(-1)).toBe('1960-61');
+	const now = new Date('2026-11-23');
+
+	it('offers the current and the next Season, newest first', () => {
+		expect(seasonChoices('split', now)).toEqual(['2027-28', '2026-27']);
+		expect(seasonChoices('calendar', now)).toEqual(['2027', '2026']);
 	});
 
 	it('starts a split Season in July', () => {
-		expect(seasonChoices('split', new Date('2027-03-01'))[0]).toBe('2027-28');
-		expect(seasonChoices('split', new Date('2027-03-01'))[1]).toBe('2026-27');
-		expect(seasonChoices('split', new Date('2027-07-01'))[0]).toBe('2028-29');
+		expect(seasonChoices('split', new Date('2027-03-01'))).toEqual(['2027-28', '2026-27']);
+		expect(seasonChoices('split', new Date('2027-07-01'))).toEqual(['2028-29', '2027-28']);
 	});
 
-	it('lists calendar years newest first, up to next year', () => {
-		const seasons = seasonChoices('calendar', new Date('2026-11-23'));
-		expect(seasons.slice(0, 2)).toEqual(['2027', '2026']);
-		expect(seasons.at(-1)).toBe('1960');
+	it('adds the Seasons Kits have, once, in the format only', () => {
+		expect(
+			seasonChoices('split', now, ['2019-20', '2026-27', '2019-20', '2024', '2021-22'])
+		).toEqual(['2027-28', '2026-27', '2021-22', '2019-20']);
+		expect(seasonChoices('calendar', now, ['2022', '2019-20'])).toEqual(['2027', '2026', '2022']);
 	});
 
-	it('keeps a current value outside the range, in order', () => {
-		const seasons = seasonChoices('split', new Date('2026-11-23'), '1955-56');
-		expect(seasons.at(-1)).toBe('1955-56');
-		expect(seasonChoices('split', new Date('2026-11-23'), '2024')).not.toContain('2024');
+	it('keeps the Season of the Kit being edited', () => {
+		expect(seasonChoices('split', now, [], '1998-99')).toEqual(['2027-28', '2026-27', '1998-99']);
+		expect(seasonChoices('split', now, [], '1998')).toEqual(['2027-28', '2026-27']);
 	});
 });
 

@@ -96,7 +96,12 @@
 	const seasonOptions = $derived([
 		{ value: '', label: seasonFormat ? 'Choose a season' : 'Choose a team first' },
 		...(seasonFormat
-			? seasonChoices(seasonFormat, new Date(), season).map((s) => ({ value: s, label: s }))
+			? seasonChoices(
+					seasonFormat,
+					new Date(),
+					kits.map((k) => k.season),
+					season
+				).map((s) => ({ value: s, label: s }))
 			: [])
 	]);
 	$effect(() => {
