@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { deleteRow, postAction } from '#lib/forms';
+	import { matchesSearch } from '#lib/search';
 	import type { Country, TeamKind, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
 	import Popup from './Popup.svelte';
+	import SearchField from './SearchField.svelte';
 	import Select from './Select.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
 
@@ -15,10 +17,17 @@
 		{ value: 'national', label: 'National Team' }
 	];
 
+	let search = $state('');
+
 	// Grouped by Country so that a long list stays readable.
 	const groups = $derived(
 		countries
-			.map((country) => ({ country, teams: teams.filter((t) => t.country.id === country.id) }))
+			.map((country) => ({
+				country,
+				teams: teams.filter(
+					(t) => t.country.id === country.id && matchesSearch(search, t.name, country.name)
+				)
+			}))
 			.filter((group) => group.teams.length > 0)
 	);
 
@@ -57,8 +66,11 @@
 
 <section aria-labelledby="teams-heading" class="flex min-w-0 flex-col gap-3">
 	<h2 id="teams-heading" class="font-display text-xl font-extrabold uppercase italic">Teams</h2>
+	<SearchField bind:value={search} label="Search teams" placeholder="Search teams" />
 	{#if groups.length === 0}
-		<p class="text-sm text-muted-foreground">No teams yet: the jersey forms add them.</p>
+		<p class="text-sm text-muted-foreground">
+			{search.trim() ? 'No team matches.' : 'No teams yet: the jersey forms add them.'}
+		</p>
 	{/if}
 	{#each groups as group (group.country.id)}
 		<div class="flex flex-col gap-2">

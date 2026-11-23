@@ -2,12 +2,21 @@
 	import { continents, seasonFormats } from '#lib/countries';
 	import type { Country } from '#lib/server/catalog/types';
 	import { deleteRow } from '#lib/forms';
+	import { matchesSearch } from '#lib/search';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import CountryForm from './CountryForm.svelte';
 	import Popup from './Popup.svelte';
+	import SearchField from './SearchField.svelte';
 
 	let { countries }: { countries: Country[] } = $props();
+
+	let search = $state('');
+	const shown = $derived(
+		countries.filter((c) =>
+			matchesSearch(search, c.name, c.league.name, continentLabel(c.continent) ?? '')
+		)
+	);
 
 	let open = $state(false);
 	/** The Country being edited; null while adding. */
@@ -29,8 +38,9 @@
 		</h2>
 		<Button intent="success" size="sm" onclick={() => show(null)}>Add a country</Button>
 	</div>
+	<SearchField bind:value={search} label="Search countries" placeholder="Search countries" />
 	<ul class="flex flex-col gap-2">
-		{#each countries as country (country.id)}
+		{#each shown as country (country.id)}
 			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
 				<div class="flex min-w-0 flex-col">
 					<span class="font-medium">{country.name}</span>

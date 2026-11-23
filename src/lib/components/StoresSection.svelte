@@ -1,12 +1,17 @@
 <script lang="ts">
 	import type { Store } from '#lib/server/catalog/types';
 	import { deleteRow } from '#lib/forms';
+	import { matchesSearch } from '#lib/search';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Popup from './Popup.svelte';
+	import SearchField from './SearchField.svelte';
 	import StoreForm from './StoreForm.svelte';
 
 	let { stores }: { stores: Store[] } = $props();
+
+	let search = $state('');
+	const shown = $derived(stores.filter((s) => matchesSearch(search, s.name)));
 
 	let open = $state(false);
 	/** The Store being renamed; null while adding. */
@@ -23,8 +28,9 @@
 		<h2 id="stores-heading" class="font-display text-xl font-extrabold uppercase italic">Stores</h2>
 		<Button intent="success" size="sm" onclick={() => show(null)}>Add a store</Button>
 	</div>
+	<SearchField bind:value={search} label="Search stores" placeholder="Search stores" />
 	<ul class="flex flex-col gap-2">
-		{#each stores as store (store.id)}
+		{#each shown as store (store.id)}
 			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
 				<span class="font-medium">{store.name}</span>
 				<Button size="sm" onclick={() => show(store)}>
