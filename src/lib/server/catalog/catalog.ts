@@ -606,15 +606,15 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 					return { kit, store: null, ...cut, ...giftFields(acquisition) };
 				if (acquisition?.kind !== 'purchase')
 					throw new Error('Acquisition must be a Purchase or a Gift');
-				const storeName = cleanOrNull(acquisition.store);
-				if (!storeName) throw new Error('A Purchase needs a Store');
 				if (acquisition.priceCents !== null && !isCents(acquisition.priceCents))
 					throw new Error('A price is euro cents, or null when unknown');
-				let store = named(storeList, storeName);
-				if (!store) storeList.push((store = { name: storeName, created: true }));
+				const storeName = cleanOrNull(acquisition.store);
+				let store = storeName === null ? null : named(storeList, storeName);
+				if (storeName !== null && !store)
+					storeList.push((store = { name: storeName, created: true }));
 				return {
 					kit,
-					store: store.name,
+					store: store?.name ?? null,
 					...cut,
 					...purchaseDates(acquisition),
 					priceCents: acquisition.priceCents

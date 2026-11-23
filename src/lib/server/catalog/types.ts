@@ -273,11 +273,11 @@ export interface ImportKitRow {
 	kitType: KitType;
 }
 
-/** Dates are `YYYY` or `YYYY-MM-DD`. A Store is named; a null price is unknown. */
+/** Dates are `YYYY` or `YYYY-MM-DD`. A Store is named; a null Store or price is unknown. */
 export type ImportAcquisition =
 	| {
 			kind: 'purchase';
-			store: string;
+			store: string | null;
 			priceCents: number | null;
 			bought: string;
 			sent?: string | null;

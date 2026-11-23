@@ -2404,6 +2404,19 @@ describe('Import the sheet rows', () => {
 		expect(await catalog.listCountries()).toEqual([]);
 	});
 
+	it('keeps a Purchase whose Store is unknown', async () => {
+		const input = rows();
+		input.jerseys[0].acquisition = {
+			kind: 'purchase',
+			store: null,
+			priceCents: null,
+			bought: '2018-07-12'
+		};
+		await catalog.importRows(token, input);
+		const jersey = (await catalog.listCollection()).find((j) => j.print === 'NICOLAS 4')!;
+		expect(jersey.acquisition).toMatchObject({ kind: 'purchase', store: null, priceCents: null });
+	});
+
 	it('is refused when the Collection already has a Jersey', async () => {
 		await catalog.importRows(token, { ...rows(), wishlist: [] });
 		await expect(catalog.importRows(token, rows())).rejects.toThrow('already has entries');
