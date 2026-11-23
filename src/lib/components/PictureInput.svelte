@@ -33,6 +33,12 @@
 		await tick();
 		urlInput?.focus();
 	}
+
+	async function openUrl() {
+		urlOpen = true;
+		await tick();
+		urlInput?.focus();
+	}
 </script>
 
 <div class="flex flex-col gap-1.5">
@@ -67,7 +73,7 @@
 		{/if}
 	</div>
 	{#if findUrl}
-		<FindPicturesLink url={findUrl} />
+		<FindPicturesLink url={findUrl} onOpen={openUrl} />
 	{/if}
 	{#if urlOpen}
 		<Input

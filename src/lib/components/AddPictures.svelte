@@ -5,11 +5,16 @@
 	import LinkIcon from '@lucide/svelte/icons/link';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import Button from './Button.svelte';
+	import FindPicturesLink from './FindPicturesLink.svelte';
 	import { Button as IconButton } from './ui/button/index.js';
 	import { Input } from './ui/input/index.js';
 	import { Label } from './ui/label/index.js';
 
-	let { kitId, onAdded }: { kitId: number; onAdded: () => void | Promise<void> } = $props();
+	let {
+		kitId,
+		onAdded,
+		findUrl = null
+	}: { kitId: number; onAdded: () => void | Promise<void>; findUrl?: string | null } = $props();
 
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let busy = $state(false);
@@ -65,6 +70,12 @@
 	async function toggleUrl() {
 		urlOpen = !urlOpen;
 		if (!urlOpen) return;
+		await tick();
+		urlInput?.focus();
+	}
+
+	async function openUrl() {
+		urlOpen = true;
 		await tick();
 		urlInput?.focus();
 	}
@@ -130,6 +141,9 @@
 			<LinkIcon class="size-5" />
 		</IconButton>
 	</div>
+	{#if findUrl}
+		<FindPicturesLink url={findUrl} onOpen={openUrl} />
+	{/if}
 	{#if urlOpen}
 		<form class="flex gap-2" onsubmit={chooseUrl}>
 			<Input

@@ -193,7 +193,11 @@
 		{@const item = selected}
 		<Button intent="success" onclick={() => (gettingIt = true)}>Got it</Button>
 		<Button loading={dropping} onclick={() => drop(item)}>Drop</Button>
-		<AddPictures kitId={item.kit.id} onAdded={pictures.reload} />
+		<AddPictures
+			kitId={item.kit.id}
+			onAdded={pictures.reload}
+			findUrl={kitArchiveUrl(item.kit.team.name, item.kit.season, item.kit.kitType)}
+		/>
 	{/if}
 {/snippet}
 
@@ -217,9 +221,6 @@
 		wide={gettingIt}
 		actions={data.form && !gettingIt ? itemActions : undefined}
 		pictureAction={data.form && !gettingIt ? pictureAction : undefined}
-		findPicturesUrl={data.form && !gettingIt
-			? kitArchiveUrl(selected.kit.team.name, selected.kit.season, selected.kit.kitType)
-			: null}
 	>
 		{#snippet details()}
 			{#if gettingIt && data.form}
