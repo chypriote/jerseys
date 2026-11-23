@@ -253,6 +253,22 @@ export interface GotItInput {
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
 
+// --- Kit Pictures --------------------------------------------------------------------
+
+/** An extra Picture of a Kit, beyond its Main Picture. */
+export interface Picture {
+	id: number;
+	kitId: number;
+	/** 1 for the first Picture added to the Kit, then the next number. */
+	position: number;
+}
+
+export interface AddPictureInput {
+	kitId: number;
+	body: ArrayBuffer;
+	contentType: string;
+}
+
 /**
  * Every rule and every D1 and R2 access lives behind this interface.
  * Write operations take the Owner token and fail with `UnauthorizedError` if it is invalid.
@@ -316,6 +332,14 @@ export interface Catalog {
 	gotIt(token: string, input: GotItInput): Promise<CollectionJersey>;
 	/** Removes the Wishlist Item. The Kit stays. */
 	drop(token: string, wishlistItemId: number): Promise<void>;
+
+	// Kit Pictures. Same image rules as the Main Picture.
+	/** The extra Pictures of a Kit, in the order they were added. */
+	listPictures(kitId: number): Promise<Picture[]>;
+	/** The Picture image, or null when there is none. */
+	getPicture(pictureId: number): Promise<MainPictureImage | null>;
+	/** Owner: adds an uploaded JPEG, PNG or WebP image (under 2 MB) as the Kit's next Picture. */
+	addPicture(token: string, input: AddPictureInput): Promise<Picture>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;

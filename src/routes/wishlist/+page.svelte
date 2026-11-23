@@ -4,6 +4,8 @@
 	import { continents } from '#lib/countries';
 	import { kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
+	import { kitPictures } from '#lib/kit-pictures.svelte';
+	import AddPictures from '#lib/components/AddPictures.svelte';
 	import { postAction } from '#lib/forms';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
@@ -96,6 +98,7 @@
 	const selected = $derived(data.items.find((i) => i.id === selectedId) ?? null);
 	let anchor = $state<HTMLElement | null>(null);
 	let open = $state(false);
+	const pictures = kitPictures(() => selected?.kit.id ?? null);
 
 	// Owner: "Got it" turns the Popup into the GotItForm; "Drop" removes the Wishlist Item at once.
 	let gettingIt = $state(false);
@@ -197,6 +200,7 @@
 		{@const item = selected}
 		<Button intent="success" onclick={() => (gettingIt = true)}>Got it</Button>
 		<Button loading={dropping} onclick={() => drop(item)}>Drop</Button>
+		<AddPictures kitId={item.kit.id} onAdded={pictures.reload} />
 	{/if}
 {/snippet}
 
@@ -207,6 +211,7 @@
 		title={gettingIt ? 'Got it' : selected.kit.team.name}
 		subtitle={caption(selected)}
 		mainPictureUrl={mainPictureUrl(selected.kit)}
+		pictureUrls={pictures.urls}
 		wide={gettingIt}
 		actions={data.form && !gettingIt ? itemActions : undefined}
 	>

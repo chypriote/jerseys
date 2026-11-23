@@ -5,6 +5,8 @@
 	import { formatCents, formatDate } from '#lib/format';
 	import { fitLabels, kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
+	import { kitPictures } from '#lib/kit-pictures.svelte';
+	import AddPictures from '#lib/components/AddPictures.svelte';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
 	import JerseyForm from '#lib/components/JerseyForm.svelte';
@@ -100,6 +102,7 @@
 	const selected = $derived(data.jerseys.find((j) => j.id === selectedId) ?? null);
 	let anchor = $state<HTMLElement | null>(null);
 	let open = $state(false);
+	const pictures = kitPictures(() => selected?.kit.id ?? null);
 
 	// Owner: "Edit" turns the Jersey Popup into the JerseyForm.
 	let editing = $state(false);
@@ -192,6 +195,9 @@
 
 {#snippet editAction()}
 	<Button onclick={() => (editing = true)}>Edit</Button>
+	{#if selected}
+		<AddPictures kitId={selected.kit.id} onAdded={pictures.reload} />
+	{/if}
 {/snippet}
 
 {#if selected}
@@ -201,6 +207,7 @@
 		title={editing ? 'Edit jersey' : selected.kit.team.name}
 		subtitle={caption(selected)}
 		mainPictureUrl={mainPictureUrl(selected.kit)}
+		pictureUrls={pictures.urls}
 		wide={editing}
 		actions={data.form && !editing ? editAction : undefined}
 	>
