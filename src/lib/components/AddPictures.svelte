@@ -77,10 +77,19 @@
 			return;
 		}
 		await run(async () => {
-			const response = await fetch(`/api/kits/${kitId}/pictures-url`, {
+			// The server fetches the image (the browser cannot read other sites); the browser cleans it.
+			const read = await fetch(`/api/image?url=${encodeURIComponent(address)}`);
+			if (!read.ok) return refusal(read);
+			let upload: Blob;
+			try {
+				upload = await shrinkImage(await read.blob());
+			} catch {
+				return 'Could not read this image';
+			}
+			const response = await fetch(`/api/kits/${kitId}/pictures`, {
 				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ url: address })
+				headers: { 'content-type': upload.type },
+				body: upload
 			});
 			if (!response.ok) return refusal(response);
 			urlText = '';

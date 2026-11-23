@@ -5,6 +5,7 @@
 	import { kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
+	import PictureCleaner from '#lib/components/PictureCleaner.svelte';
 	import AddPictures from '#lib/components/AddPictures.svelte';
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { postAction } from '#lib/forms';
@@ -154,6 +155,10 @@
 		<SortDirection bind:value={direction} />
 	{/snippet}
 </StickyBar>
+
+{#if data.form}
+	<PictureCleaner kits={data.items.map((i) => i.kit)} />
+{/if}
 
 <main>
 	{#if data.items.length === 0}

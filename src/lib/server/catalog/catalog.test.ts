@@ -2316,14 +2316,11 @@ describe('Kit Pictures', () => {
 		expect((await env.COVERS.list()).objects).toEqual([]);
 	});
 
-	describe('from an address', () => {
+	describe('fetching an address for the browser', () => {
 		beforeEach(() => {
 			vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
 				const url = new URL(new Request(input as RequestInfo, init).url);
 				if (url.host !== 'images.example') throw new Error(`Unexpected fetch to ${url.href}`);
-				if (url.pathname === '/page.html') {
-					return new Response('<html>', { headers: { 'content-type': 'text/html' } });
-				}
 				return new Response(new Uint8Array(10), { headers: { 'content-type': 'image/png' } });
 			});
 		});
@@ -2332,40 +2329,25 @@ describe('Kit Pictures', () => {
 			vi.restoreAllMocks();
 		});
 
-		it('fetches the image and adds it as the next Picture', async () => {
-			const added = await catalog.addPictureFromUrl(token, {
-				kitId: kit,
-				url: 'https://images.example/back.png'
-			});
-			expect(added!.position).toBe(1);
-			expect(await catalog.listPictures(kit)).toEqual([added]);
-			const picture = await catalog.getPicture(added!.id);
-			expect(picture?.contentType).toBe('image/png');
+		it('answers the image bytes and type', async () => {
+			const image = await catalog.fetchPicture(token, 'https://images.example/back.png');
+			expect(image.contentType).toBe('image/png');
+			expect(image.body.byteLength).toBe(10);
 		});
 
 		it('asks for JPEG, PNG or WebP and drops an `fmt` parameter', async () => {
-			await catalog.addPictureFromUrl(token, {
-				kitId: kit,
-				url: 'https://images.example/back.jpg?fmt=avif&w=500'
-			});
+			await catalog.fetchPicture(token, 'https://images.example/back.jpg?fmt=avif&w=500');
 			const [input, init] = vi.mocked(globalThis.fetch).mock.calls[0];
 			expect(new URL(String(input)).search).toBe('?w=500');
 			expect(new Headers(init?.headers).get('accept')).toBe('image/jpeg,image/png,image/webp');
 		});
 
-		it('refuses an address that is not an image, and adds nothing', async () => {
+		it('refuses a bad address and a missing token', async () => {
+			await expect(catalog.fetchPicture(token, 'ftp://images.example/a.png')).rejects.toThrow(
+				'Use an http or https address'
+			);
 			await expect(
-				catalog.addPictureFromUrl(token, { kitId: kit, url: 'https://images.example/page.html' })
-			).rejects.toThrow('Use a JPEG, PNG or WebP image');
-			expect(await catalog.listPictures(kit)).toEqual([]);
-		});
-
-		it('refuses to add a Picture from an address without a valid token', async () => {
-			await expect(
-				catalog.addPictureFromUrl('not-a-token', {
-					kitId: kit,
-					url: 'https://images.example/back.png'
-				})
+				catalog.fetchPicture('not-a-token', 'https://images.example/back.png')
 			).rejects.toMatchObject({ name: 'UnauthorizedError' });
 		});
 	});

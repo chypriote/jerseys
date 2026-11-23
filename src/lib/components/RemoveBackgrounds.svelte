@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
-	import { mainPictureUrl, prepareImage } from '#lib/pictures';
+	import { checkedPictures, cleanMainPicture, rememberChecked } from '#lib/clean-pictures';
 	import type { KitView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 
@@ -17,28 +17,22 @@
 		running = true;
 		message = null;
 		const pictured = kits.filter((k) => k.mainPictureKey);
+		const checked = checkedPictures();
 		let changed = 0;
 		let failed = 0;
 		try {
 			for (const [index, kit] of pictured.entries()) {
 				message = `${index + 1} of ${pictured.length}…`;
 				try {
-					const response = await fetch(mainPictureUrl(kit)!);
-					if (!response.ok) throw new Error('read failed');
-					const image = await prepareImage(await response.blob());
-					if (!image.changed) continue;
-					const saved = await fetch(`/api/kits/${kit.id}/main-picture-upload`, {
-						method: 'POST',
-						headers: { 'content-type': image.blob.type },
-						body: image.blob
-					});
-					if (!saved.ok) throw new Error('save failed');
-					changed++;
+					const done = await cleanMainPicture(kit);
+					checked.add(`${kit.id}:${kit.mainPictureVersion + (done ? 1 : 0)}`);
+					if (done) changed++;
 				} catch {
 					failed++;
 				}
 			}
 		} finally {
+			rememberChecked(checked);
 			running = false;
 			await invalidateAll();
 		}

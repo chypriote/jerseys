@@ -7,6 +7,7 @@
 	import { mainPictureUrl } from '#lib/pictures';
 	import { deleteRow } from '#lib/forms';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
+	import PictureCleaner from '#lib/components/PictureCleaner.svelte';
 	import AddPictures from '#lib/components/AddPictures.svelte';
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import AddAction from '#lib/components/AddAction.svelte';
@@ -155,6 +156,10 @@
 		<SortDirection bind:value={direction} />
 	{/snippet}
 </StickyBar>
+
+{#if data.form}
+	<PictureCleaner kits={data.jerseys.map((j) => j.kit)} />
+{/if}
 
 <main>
 	<div
