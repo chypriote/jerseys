@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { printNumber } from './print-number';
+import { printName, printNumber } from './print-number';
 
 describe('printNumber', () => {
 	it('returns the trailing digits of the Print, in any script', () => {
@@ -15,5 +15,19 @@ describe('printNumber', () => {
 		expect(printNumber('')).toBeNull();
 		expect(printNumber('NICOLAS')).toBeNull();
 		expect(printNumber('4 NICOLAS')).toBeNull();
+	});
+});
+
+describe('printName', () => {
+	it('returns the Print without its trailing number', () => {
+		expect(printName('NICOLAS 4')).toBe('NICOLAS');
+		expect(printName('尼古拉斯 4')).toBe('尼古拉斯');
+		expect(printName('NICOLAS')).toBe('NICOLAS');
+	});
+
+	it('returns null when nothing is left', () => {
+		expect(printName('10')).toBeNull();
+		expect(printName('')).toBeNull();
+		expect(printName(null)).toBeNull();
 	});
 });

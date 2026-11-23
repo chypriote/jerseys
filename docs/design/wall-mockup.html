@@ -121,8 +121,8 @@ circle.empty, circle.covered { stroke: var(--bg-surface); stroke-width: 1px; vec
 .box { aspect-ratio: 1; background: var(--bg-surface); border-radius: 14px; box-shadow: var(--raised); display: grid; place-items: center; overflow: hidden; }
 .box { position: relative; }
 .box svg { width: 80%; height: 80%; }
-.prt { position: absolute; left: 28px; right: 28px; bottom: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: italic 800 12px/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; color: var(--text-primary); paint-order: stroke; -webkit-text-stroke: 3px var(--bg-surface); }
-.num { position: absolute; right: 6px; bottom: 2px; font: italic 800 26px/1 var(--font-display); color: var(--text-primary); paint-order: stroke; -webkit-text-stroke: 4px var(--bg-surface); }
+.prt { position: absolute; left: 28px; right: 28px; bottom: 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font: italic 800 14px/1 var(--font-display); text-transform: uppercase; letter-spacing: .02em; color: var(--text-primary); paint-order: stroke; -webkit-text-stroke: 3px var(--bg-surface); }
+.num { position: absolute; right: 8px; bottom: 8px; font: italic 800 14px/1 var(--font-display); color: var(--text-primary); paint-order: stroke; -webkit-text-stroke: 4px var(--bg-surface); }
 .cap { padding: 8px 2px 0; display: grid; min-width: 0; }
 .team { font: italic 800 14px/1.25 var(--font-display); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kit { font: 500 11px/1.25 var(--font-base); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -436,7 +436,7 @@ function renderDir() {
 function renderGrid() {
   const rows = list();
   $("grid").innerHTML = rows.length ? rows.map(k => `<button class="tile" type="button" data-id="${k.id}">
-      <span class="box">${mainPicture(k)}${k.print ? `<span class="prt" aria-hidden="true">${esc(k.print)}</span>` : ""}${(k.print || "").match(/(\d+)\s*$/) ? `<span class="num" aria-hidden="true">${(k.print || "").match(/(\d+)\s*$/)[1]}</span>` : ""}</span>
+      <span class="box">${mainPicture(k)}${(k.print || "").replace(/\s*\d+\s*$/, "").trim() ? `<span class="prt" aria-hidden="true">${esc(k.print.replace(/\s*\d+\s*$/, "").trim())}</span>` : ""}${(k.print || "").match(/(\d+)\s*$/) ? `<span class="num" aria-hidden="true">${(k.print || "").match(/(\d+)\s*$/)[1]}</span>` : ""}</span>
       <span class="cap"><span class="team">${esc(k.team)}</span><span class="kit">${esc(k.season)} · ${esc(k.kitType)}</span></span>
     </button>`).join("")
     : `<div class="empty-state"><span>No match</span><button class="pill btn-neutral" type="button" id="clear">Clear filters</button></div>`;
