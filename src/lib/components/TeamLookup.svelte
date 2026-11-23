@@ -109,7 +109,7 @@
 			aria-describedby={error ? `${id}-error` : undefined}
 			oninput={onInput}
 			onkeydown={onKeydown}
-			onfocus={() => (open = true)}
+			onclick={() => (open = true)}
 			onblur={() => (open = false)}
 		/>
 		<ul
