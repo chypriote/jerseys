@@ -131,7 +131,7 @@ Same as Vinyles: the shadcn-svelte alert dialog, over the Popup. Title "Delete {
 
 **Purpose:** Filter a list by Country.
 
-Same shape as the Vinyles ArtistFilter: a `<details>` pill with checkboxes. Summary: "All countries ({n})" or "Countries ({n})". Countries are grouped under their Continent heading. Only Countries that have at least one Tile on this page are listed. A Jersey matches its Country by Coverage rules: the National Team's Country, or the Club's League's Country.
+Same shape as the Vinyles ArtistFilter: a `<details>` pill with checkboxes. Summary: "All countries ({n})" or "Countries ({n})". Countries are grouped under their Continent heading. Each heading has a checkbox that selects or clears all the Countries of that Continent (checked when all are selected, indeterminate when some are). A "Clear filter" Button stays at the top of the open list while it scrolls; it is disabled when nothing is selected. Only Countries that have at least one Tile on this page are listed. A Jersey matches its Country by Coverage rules: the National Team's Country, or the Club's League's Country.
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
