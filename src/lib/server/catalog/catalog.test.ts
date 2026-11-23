@@ -2921,6 +2921,48 @@ describe('Import the sheet rows', () => {
 
 // --- Delete ---------------------------------------------------------------------------
 
+describe('Jersey counts', () => {
+	const catalog = createCatalog(env);
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+	});
+
+	it('counts Jerseys per Country, Team and Store, and leaves Gifts out of the Stores', async () => {
+		const home = await insertKit({
+			team: 'Lyon',
+			country: 'France',
+			start: 2023,
+			end: 2024,
+			kitType: 'home'
+		});
+		const away = await insertKit({
+			team: 'Lyon',
+			country: 'France',
+			start: 2023,
+			end: 2024,
+			kitType: 'away'
+		});
+		await insertKit({ team: 'Nice', country: 'France', start: 2023, end: 2024, kitType: 'home' });
+		await insertJersey(home, { date: '2024', storeId: 1 });
+		await insertJersey(home, { date: '2023', storeId: 1 });
+		await insertJersey(away, { kind: 'gift', date: '2024' });
+
+		const counts = await catalog.jerseyCounts();
+		const [france] = await catalog.listCountries();
+		const lyon = (await catalog.listTeams()).find((t) => t.name === 'Lyon')!;
+		expect(counts.countries).toEqual({ [france.id]: 3 });
+		expect(counts.teams).toEqual({ [lyon.id]: 3 });
+		expect(counts.stores).toEqual({ 1: 2 });
+	});
+});
+
 describe('Delete', () => {
 	const catalog = createCatalog(env);
 	let token: string;

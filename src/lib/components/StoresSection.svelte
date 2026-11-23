@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Store } from '#lib/server/catalog/types';
 	import { deleteRow } from '#lib/forms';
+	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
@@ -8,7 +9,7 @@
 	import SearchField from './SearchField.svelte';
 	import StoreForm from './StoreForm.svelte';
 
-	let { stores }: { stores: Store[] } = $props();
+	let { stores, counts }: { stores: Store[]; counts: Record<number, number> } = $props();
 
 	let search = $state('');
 	const shown = $derived(stores.filter((s) => matchesSearch(search, s.name)));
@@ -35,7 +36,10 @@
 	<ul class="flex flex-col gap-2">
 		{#each shown as store (store.id)}
 			<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
-				<span class="font-medium">{store.name}</span>
+				<div class="flex min-w-0 flex-col">
+					<span class="font-medium">{store.name}</span>
+					<span class="text-sm text-muted-foreground">{jerseyCount(counts[store.id])}</span>
+				</div>
 				<Button size="sm" onclick={() => show(store)}>
 					Rename<span class="sr-only"> {store.name}</span>
 				</Button>

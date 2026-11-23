@@ -5,6 +5,12 @@
 
 import type { KIT_TYPES, VERSIONS } from '../db/schema';
 
+export interface JerseyCounts {
+	countries: Record<number, number>;
+	teams: Record<number, number>;
+	stores: Record<number, number>;
+}
+
 export interface Store {
 	id: number;
 	name: string;
@@ -359,6 +365,8 @@ export interface Catalog {
 	// Reads (Viewer and Owner)
 	listStores(): Promise<Store[]>;
 	listCountries(): Promise<Country[]>;
+	/** How many Jerseys each Country, Team and Store has, by id. An id with none is absent. */
+	jerseyCounts(): Promise<JerseyCounts>;
 	/** Every Jersey with its Kit, Team, Country and Acquisition, newest Acquisition first. */
 	listCollection(): Promise<CollectionJersey[]>;
 	/** Every Country by name, covered when Nico owns a Jersey of its National Team or of a Club in its League. */

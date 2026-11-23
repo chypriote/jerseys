@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { deleteRow, postAction } from '#lib/forms';
+	import { jerseyCount } from '#lib/format-count';
 	import { matchesSearch } from '#lib/search';
 	import type { Country, TeamKind, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
@@ -10,7 +11,11 @@
 	import Select from './Select.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
 
-	let { teams, countries }: { teams: TeamView[]; countries: Country[] } = $props();
+	let {
+		teams,
+		countries,
+		counts
+	}: { teams: TeamView[]; countries: Country[]; counts: Record<number, number> } = $props();
 
 	const kinds: { value: TeamKind; label: string }[] = [
 		{ value: 'club', label: 'Club' },
@@ -86,7 +91,7 @@
 						<div class="flex min-w-0 flex-col">
 							<span class="font-medium">{team.name}</span>
 							<span class="text-sm text-muted-foreground">
-								{kinds.find((k) => k.value === team.kind)?.label}
+								{kinds.find((k) => k.value === team.kind)?.label} · {jerseyCount(counts[team.id])}
 							</span>
 						</div>
 						<Button size="sm" onclick={() => show(team)}>
