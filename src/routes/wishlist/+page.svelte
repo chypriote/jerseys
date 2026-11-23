@@ -194,6 +194,7 @@
 
 {#snippet pictureAction(index: number)}
 	<DeleteAction
+		icon
 		what="this picture"
 		text="Every Jersey and the Wishlist Item of this Kit lose it."
 		onDelete={() => pictures.delete(index)}
