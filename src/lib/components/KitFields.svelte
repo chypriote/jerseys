@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { continents } from '#lib/countries';
 	import { kitTypeLabels, labelOptions } from '#lib/labels';
+	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { kitHasMainPicture } from '#lib/pictures';
 	import type {
 		Country,
@@ -40,6 +41,13 @@
 	} = $props();
 
 	const hasMainPicture = $derived(kitHasMainPicture(pictured, team, season, kitType));
+	// The Football Kit Archive page of the Kit the fields describe, once they are filled.
+	const findUrl = $derived.by(() => {
+		const choice = team;
+		if (!choice || !season.trim()) return null;
+		const name = 'teamId' in choice ? teams.find((t) => t.id === choice.teamId)?.name : choice.name;
+		return name?.trim() ? kitArchiveUrl(name, season, kitType) : null;
+	});
 	// A picture chosen before the fields moved to a pictured Kit is not sent.
 	$effect(() => {
 		if (hasMainPicture) {
@@ -87,5 +95,5 @@
 	</div>
 </div>
 {#if !hasMainPicture}
-	<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} />
+	<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} {findUrl} />
 {/if}
