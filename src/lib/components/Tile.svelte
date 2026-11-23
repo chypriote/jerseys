@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { Desire } from '#lib/server/catalog/types';
+	import DesireDots from './DesireDots.svelte';
 	import MainPicture from './MainPicture.svelte';
 
 	let {
@@ -6,6 +8,7 @@
 		season,
 		kitType,
 		mainPictureUrl = null,
+		desire,
 		onSelect
 	}: {
 		team: string;
@@ -13,6 +16,8 @@
 		season: string;
 		kitType: string;
 		mainPictureUrl?: string | null;
+		/** Wishlist only: DesireDots under the caption. */
+		desire?: Desire;
 		/** Gives the Popup the Tile to focus on close. */
 		onSelect?: (el: HTMLElement) => void;
 	} = $props();
@@ -37,5 +42,8 @@
 		<span class="truncate text-[11px] leading-[1.25] font-medium text-muted-foreground">
 			{season} · {kitType}
 		</span>
+		{#if desire}
+			<span class="pt-1"><DesireDots value={desire} /></span>
+		{/if}
 	</span>
 </button>
