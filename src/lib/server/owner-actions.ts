@@ -1,6 +1,6 @@
 import { fail, type RequestEvent } from '@sveltejs/kit';
 import { catalogFromPlatform, UnauthorizedError } from '#lib/server/catalog';
-import type { Catalog } from '#lib/server/catalog';
+import type { Catalog, CountryInput } from '#lib/server/catalog';
 import { ownerToken } from '#lib/server/owner';
 
 /**
@@ -35,6 +35,14 @@ export const ownerActions = {
 	renameStore: (event: RequestEvent) =>
 		run<{ id: number; name: string }>(event, async (catalog, token, { id, name }) => {
 			await catalog.renameStore(token, Number(id), String(name ?? ''));
+		}),
+	addCountry: (event: RequestEvent) =>
+		run<CountryInput>(event, async (catalog, token, input) => {
+			await catalog.addCountry(token, input);
+		}),
+	editCountry: (event: RequestEvent) =>
+		run<CountryInput & { id: number }>(event, async (catalog, token, input) => {
+			await catalog.editCountry(token, { ...input, id: Number(input.id) });
 		})
 };
 

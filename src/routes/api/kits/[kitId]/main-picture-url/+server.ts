@@ -4,13 +4,13 @@ import { ownerToken } from '#lib/server/owner';
 import { endpointError } from '#lib/server/owner-actions';
 import type { RequestHandler } from './$types';
 
-/** Uses the image in the request body as the Cover of a Kit. The Catalog checks token, type and size. */
+/** Fetches the image at `url` and uses it as the Main Picture of a Kit. The Catalog checks token, type and size. */
 export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	try {
-		await catalogFromPlatform().uploadCover(ownerToken(cookies), {
+		const { url } = (await request.json()) as { url?: string };
+		await catalogFromPlatform().uploadMainPictureFromUrl(ownerToken(cookies), {
 			kitId: Number(params.kitId),
-			body: await request.arrayBuffer(),
-			contentType: request.headers.get('content-type') ?? ''
+			url: String(url ?? '')
 		});
 		return json({ ok: true });
 	} catch (error) {

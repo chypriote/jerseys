@@ -1,6 +1,6 @@
 # Jerseys
 
-Nico's football jersey Collection and Wishlist as a wall of Kits. SvelteKit (Svelte 5) on Cloudflare Workers, Drizzle ORM on D1, Covers in R2, shadcn-svelte + Tailwind CSS v4. Spec: GitHub issue #10. Domain: GLOSSARY.md. Design: DESIGN.md, TOKENS.md, COMPONENTS.md.
+Nico's football jersey Collection and Wishlist as a wall of Kits. SvelteKit (Svelte 5) on Cloudflare Workers, Drizzle ORM on D1, Pictures in R2, shadcn-svelte + Tailwind CSS v4. Spec: GitHub issue #10. Domain: GLOSSARY.md. Design: DESIGN.md, TOKENS.md, COMPONENTS.md.
 
 ## Commands
 

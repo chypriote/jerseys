@@ -1,4 +1,4 @@
-/** Cover image rules, the same for uploads, pasted addresses and lookup candidates. */
+/** Main Picture image rules, the same for uploads, pasted addresses and lookup candidates. */
 export const UPLOAD_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 /** Images must be under this size. */
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;

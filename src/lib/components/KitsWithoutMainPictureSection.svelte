@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { KitSummary } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
-	import CoverPicker from './CoverPicker.svelte';
+	import PicturePicker from './PicturePicker.svelte';
 	import Popup from './Popup.svelte';
 
 	let { kits }: { kits: KitSummary[] } = $props();
 
 	let open = $state(false);
-	/** The Kit whose Cover the picker sets. */
+	/** The Kit whose Main Picture the picker sets. */
 	let editing = $state<KitSummary | null>(null);
 
 	const label = (kit: KitSummary) =>
@@ -19,12 +19,15 @@
 	}
 </script>
 
-<section aria-labelledby="kits-without-cover-heading" class="flex min-w-0 flex-col gap-3">
-	<h2 id="kits-without-cover-heading" class="font-display text-xl font-extrabold uppercase italic">
-		Kits without a cover
+<section aria-labelledby="kits-without-main-picture-heading" class="flex min-w-0 flex-col gap-3">
+	<h2
+		id="kits-without-main-picture-heading"
+		class="font-display text-xl font-extrabold uppercase italic"
+	>
+		Kits without a main picture
 	</h2>
 	{#if kits.length === 0}
-		<p class="text-sm text-muted-foreground">Every kit has a cover.</p>
+		<p class="text-sm text-muted-foreground">Every kit has a main picture.</p>
 	{:else}
 		<ul class="flex flex-col gap-2">
 			{#each kits as kit (kit.id)}
@@ -34,7 +37,7 @@
 						<span class="block text-sm text-muted-foreground">{label(kit)}</span>
 					</span>
 					<Button size="sm" onclick={() => show(kit)}>
-						Set cover<span class="sr-only"> of {kit.teamName} {label(kit)}</span>
+						Set main picture<span class="sr-only"> of {kit.teamName} {label(kit)}</span>
 					</Button>
 				</li>
 			{/each}
@@ -42,11 +45,11 @@
 	{/if}
 </section>
 
-<Popup bind:open title={editing ? `${editing.teamName} ${label(editing)}` : 'Set cover'}>
+<Popup bind:open title={editing ? `${editing.teamName} ${label(editing)}` : 'Set main picture'}>
 	{#snippet details()}
 		{#if editing}
 			{#key editing}
-				<CoverPicker kitId={editing.id} onDone={() => (open = false)} />
+				<PicturePicker kitId={editing.id} onDone={() => (open = false)} />
 			{/key}
 		{/if}
 	{/snippet}

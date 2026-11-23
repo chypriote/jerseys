@@ -1,0 +1,1 @@
+ALTER TABLE `kit` ADD `main_picture_chosen` integer DEFAULT false NOT NULL;

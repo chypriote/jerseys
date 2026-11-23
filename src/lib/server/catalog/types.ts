@@ -8,7 +8,32 @@ export interface Store {
 	name: string;
 }
 
-// --- Kit Covers ---------------------------------------------------------------
+export type Continent = 'europe' | 'asia-oceania' | 'americas' | 'africa';
+export type SeasonFormat = 'split' | 'calendar';
+
+export interface League {
+	id: number;
+	name: string;
+	seasonFormat: SeasonFormat;
+}
+
+/** A Country with its one League. */
+export interface Country {
+	id: number;
+	name: string;
+	continent: Continent;
+	league: League;
+}
+
+/** What the Owner types for a Country and its League. */
+export interface CountryInput {
+	name: string;
+	continent: Continent;
+	leagueName: string;
+	seasonFormat: SeasonFormat;
+}
+
+// --- Kit Main Pictures ---------------------------------------------------------------
 
 export type KitType = 'home' | 'away' | 'third' | 'fourth' | 'cup' | 'special';
 
@@ -21,12 +46,12 @@ export interface KitSummary {
 	kitType: KitType;
 }
 
-export interface CoverImage {
+export interface MainPictureImage {
 	body: ReadableStream;
 	contentType: string;
 }
 
-export interface UploadCoverInput {
+export interface UploadMainPictureInput {
 	kitId: number;
 	body: ArrayBuffer;
 	contentType: string;
@@ -43,20 +68,26 @@ export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wro
 export interface Catalog {
 	// Reads (Viewer and Owner)
 	listStores(): Promise<Store[]>;
-	/** The Cover image of a Kit, or null when it has none. */
-	getCover(kitId: number): Promise<CoverImage | null>;
+	listCountries(): Promise<Country[]>;
+	/** The Main Picture image of a Kit, or null when it has none. */
+	getMainPicture(kitId: number): Promise<MainPictureImage | null>;
+
+	// Countries (Owner). A Country and its League are written together.
+	// A name another Country has (any case) is refused.
+	addCountry(token: string, input: CountryInput): Promise<Country>;
+	editCountry(token: string, input: CountryInput & { id: number }): Promise<Country>;
 
 	// Stores (Owner). A name another Store has (any case) is refused.
 	addStore(token: string, name: string): Promise<Store>;
 	renameStore(token: string, id: number, name: string): Promise<Store>;
 
-	// Kit Covers (Owner). A Cover set here is marked Owner-chosen and gets a new version.
-	/** Kits with no Cover, by Team, then Season, then Kit Type. */
-	listKitsWithoutCover(token: string): Promise<KitSummary[]>;
-	/** Uses an uploaded JPEG, PNG or WebP image (under 2 MB) as the Cover of the Kit. */
-	uploadCover(token: string, input: UploadCoverInput): Promise<void>;
-	/** Fetches an image from an http(s) address (same checks as an upload) and uses it as the Cover. */
-	uploadCoverFromUrl(token: string, input: { kitId: number; url: string }): Promise<void>;
+	// Kit Main Pictures (Owner). A Main Picture set here is marked Owner-chosen and gets a new version.
+	/** Kits with no Main Picture, by Team, then Season, then Kit Type. */
+	listKitsWithoutMainPicture(token: string): Promise<KitSummary[]>;
+	/** Uses an uploaded JPEG, PNG or WebP image (under 2 MB) as the Main Picture of the Kit. */
+	uploadMainPicture(token: string, input: UploadMainPictureInput): Promise<void>;
+	/** Fetches an image from an http(s) address (same checks as an upload) and uses it as the Main Picture. */
+	uploadMainPictureFromUrl(token: string, input: { kitId: number; url: string }): Promise<void>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;

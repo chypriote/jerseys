@@ -8,7 +8,7 @@
 	import { Button as IconButton } from './ui/button/index.js';
 	import { Input } from './ui/input/index.js';
 
-	/** Sets the Cover of a Kit from an uploaded image or an image address. Candidates come later. */
+	/** Sets the Main Picture of a Kit from an uploaded image or an image address. Candidates come later. */
 	let { kitId, onDone }: { kitId: number; onDone: () => void } = $props();
 
 	let error = $state<string | null>(null);
@@ -41,10 +41,11 @@
 				await invalidateAll();
 				onDone();
 			} else {
-				error = ((await response.json()) as { error?: string }).error ?? 'Could not set the cover';
+				error =
+					((await response.json()) as { error?: string }).error ?? 'Could not set the main picture';
 			}
 		} catch {
-			error = 'Could not set the cover';
+			error = 'Could not set the main picture';
 		} finally {
 			busy = false;
 		}
@@ -63,7 +64,7 @@
 			if (fileInput) fileInput.value = '';
 		}
 		await save(() =>
-			fetch(`/api/kits/${kitId}/cover-upload`, {
+			fetch(`/api/kits/${kitId}/main-picture-upload`, {
 				method: 'POST',
 				headers: { 'content-type': upload.type },
 				body: upload
@@ -86,7 +87,7 @@
 			return;
 		}
 		await save(() =>
-			fetch(`/api/kits/${kitId}/cover-url`, {
+			fetch(`/api/kits/${kitId}/main-picture-url`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ url: address })
@@ -99,7 +100,7 @@
 	{#if busy}
 		<div
 			role="status"
-			aria-label="Saving the cover"
+			aria-label="Saving the main picture"
 			class="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/70"
 		>
 			<SpinnerIcon class="size-10 text-primary motion-safe:animate-spin" />
@@ -117,7 +118,7 @@
 		<IconButton
 			variant="neutral"
 			size="icon"
-			aria-label="Upload a cover"
+			aria-label="Upload a main picture"
 			disabled={busy}
 			onclick={() => fileInput?.click()}
 		>

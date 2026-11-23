@@ -1,9 +1,10 @@
 import { eq, isNull, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
-import { kits, stores, teams } from '../db/schema';
+import { continents, seasonFormats } from '../../countries';
+import { countries, kits, leagues, stores, teams } from '../db/schema';
 import { checkImage, MAX_UPLOAD_BYTES, readBody } from './images';
 import { issueToken, passwordMatches, tokenIsValid, UnauthorizedError } from './auth';
-import type { Catalog } from './types';
+import type { Catalog, Country, CountryInput } from './types';
 
 export interface CatalogEnv {
 	DB: D1Database;
@@ -16,6 +17,19 @@ function required(value: string, what: string) {
 	const cleaned = value.trim();
 	if (!cleaned) throw new Error(`${what} is required`);
 	return cleaned;
+}
+
+/** The cleaned Country and League fields, or a readable error. Form payloads are untrusted. */
+function countryFields(input: CountryInput) {
+	if (!continents.some((c) => c.value === input.continent))
+		throw new Error(`Continent must be one of ${continents.map((c) => c.label).join(', ')}`);
+	if (!seasonFormats.some((f) => f.value === input.seasonFormat))
+		throw new Error('Season Format must be Split or Calendar');
+	return {
+		continent: input.continent,
+		leagueName: required(input.leagueName ?? '', 'League name'),
+		seasonFormat: input.seasonFormat
+	};
 }
 
 const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' });
@@ -35,13 +49,17 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 			throw new UnauthorizedError();
 	}
 
-	/** Writes the image as the Cover of the Kit, marks it Owner-chosen and changes its URL. */
-	async function storeCover(kitId: number, body: ArrayBuffer, contentType: string) {
-		const coverKey = `covers/${kitId}`;
-		await env.COVERS.put(coverKey, body, { httpMetadata: { contentType } });
+	/** Writes the image as the Main Picture of the Kit, marks it Owner-chosen and changes its URL. */
+	async function storeMainPicture(kitId: number, body: ArrayBuffer, contentType: string) {
+		const mainPictureKey = `main-pictures/${kitId}`;
+		await env.COVERS.put(mainPictureKey, body, { httpMetadata: { contentType } });
 		await db
 			.update(kits)
-			.set({ coverKey, coverChosen: true, coverVersion: sql`${kits.coverVersion} + 1` })
+			.set({
+				mainPictureKey,
+				mainPictureChosen: true,
+				mainPictureVersion: sql`${kits.mainPictureVersion} + 1`
+			})
 			.where(eq(kits.id, kitId));
 	}
 
@@ -68,7 +86,7 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 		checkImage(body, contentType);
 		const kit = (await db.select({ id: kits.id }).from(kits).where(eq(kits.id, kitId)))[0];
 		if (!kit) throw new Error('Kit not found');
-		await storeCover(kit.id, body, contentType);
+		await storeMainPicture(kit.id, body, contentType);
 	}
 
 	/** The trimmed name, or a readable error when it is empty or another Store has it. */
@@ -80,7 +98,70 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 		return cleaned;
 	}
 
+	/** The trimmed name, or a readable error when it is empty or another Country has it. */
+	async function freeCountryName(name: string, exceptId?: number) {
+		const cleaned = required(name ?? '', 'Country name');
+		const all = await db.select().from(countries);
+		if (all.some((c) => c.id !== exceptId && compare(c.name, cleaned) === 0))
+			throw new Error(`A country named “${cleaned}” already exists`);
+		return cleaned;
+	}
+
+	async function readCountries(): Promise<Country[]> {
+		const rows = await db
+			.select({ country: countries, league: leagues })
+			.from(countries)
+			.innerJoin(leagues, eq(countries.leagueId, leagues.id));
+		return rows
+			.map(({ country, league }) => ({
+				id: country.id,
+				name: country.name,
+				continent: country.continent,
+				league: { id: league.id, name: league.name, seasonFormat: league.seasonFormat }
+			}))
+			.sort((a, b) => compare(a.name, b.name));
+	}
+
+	async function countryById(id: number) {
+		const found = (await readCountries()).find((c) => c.id === id);
+		if (!found) throw new Error('Unknown country');
+		return found;
+	}
+
 	return {
+		listCountries: readCountries,
+
+		async addCountry(token, input) {
+			await owner(token);
+			const { continent, leagueName, seasonFormat } = countryFields(input);
+			const name = await freeCountryName(input.name);
+			// One batch is one transaction: the Country takes the League inserted just before it.
+			const [, [created]] = await db.batch([
+				db.insert(leagues).values({ name: leagueName, seasonFormat }),
+				db
+					.insert(countries)
+					.values({ name, continent, leagueId: sql`last_insert_rowid()` })
+					.returning()
+			]);
+			return countryById(created.id);
+		},
+
+		async editCountry(token, input) {
+			await owner(token);
+			const [current] = await db.select().from(countries).where(eq(countries.id, input.id));
+			if (!current) throw new Error('Unknown country');
+			const { continent, leagueName, seasonFormat } = countryFields(input);
+			const name = await freeCountryName(input.name, input.id);
+			await db.batch([
+				db.update(countries).set({ name, continent }).where(eq(countries.id, input.id)),
+				db
+					.update(leagues)
+					.set({ name: leagueName, seasonFormat })
+					.where(eq(leagues.id, current.leagueId))
+			]);
+			return countryById(input.id);
+		},
+
 		async listStores() {
 			const all = await db.select().from(stores);
 			return all.sort((a, b) => compare(a.name, b.name));
@@ -105,28 +186,31 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 			return { id: renamed.id, name: renamed.name };
 		},
 
-		async getCover(kitId) {
+		async getMainPicture(kitId) {
 			const kit = (
-				await db.select({ coverKey: kits.coverKey }).from(kits).where(eq(kits.id, kitId))
+				await db
+					.select({ mainPictureKey: kits.mainPictureKey })
+					.from(kits)
+					.where(eq(kits.id, kitId))
 			)[0];
-			if (!kit?.coverKey) return null;
-			const object = await env.COVERS.get(kit.coverKey);
+			if (!kit?.mainPictureKey) return null;
+			const object = await env.COVERS.get(kit.mainPictureKey);
 			if (!object) return null;
 			return { body: object.body, contentType: object.httpMetadata?.contentType ?? 'image/jpeg' };
 		},
 
-		async uploadCover(token, input) {
+		async uploadMainPicture(token, input) {
 			await owner(token);
 			await saveUpload(input.kitId, input.body, input.contentType);
 		},
 
-		async uploadCoverFromUrl(token, input) {
+		async uploadMainPictureFromUrl(token, input) {
 			await owner(token);
 			const image = await fetchImage(input.url);
 			await saveUpload(input.kitId, image.body, image.contentType);
 		},
 
-		async listKitsWithoutCover(token) {
+		async listKitsWithoutMainPicture(token) {
 			await owner(token);
 			const rows = await db
 				.select({
@@ -138,7 +222,7 @@ export function buildCatalog(env: CatalogEnv): Catalog {
 				})
 				.from(kits)
 				.innerJoin(teams, eq(kits.teamId, teams.id))
-				.where(isNull(kits.coverKey));
+				.where(isNull(kits.mainPictureKey));
 			return rows
 				.sort(
 					(a, b) =>

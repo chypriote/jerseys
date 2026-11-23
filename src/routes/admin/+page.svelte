@@ -1,5 +1,6 @@
 <script lang="ts">
-	import KitsWithoutCoverSection from '#lib/components/KitsWithoutCoverSection.svelte';
+	import CountriesSection from '#lib/components/CountriesSection.svelte';
+	import KitsWithoutMainPictureSection from '#lib/components/KitsWithoutMainPictureSection.svelte';
 	import StoresSection from '#lib/components/StoresSection.svelte';
 	import { Button as UiButton } from '#lib/components/ui/button/index.js';
 	import type { PageProps } from './$types';
@@ -14,9 +15,10 @@
 		<h1>Admin</h1>
 		<UiButton variant="neutral" href="/">Back home</UiButton>
 	</div>
-	<!-- One section per kind of reference data (Countries, Kits without a Cover come next). -->
+	<!-- One section per kind of reference data (Countries, Kits without a main picture come next). -->
 	<div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+		<CountriesSection countries={data.countries} />
 		<StoresSection stores={data.stores} />
-		<KitsWithoutCoverSection kits={data.kitsWithoutCover} />
+		<KitsWithoutMainPictureSection kits={data.kitsWithoutMainPicture} />
 	</div>
 </main>

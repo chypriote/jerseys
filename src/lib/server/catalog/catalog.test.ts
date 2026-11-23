@@ -79,13 +79,25 @@ describe('Owner login', () => {
 
 	it('refuses every write without a valid token', async () => {
 		const bad = 'not-a-token';
+		const country = {
+			name: 'Wales',
+			continent: 'europe',
+			leagueName: 'Cymru Premier',
+			seasonFormat: 'split'
+		} as const;
 		const calls = [
 			() => catalog.addStore(bad, 'Shop'),
 			() => catalog.renameStore(bad, 1, 'Shop'),
-			() => catalog.listKitsWithoutCover(bad),
+			() => catalog.addCountry(bad, country),
+			() => catalog.editCountry(bad, { ...country, id: 1 }),
+			() => catalog.listKitsWithoutMainPicture(bad),
 			() =>
-				catalog.uploadCover(bad, { kitId: 1, body: new ArrayBuffer(1), contentType: 'image/png' }),
-			() => catalog.uploadCoverFromUrl(bad, { kitId: 1, url: 'https://images.example/a.png' })
+				catalog.uploadMainPicture(bad, {
+					kitId: 1,
+					body: new ArrayBuffer(1),
+					contentType: 'image/png'
+				}),
+			() => catalog.uploadMainPictureFromUrl(bad, { kitId: 1, url: 'https://images.example/a.png' })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -154,7 +166,128 @@ describe('Stores', () => {
 	});
 });
 
-// --- Kit Covers ---------------------------------------------------------------
+describe('Countries', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	it('adds a Country with its League, trimmed, and lists Countries by name', async () => {
+		const france = await catalog.addCountry(token, {
+			name: ' France ',
+			continent: 'europe',
+			leagueName: ' Ligue 1 ',
+			seasonFormat: 'split'
+		});
+		expect(france).toMatchObject({
+			name: 'France',
+			continent: 'europe',
+			league: { name: 'Ligue 1', seasonFormat: 'split' }
+		});
+		await catalog.addCountry(token, {
+			name: 'Brazil',
+			continent: 'americas',
+			leagueName: 'Brasileirão',
+			seasonFormat: 'calendar'
+		});
+		const listed = await catalog.listCountries();
+		expect(listed.map((c) => c.name)).toEqual(['Brazil', 'France']);
+		expect(listed).toContainEqual(france);
+		expect(listed[0].league).toMatchObject({ name: 'Brasileirão', seasonFormat: 'calendar' });
+	});
+
+	it('refuses a Country name that exists, in any case, with a readable error', async () => {
+		await catalog.addCountry(token, {
+			name: 'Japan',
+			continent: 'asia-oceania',
+			leagueName: 'J1 League',
+			seasonFormat: 'calendar'
+		});
+		await expect(
+			catalog.addCountry(token, {
+				name: ' japan ',
+				continent: 'asia-oceania',
+				leagueName: 'Other League',
+				seasonFormat: 'split'
+			})
+		).rejects.toThrow('A country named “japan” already exists');
+		const listed = await catalog.listCountries();
+		expect(listed.map((c) => c.league.name)).toEqual(['J1 League']);
+	});
+
+	it('edits a Country, its Continent and its League, and lets an edit change only the case', async () => {
+		const added = await catalog.addCountry(token, {
+			name: 'australia',
+			continent: 'europe',
+			leagueName: 'A League',
+			seasonFormat: 'calendar'
+		});
+		const edited = await catalog.editCountry(token, {
+			id: added.id,
+			name: ' Australia ',
+			continent: 'asia-oceania',
+			leagueName: ' A-League Men ',
+			seasonFormat: 'split'
+		});
+		expect(edited).toEqual({
+			id: added.id,
+			name: 'Australia',
+			continent: 'asia-oceania',
+			league: { id: added.league.id, name: 'A-League Men', seasonFormat: 'split' }
+		});
+		expect(await catalog.listCountries()).toEqual([edited]);
+	});
+
+	it('refuses an edit to a name another Country has, or of an unknown Country', async () => {
+		const input = { continent: 'europe', leagueName: 'League', seasonFormat: 'split' } as const;
+		await catalog.addCountry(token, { ...input, name: 'Spain' });
+		const italy = await catalog.addCountry(token, { ...input, name: 'Italy' });
+		await expect(
+			catalog.editCountry(token, { ...input, id: italy.id, name: 'SPAIN' })
+		).rejects.toThrow('A country named “SPAIN” already exists');
+		await expect(catalog.editCountry(token, { ...input, id: 9999, name: 'Wales' })).rejects.toThrow(
+			'Unknown country'
+		);
+		expect((await catalog.listCountries()).map((c) => c.name)).toEqual(['Italy', 'Spain']);
+	});
+
+	it('refuses an unknown Continent or Season Format, and empty names', async () => {
+		const input = {
+			name: 'Atlantis',
+			continent: 'europe',
+			leagueName: 'Deep League',
+			seasonFormat: 'split'
+		} as const;
+		const bad = (extra: object) => ({ ...input, ...extra }) as never;
+		await expect(catalog.addCountry(token, bad({ continent: 'antarctica' }))).rejects.toThrow(
+			'Continent must be one of Europe, Asia & Oceania, Americas, Africa'
+		);
+		await expect(catalog.addCountry(token, bad({ seasonFormat: 'weekly' }))).rejects.toThrow(
+			'Season Format must be Split or Calendar'
+		);
+		await expect(catalog.addCountry(token, bad({ name: ' ' }))).rejects.toThrow(
+			'Country name is required'
+		);
+		await expect(catalog.addCountry(token, bad({ leagueName: '' }))).rejects.toThrow(
+			'League name is required'
+		);
+		const spain = await catalog.addCountry(token, { ...input, name: 'Spain' });
+		await expect(
+			catalog.editCountry(token, bad({ id: spain.id, continent: 'oceania' }))
+		).rejects.toThrow('Continent must be one of');
+		expect(await catalog.listCountries()).toEqual([spain]);
+	});
+});
+
+// --- Kit Main Pictures ---------------------------------------------------------------
 
 /** No Kit create path exists yet: Kits are inserted straight into D1. */
 async function insertKit(kit: {
@@ -163,7 +296,7 @@ async function insertKit(kit: {
 	start: number;
 	end?: number;
 	kitType: string;
-	coverKey?: string;
+	mainPictureKey?: string;
 }) {
 	const country = `Country of ${kit.team}`;
 	await env.DB.batch([
@@ -178,20 +311,26 @@ async function insertKit(kit: {
 		).bind(kit.team, kit.kind ?? 'club', country)
 	]);
 	const row = await env.DB.prepare(
-		'INSERT INTO kit (team_id, season_start_year, season_end_year, kit_type, cover_key) VALUES ((SELECT id FROM team WHERE name = ?1), ?2, ?3, ?4, ?5) RETURNING id'
+		'INSERT INTO kit (team_id, season_start_year, season_end_year, kit_type, main_picture_key) VALUES ((SELECT id FROM team WHERE name = ?1), ?2, ?3, ?4, ?5) RETURNING id'
 	)
-		.bind(kit.team, kit.start, kit.end ?? null, kit.kitType, kit.coverKey ?? null)
+		.bind(kit.team, kit.start, kit.end ?? null, kit.kitType, kit.mainPictureKey ?? null)
 		.first<{ id: number }>();
 	return row!.id;
 }
 
-/** The Cover fields of a Kit, read from D1: no Catalog read returns them yet. */
-const coverOf = (kitId: number) =>
-	env.DB.prepare('SELECT cover_key, cover_version, cover_chosen FROM kit WHERE id = ?')
+/** The Main Picture fields of a Kit, read from D1: no Catalog read returns them yet. */
+const mainPictureOf = (kitId: number) =>
+	env.DB.prepare(
+		'SELECT main_picture_key, main_picture_version, main_picture_chosen FROM kit WHERE id = ?'
+	)
 		.bind(kitId)
-		.first<{ cover_key: string | null; cover_version: number; cover_chosen: number }>();
+		.first<{
+			main_picture_key: string | null;
+			main_picture_version: number;
+			main_picture_chosen: number;
+		}>();
 
-describe('Kit Covers', () => {
+describe('Kit Main Pictures', () => {
 	const catalog = createCatalog(env);
 	let token: string;
 
@@ -209,7 +348,7 @@ describe('Kit Covers', () => {
 		token = result.token;
 	});
 
-	it('lists the Kits with no Cover by Team, then Season, with the Season formatted', async () => {
+	it('lists the Kits with no Main Picture by Team, then Season, with the Season formatted', async () => {
 		const away = await insertKit({
 			team: 'Olympique Lyonnais',
 			start: 2023,
@@ -233,9 +372,9 @@ describe('Kit Covers', () => {
 			kind: 'national',
 			start: 2022,
 			kitType: 'away',
-			coverKey: 'covers/x'
+			mainPictureKey: 'main-pictures/x'
 		});
-		expect(await catalog.listKitsWithoutCover(token)).toEqual([
+		expect(await catalog.listKitsWithoutMainPicture(token)).toEqual([
 			{ id: japan, teamName: 'Japan', season: '2024', kitType: 'home' },
 			{ id: home, teamName: 'Olympique Lyonnais', season: '1999-00', kitType: 'home' },
 			{ id: away, teamName: 'Olympique Lyonnais', season: '2023-24', kitType: 'away' }
@@ -244,30 +383,38 @@ describe('Kit Covers', () => {
 
 	const image = (size: number) => new Uint8Array(size).fill(7).buffer;
 
-	it('uploads a Cover to R2, marks it chosen, bumps its version and serves it', async () => {
+	it('uploads a Main Picture to R2, marks it chosen, bumps its version and serves it', async () => {
 		const kit = await insertKit({ team: 'Japan', kind: 'national', start: 2024, kitType: 'home' });
-		expect(await catalog.getCover(kit)).toBeNull();
-		await catalog.uploadCover(token, { kitId: kit, body: image(10), contentType: 'image/png' });
-		expect(await coverOf(kit)).toEqual({
-			cover_key: `covers/${kit}`,
-			cover_version: 1,
-			cover_chosen: 1
+		expect(await catalog.getMainPicture(kit)).toBeNull();
+		await catalog.uploadMainPicture(token, {
+			kitId: kit,
+			body: image(10),
+			contentType: 'image/png'
 		});
-		const cover = await catalog.getCover(kit);
-		expect(cover?.contentType).toBe('image/png');
-		expect((await new Response(cover!.body).arrayBuffer()).byteLength).toBe(10);
-		expect(await catalog.listKitsWithoutCover(token)).toEqual([]);
+		expect(await mainPictureOf(kit)).toEqual({
+			main_picture_key: `main-pictures/${kit}`,
+			main_picture_version: 1,
+			main_picture_chosen: 1
+		});
+		const picture = await catalog.getMainPicture(kit);
+		expect(picture?.contentType).toBe('image/png');
+		expect((await new Response(picture!.body).arrayBuffer()).byteLength).toBe(10);
+		expect(await catalog.listKitsWithoutMainPicture(token)).toEqual([]);
 
-		await catalog.uploadCover(token, { kitId: kit, body: image(20), contentType: 'image/webp' });
-		expect((await coverOf(kit))?.cover_version).toBe(2);
-		expect((await catalog.getCover(kit))?.contentType).toBe('image/webp');
-		expect(await catalog.getCover(99999)).toBeNull();
+		await catalog.uploadMainPicture(token, {
+			kitId: kit,
+			body: image(20),
+			contentType: 'image/webp'
+		});
+		expect((await mainPictureOf(kit))?.main_picture_version).toBe(2);
+		expect((await catalog.getMainPicture(kit))?.contentType).toBe('image/webp');
+		expect(await catalog.getMainPicture(99999)).toBeNull();
 	});
 
 	it('refuses an upload of another type, of 2 MB or more, empty, or for an unknown Kit', async () => {
 		const kit = await insertKit({ team: 'Japan', kind: 'national', start: 2024, kitType: 'home' });
 		const upload = (over: object) =>
-			catalog.uploadCover(token, {
+			catalog.uploadMainPicture(token, {
 				kitId: kit,
 				body: image(10),
 				contentType: 'image/png',
@@ -281,9 +428,13 @@ describe('Kit Covers', () => {
 		);
 		await expect(upload({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
 		await expect(upload({ kitId: 99999 })).rejects.toThrow('Kit not found');
-		expect(await coverOf(kit)).toEqual({ cover_key: null, cover_version: 0, cover_chosen: 0 });
+		expect(await mainPictureOf(kit)).toEqual({
+			main_picture_key: null,
+			main_picture_version: 0,
+			main_picture_chosen: 0
+		});
 		await upload({ body: image(2 * 1024 * 1024 - 1), contentType: 'image/jpeg' });
-		expect((await coverOf(kit))?.cover_chosen).toBe(1);
+		expect((await mainPictureOf(kit))?.main_picture_chosen).toBe(1);
 	});
 
 	describe('from an address', () => {
@@ -320,9 +471,10 @@ describe('Kit Covers', () => {
 			vi.restoreAllMocks();
 		});
 
-		const paste = (kitId: number, url: string) => catalog.uploadCoverFromUrl(token, { kitId, url });
+		const paste = (kitId: number, url: string) =>
+			catalog.uploadMainPictureFromUrl(token, { kitId, url });
 
-		it('fetches the image and stores it as a chosen Cover with a new version', async () => {
+		it('fetches the image and stores it as a chosen Main Picture with a new version', async () => {
 			const kit = await insertKit({
 				team: 'Japan',
 				kind: 'national',
@@ -330,14 +482,14 @@ describe('Kit Covers', () => {
 				kitType: 'home'
 			});
 			await paste(kit, 'https://images.example/kit.webp');
-			expect(await coverOf(kit)).toEqual({
-				cover_key: `covers/${kit}`,
-				cover_version: 1,
-				cover_chosen: 1
+			expect(await mainPictureOf(kit)).toEqual({
+				main_picture_key: `main-pictures/${kit}`,
+				main_picture_version: 1,
+				main_picture_chosen: 1
 			});
-			const cover = await catalog.getCover(kit);
-			expect(cover?.contentType).toBe('image/webp');
-			expect(await new Response(cover!.body).text()).toBe('url-bytes');
+			const picture = await catalog.getMainPicture(kit);
+			expect(picture?.contentType).toBe('image/webp');
+			expect(await new Response(picture!.body).text()).toBe('url-bytes');
 		});
 
 		it('refuses bad addresses, other types, images of 2 MB or more and failed fetches', async () => {
@@ -367,7 +519,11 @@ describe('Kit Covers', () => {
 			await expect(paste(99999, 'https://images.example/kit.webp')).rejects.toThrow(
 				'Kit not found'
 			);
-			expect(await coverOf(kit)).toEqual({ cover_key: null, cover_version: 0, cover_chosen: 0 });
+			expect(await mainPictureOf(kit)).toEqual({
+				main_picture_key: null,
+				main_picture_version: 0,
+				main_picture_chosen: 0
+			});
 		});
 	});
 });

@@ -10,11 +10,14 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	if (token === '' || !(await catalog.verifyToken(token))) redirect(303, '/');
 	return {
 		stores: await catalog.listStores(),
-		kitsWithoutCover: await catalog.listKitsWithoutCover(token)
+		countries: await catalog.listCountries(),
+		kitsWithoutMainPicture: await catalog.listKitsWithoutMainPicture(token)
 	};
 };
 
 export const actions: Actions = {
 	addStore: ownerActions.addStore,
-	renameStore: ownerActions.renameStore
+	renameStore: ownerActions.renameStore,
+	addCountry: ownerActions.addCountry,
+	editCountry: ownerActions.editCountry
 };
