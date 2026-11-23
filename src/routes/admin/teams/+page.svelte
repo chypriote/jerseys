@@ -5,4 +5,4 @@
 	let { data }: PageProps = $props();
 </script>
 
-<TeamsSection teams={data.teams} countries={data.countries} counts={data.counts} />
+<TeamsSection teams={data.teams} countries={data.countries} kits={data.kits} counts={data.counts} />

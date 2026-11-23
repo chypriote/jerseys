@@ -7,6 +7,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		teams: await catalog.listTeams(),
 		countries: await catalog.listCountries(),
+		kits: await catalog.listKits(),
 		counts: (await catalog.jerseyCounts()).teams
 	};
 };
