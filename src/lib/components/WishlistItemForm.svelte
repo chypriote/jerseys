@@ -7,6 +7,7 @@
 		Country,
 		KitKey,
 		KitType,
+		KitView,
 		TeamChoice,
 		TeamView,
 		Version
@@ -19,11 +20,13 @@
 		teams,
 		countries,
 		pictured,
+		kits,
 		onDone
 	}: {
 		teams: TeamView[];
 		countries: Country[];
 		pictured: KitKey[];
+		kits: KitView[];
 		/** Save succeeded, or Cancel. */
 		onDone: () => void;
 	} = $props();
@@ -100,6 +103,7 @@
 		{teams}
 		{countries}
 		{pictured}
+		{kits}
 		{teamError}
 	/>
 	<ToggleGroup label="Version" bind:value={version} options={versionOptions} />

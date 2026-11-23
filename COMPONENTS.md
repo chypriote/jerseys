@@ -259,14 +259,15 @@ Like Vinyles, plus dates:
 Add and edit a Jersey. Fields, in order:
 
 1. Team: TeamLookup.
-2. Season: Field. Placeholder from the Team's Season Format: "2024-25" (Season) or "2024" (Calendar).
-3. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
-4. Main Picture: file input "Main picture", shown when the Kit has no Main Picture yet. One Main Picture per Kit.
-5. Version: ToggleGroup Fan / Player / Tracksuit.
-6. Size: ToggleGroup S / M / L.
-7. Fit: ToggleGroup Too small / Good / Too big.
-8. Print: Field, optional, any script.
-9. AcquisitionFields.
+2. Existing kits: shown when an existing Team is chosen and has Kits (ExistingKits). One pill Button per Kit, with its Main Picture in a small round thumbnail and "Season · Kit Type" (`aria-pressed` for the one that matches the fields). A tap fills Season, Kit Type and Comment. The Owner can still type a new Season and Kit Type. The same block shows in WishlistItemForm (both use KitFields).
+3. Season: Field. Placeholder from the Team's Season Format, written as an example: "e.g. 2024-25" (Season) or "e.g. 2024" (Calendar). It is never a suggestion from the Team's Kits.
+4. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
+5. Main Picture: file input "Main picture", shown when the Kit has no Main Picture yet. One Main Picture per Kit.
+6. Version: ToggleGroup Fan / Player / Tracksuit.
+7. Size: ToggleGroup S / M / L.
+8. Fit: ToggleGroup Too small / Good / Too big.
+9. Print: Field, optional, any script.
+10. AcquisitionFields.
 
 Buttons: `success` "Save", `neutral` "Cancel". Delete is in the Jersey Popup (see "Popup content"), not in the form.
 

@@ -17,6 +17,7 @@
 		KitKey,
 		Fit,
 		KitType,
+		KitView,
 		Size,
 		Store,
 		TeamChoice,
@@ -34,6 +35,7 @@
 		teams,
 		countries,
 		pictured,
+		kits,
 		stores,
 		onDone
 	}: {
@@ -42,6 +44,7 @@
 		teams: TeamView[];
 		countries: Country[];
 		pictured: KitKey[];
+		kits: KitView[];
 		stores: Store[];
 		/** Save succeeded, or Cancel. */
 		onDone: () => void;
@@ -127,6 +130,7 @@
 		{teams}
 		{countries}
 		{pictured}
+		{kits}
 		{teamError}
 	/>
 	<ToggleGroup label="Version" bind:value={version} options={labelOptions(versionLabels)} />

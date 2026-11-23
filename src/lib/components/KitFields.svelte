@@ -7,10 +7,12 @@
 		Country,
 		KitKey,
 		KitType,
+		KitView,
 		SeasonFormat,
 		TeamChoice,
 		TeamView
 	} from '#lib/server/catalog/types';
+	import ExistingKits from './ExistingKits.svelte';
 	import Field from './Field.svelte';
 	import PictureInput from './PictureInput.svelte';
 	import Select from './Select.svelte';
@@ -26,6 +28,7 @@
 		teams,
 		countries,
 		pictured,
+		kits = [],
 		teamError = null
 	}: {
 		team: TeamChoice | null;
@@ -40,6 +43,8 @@
 		countries: Country[];
 		/** Kits that have a Main Picture: no "Main picture" input for them. */
 		pictured: KitKey[];
+		/** Every Kit: the ones of the chosen Team can be picked. */
+		kits?: KitView[];
 		teamError?: string | null;
 	} = $props();
 
@@ -81,8 +86,18 @@
 		const countryId = team.countryId;
 		return countries.find((c) => c.id === countryId)?.league.seasonFormat ?? null;
 	});
+	const teamKits = $derived(
+		team && 'teamId' in team
+			? kits.filter((k) => k.team.id === (team as { teamId: number }).teamId)
+			: []
+	);
+	// An example of the format, not a suggestion.
 	const seasonPlaceholder = $derived(
-		seasonFormat === 'split' ? '2024-25' : seasonFormat === 'calendar' ? '2024' : '2024-25 or 2024'
+		seasonFormat === 'split'
+			? 'e.g. 2024-25'
+			: seasonFormat === 'calendar'
+				? 'e.g. 2024'
+				: 'e.g. 2024-25 or 2024'
 	);
 </script>
 
@@ -90,6 +105,11 @@
 <div class="flex flex-col gap-4 sm:col-span-2">
 	<TeamLookup bind:value={team} {teams} countries={countryGroups} error={teamError} />
 </div>
+{#if teamKits.length > 0}
+	<div class="flex flex-col gap-4 sm:col-span-2">
+		<ExistingKits kits={teamKits} bind:season bind:kitType bind:comment />
+	</div>
+{/if}
 <Field label="Season" required placeholder={seasonPlaceholder} bind:value={season} />
 <div class="flex flex-col gap-1.5">
 	<span class="text-sm font-bold">Kit Type</span>
