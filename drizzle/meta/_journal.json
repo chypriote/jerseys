@@ -22,6 +22,13 @@
       "when": 1795403499207,
       "tag": "0002_rename_cover_to_main_picture",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1795403752244,
+      "tag": "0003_kit_main_picture_chosen",
+      "breakpoints": true
     }
   ]
 }

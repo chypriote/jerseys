@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCatalog } from './index';
 
 describe('Catalog', () => {
@@ -89,7 +89,15 @@ describe('Owner login', () => {
 			() => catalog.addStore(bad, 'Shop'),
 			() => catalog.renameStore(bad, 1, 'Shop'),
 			() => catalog.addCountry(bad, country),
-			() => catalog.editCountry(bad, { ...country, id: 1 })
+			() => catalog.editCountry(bad, { ...country, id: 1 }),
+			() => catalog.listKitsWithoutMainPicture(bad),
+			() =>
+				catalog.uploadMainPicture(bad, {
+					kitId: 1,
+					body: new ArrayBuffer(1),
+					contentType: 'image/png'
+				}),
+			() => catalog.uploadMainPictureFromUrl(bad, { kitId: 1, url: 'https://images.example/a.png' })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -276,5 +284,246 @@ describe('Countries', () => {
 			catalog.editCountry(token, bad({ id: spain.id, continent: 'oceania' }))
 		).rejects.toThrow('Continent must be one of');
 		expect(await catalog.listCountries()).toEqual([spain]);
+	});
+});
+
+// --- Kit Main Pictures ---------------------------------------------------------------
+
+/** No Kit create path exists yet: Kits are inserted straight into D1. */
+async function insertKit(kit: {
+	team: string;
+	kind?: 'club' | 'national';
+	start: number;
+	end?: number;
+	kitType: string;
+	mainPictureKey?: string;
+}) {
+	const country = `Country of ${kit.team}`;
+	await env.DB.batch([
+		env.DB.prepare(
+			'INSERT OR IGNORE INTO league (id, name, season_format) VALUES ((SELECT id FROM league WHERE name = ?1), ?1, ?2)'
+		).bind(`League of ${kit.team}`, kit.end ? 'split' : 'calendar'),
+		env.DB.prepare(
+			"INSERT OR IGNORE INTO country (name, continent, league_id) VALUES (?1, 'europe', (SELECT id FROM league WHERE name = ?2))"
+		).bind(country, `League of ${kit.team}`),
+		env.DB.prepare(
+			'INSERT OR IGNORE INTO team (name, kind, country_id) VALUES (?1, ?2, (SELECT id FROM country WHERE name = ?3))'
+		).bind(kit.team, kit.kind ?? 'club', country)
+	]);
+	const row = await env.DB.prepare(
+		'INSERT INTO kit (team_id, season_start_year, season_end_year, kit_type, main_picture_key) VALUES ((SELECT id FROM team WHERE name = ?1), ?2, ?3, ?4, ?5) RETURNING id'
+	)
+		.bind(kit.team, kit.start, kit.end ?? null, kit.kitType, kit.mainPictureKey ?? null)
+		.first<{ id: number }>();
+	return row!.id;
+}
+
+/** The Main Picture fields of a Kit, read from D1: no Catalog read returns them yet. */
+const mainPictureOf = (kitId: number) =>
+	env.DB.prepare(
+		'SELECT main_picture_key, main_picture_version, main_picture_chosen FROM kit WHERE id = ?'
+	)
+		.bind(kitId)
+		.first<{
+			main_picture_key: string | null;
+			main_picture_version: number;
+			main_picture_chosen: number;
+		}>();
+
+describe('Kit Main Pictures', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const listed = await env.COVERS.list();
+		await Promise.all(listed.objects.map((o) => env.COVERS.delete(o.key)));
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	it('lists the Kits with no Main Picture by Team, then Season, with the Season formatted', async () => {
+		const away = await insertKit({
+			team: 'Olympique Lyonnais',
+			start: 2023,
+			end: 2024,
+			kitType: 'away'
+		});
+		const home = await insertKit({
+			team: 'Olympique Lyonnais',
+			start: 1999,
+			end: 2000,
+			kitType: 'home'
+		});
+		const japan = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home'
+		});
+		await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2022,
+			kitType: 'away',
+			mainPictureKey: 'main-pictures/x'
+		});
+		expect(await catalog.listKitsWithoutMainPicture(token)).toEqual([
+			{ id: japan, teamName: 'Japan', season: '2024', kitType: 'home' },
+			{ id: home, teamName: 'Olympique Lyonnais', season: '1999-00', kitType: 'home' },
+			{ id: away, teamName: 'Olympique Lyonnais', season: '2023-24', kitType: 'away' }
+		]);
+	});
+
+	const image = (size: number) => new Uint8Array(size).fill(7).buffer;
+
+	it('uploads a Main Picture to R2, marks it chosen, bumps its version and serves it', async () => {
+		const kit = await insertKit({ team: 'Japan', kind: 'national', start: 2024, kitType: 'home' });
+		expect(await catalog.getMainPicture(kit)).toBeNull();
+		await catalog.uploadMainPicture(token, {
+			kitId: kit,
+			body: image(10),
+			contentType: 'image/png'
+		});
+		expect(await mainPictureOf(kit)).toEqual({
+			main_picture_key: `main-pictures/${kit}`,
+			main_picture_version: 1,
+			main_picture_chosen: 1
+		});
+		const picture = await catalog.getMainPicture(kit);
+		expect(picture?.contentType).toBe('image/png');
+		expect((await new Response(picture!.body).arrayBuffer()).byteLength).toBe(10);
+		expect(await catalog.listKitsWithoutMainPicture(token)).toEqual([]);
+
+		await catalog.uploadMainPicture(token, {
+			kitId: kit,
+			body: image(20),
+			contentType: 'image/webp'
+		});
+		expect((await mainPictureOf(kit))?.main_picture_version).toBe(2);
+		expect((await catalog.getMainPicture(kit))?.contentType).toBe('image/webp');
+		expect(await catalog.getMainPicture(99999)).toBeNull();
+	});
+
+	it('refuses an upload of another type, of 2 MB or more, empty, or for an unknown Kit', async () => {
+		const kit = await insertKit({ team: 'Japan', kind: 'national', start: 2024, kitType: 'home' });
+		const upload = (over: object) =>
+			catalog.uploadMainPicture(token, {
+				kitId: kit,
+				body: image(10),
+				contentType: 'image/png',
+				...over
+			});
+		await expect(upload({ contentType: 'image/svg+xml' })).rejects.toThrow(
+			'Use a JPEG, PNG or WebP image'
+		);
+		await expect(upload({ body: image(2 * 1024 * 1024) })).rejects.toThrow(
+			'The image must be under 2 MB'
+		);
+		await expect(upload({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
+		await expect(upload({ kitId: 99999 })).rejects.toThrow('Kit not found');
+		expect(await mainPictureOf(kit)).toEqual({
+			main_picture_key: null,
+			main_picture_version: 0,
+			main_picture_chosen: 0
+		});
+		await upload({ body: image(2 * 1024 * 1024 - 1), contentType: 'image/jpeg' });
+		expect((await mainPictureOf(kit))?.main_picture_chosen).toBe(1);
+	});
+
+	describe('from an address', () => {
+		let pulls: number;
+
+		// Fake image host at the fetch boundary: no live calls in tests.
+		beforeEach(() => {
+			pulls = 0;
+			vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+				const url = new URL(new Request(input as RequestInfo, init).url);
+				if (url.host !== 'images.example') throw new Error(`Unexpected fetch to ${url.href}`);
+				const png = { headers: { 'content-type': 'image/png' } };
+				if (url.pathname === '/big.png') return new Response(new Uint8Array(2 * 1024 * 1024), png);
+				if (url.pathname === '/endless.png') {
+					return new Response(
+						new ReadableStream({
+							pull(controller) {
+								pulls++;
+								controller.enqueue(new Uint8Array(512 * 1024));
+							}
+						}),
+						png
+					);
+				}
+				if (url.pathname === '/page.html') {
+					return new Response('<html>', { headers: { 'content-type': 'text/html' } });
+				}
+				if (url.pathname === '/missing.png') return new Response('no', { status: 404 });
+				return new Response('url-bytes', { headers: { 'content-type': 'image/webp; charset=x' } });
+			});
+		});
+
+		afterEach(() => {
+			vi.restoreAllMocks();
+		});
+
+		const paste = (kitId: number, url: string) =>
+			catalog.uploadMainPictureFromUrl(token, { kitId, url });
+
+		it('fetches the image and stores it as a chosen Main Picture with a new version', async () => {
+			const kit = await insertKit({
+				team: 'Japan',
+				kind: 'national',
+				start: 2024,
+				kitType: 'home'
+			});
+			await paste(kit, 'https://images.example/kit.webp');
+			expect(await mainPictureOf(kit)).toEqual({
+				main_picture_key: `main-pictures/${kit}`,
+				main_picture_version: 1,
+				main_picture_chosen: 1
+			});
+			const picture = await catalog.getMainPicture(kit);
+			expect(picture?.contentType).toBe('image/webp');
+			expect(await new Response(picture!.body).text()).toBe('url-bytes');
+		});
+
+		it('refuses bad addresses, other types, images of 2 MB or more and failed fetches', async () => {
+			const kit = await insertKit({
+				team: 'Japan',
+				kind: 'national',
+				start: 2024,
+				kitType: 'home'
+			});
+			await expect(paste(kit, 'nonsense')).rejects.toThrow('This is not a web address');
+			await expect(paste(kit, 'ftp://images.example/a.png')).rejects.toThrow(
+				'Use an http or https address'
+			);
+			await expect(paste(kit, 'https://images.example/page.html')).rejects.toThrow(
+				'Use a JPEG, PNG or WebP image'
+			);
+			await expect(paste(kit, 'https://images.example/big.png')).rejects.toThrow(
+				'The image must be under 2 MB'
+			);
+			await expect(paste(kit, 'https://images.example/endless.png')).rejects.toThrow(
+				'The image must be under 2 MB'
+			);
+			expect(pulls).toBeLessThan(10);
+			await expect(paste(kit, 'https://images.example/missing.png')).rejects.toThrow(
+				'The address answered 404'
+			);
+			await expect(paste(99999, 'https://images.example/kit.webp')).rejects.toThrow(
+				'Kit not found'
+			);
+			expect(await mainPictureOf(kit)).toEqual({
+				main_picture_key: null,
+				main_picture_version: 0,
+				main_picture_chosen: 0
+			});
+		});
 	});
 });

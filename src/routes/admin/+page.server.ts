@@ -8,7 +8,11 @@ export const load: PageServerLoad = async ({ cookies }) => {
 	const catalog = catalogFromPlatform();
 	const token = ownerToken(cookies);
 	if (token === '' || !(await catalog.verifyToken(token))) redirect(303, '/');
-	return { stores: await catalog.listStores(), countries: await catalog.listCountries() };
+	return {
+		stores: await catalog.listStores(),
+		countries: await catalog.listCountries(),
+		kitsWithoutMainPicture: await catalog.listKitsWithoutMainPicture(token)
+	};
 };
 
 export const actions: Actions = {

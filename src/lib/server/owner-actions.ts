@@ -45,3 +45,11 @@ export const ownerActions = {
 			await catalog.editCountry(token, { ...input, id: Number(input.id) });
 		})
 };
+
+/** The JSON error answer of an Owner endpoint (for bodies a form action cannot carry, like an image). */
+export function endpointError(error: unknown): Response {
+	if (error instanceof UnauthorizedError)
+		return Response.json({ error: 'Please log in again' }, { status: 401 });
+	if (error instanceof Error) return Response.json({ error: error.message }, { status: 400 });
+	throw error;
+}
