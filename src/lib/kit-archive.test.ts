@@ -14,8 +14,12 @@ describe('kitArchiveUrl', () => {
 		);
 	});
 
-	it('has no page for a Cup or Special Kit', () => {
-		expect(kitArchiveUrl('Lyon', '2023-24', 'cup')).toBeNull();
-		expect(kitArchiveUrl('Lyon', '2023-24', 'special')).toBeNull();
+	it('links a Cup or Special Kit to the Team page', () => {
+		expect(kitArchiveUrl('Japan', '2024', 'special')).toBe(
+			'https://www.footballkitarchive.com/japan-kits/'
+		);
+		expect(kitArchiveUrl('Olympique Lyonnais', '2023-24', 'cup')).toBe(
+			'https://www.footballkitarchive.com/olympique-lyonnais-kits/'
+		);
 	});
 });
