@@ -159,6 +159,7 @@ Same as Vinyles: native Select over the Stores and a last option "Add a store…
 - When the text matches no Team exactly, the last option is "Add “{name}” as a new team", in `color.icon.accent`.
 - Keys: Up and Down move, Enter picks, Esc closes the list (not the Popup). A click picks.
 - Picking the new option opens a block under the Field: kind (ToggleGroup Club / National Team, default Club) and Country (Select, grouped by Continent, required). Text under it: "The League follows the Country." Save creates the Team with the Jersey or Wishlist Item.
+- A new Team name is searched on TheSportsDB (`/api/teams/search`) on the first Save of the form, and in the Teams page "Add a team" Popup. When no Team matches (case, accents and punctuation ignored; one name inside the other counts), the form shows "“{name}” is not on TheSportsDB. Save again to add it anyway." and a second Save adds it. A failed search never blocks. Football Kit Archive cannot be the check: it refuses server requests.
 - Typing again after a pick closes the block until a new pick.
 - The list is a `color.bg.surface` card, `tile.radius`, `shadow.raised`. Options are 44px pills; the active one has `color.bg.page`.
 

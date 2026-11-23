@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { mainPictureUpload, postAction, teamProblem } from '#lib/forms';
+	import { newTeamName, unknownTeamMessage } from '#lib/team-name';
 	import type { Country, KitKey, KitType, TeamChoice, TeamView } from '#lib/server/catalog/types';
 	import FormActions from './FormActions.svelte';
 	import KitFields from './KitFields.svelte';
@@ -21,11 +22,23 @@
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
 	let busy = $state(false);
+	/** The new Team name already checked on TheSportsDB: a second Save adds it anyway. */
+	let warned = '';
 
 	async function save(event: SubmitEvent) {
 		event.preventDefault();
 		teamError = teamProblem(team);
 		if (!team || teamError) return;
+		error = null;
+		const newName = newTeamName(team);
+		if (newName && newName !== warned) {
+			warned = newName;
+			const message = await unknownTeamMessage(newName);
+			if (message) {
+				error = message;
+				return;
+			}
+		}
 		busy = true;
 		const upload = await mainPictureUpload(mainPicture);
 		if (typeof upload === 'string') {

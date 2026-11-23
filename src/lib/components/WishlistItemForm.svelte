@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { mainPictureUpload, postAction, teamProblem } from '#lib/forms';
 	import { labelOptions, versionLabels } from '#lib/labels';
+	import { newTeamName, unknownTeamMessage } from '#lib/team-name';
 	import type {
 		AddWishlistItemInput,
 		Country,
@@ -40,12 +41,23 @@
 	let alreadyOwned = $state(false);
 	let busy = $state(false);
 	let addingAnyway = $state(false);
+	/** The new Team name already checked on TheSportsDB: a second Save adds it anyway. */
+	let warned = '';
 
 	const versionOptions = [{ value: 'any' as const, label: 'Any' }, ...labelOptions(versionLabels)];
 
 	async function save(addAnyway: boolean) {
 		teamError = teamProblem(team);
 		if (!team || teamError) return;
+		const newName = newTeamName(team);
+		if (newName && newName !== warned) {
+			warned = newName;
+			const message = await unknownTeamMessage(newName);
+			if (message) {
+				error = message;
+				return;
+			}
+		}
 		const input: AddWishlistItemInput = {
 			team,
 			season,
