@@ -150,6 +150,7 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | desire.count | 5 | Desire dots |
 | popup.radius | radius.xl | Popup |
 | popup.width.max | 420px | Popup |
+| popup.width.wide | 672px | Form Popup |
 | popup.cover.size | 150px | Popup |
 | control.size.min | 44px | All controls (touch target) |
 | grid.columns | 3; 5 from breakpoint.sm; 7 from breakpoint.md; 8 from breakpoint.lg | Tile grid |

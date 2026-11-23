@@ -111,6 +111,7 @@ Same as Vinyles: native `<dialog>` with `showModal()`, centred on the screen. Fo
 | title | string | — | The Team name |
 | subtitle | string | — | "{season} · {kitType}", `text.body.detail`, muted |
 | coverUrl | string \| null | null | `popup.cover.size`, contained, or the shirt outline |
+| wide | boolean | false | Form Popup: width `popup.width.wide`, no Cover. From `breakpoint.sm` the fields sit in two columns |
 | onDismiss | `() => void` | — | X button, Esc, tap on the backdrop |
 
 Vinyles names the title prop `album`. Here it is `title`, because a Popup also holds forms.
