@@ -51,17 +51,18 @@
 <Popup bind:open title={editing ? 'Edit store' : 'Add a store'}>
 	{#snippet details()}
 		{#key editing}
-			<StoreForm store={editing} onSuccess={() => (open = false)} />
+			<StoreForm store={editing} onSuccess={() => (open = false)}>
+				{#snippet remove()}
+					{#if editing}
+						{@const row = editing}
+						<DeleteAction
+							what={row.name}
+							text="This deletes the store. A store that purchases use cannot be deleted."
+							onDelete={() => deleteRow('?/deleteStore', row.id, () => (open = false))}
+						/>
+					{/if}
+				{/snippet}
+			</StoreForm>
 		{/key}
-	{/snippet}
-	{#snippet actions()}
-		{#if editing}
-			{@const row = editing}
-			<DeleteAction
-				what={row.name}
-				text="This deletes the store. A store that purchases use cannot be deleted."
-				onDelete={() => deleteRow('?/deleteStore', row.id, () => (open = false))}
-			/>
-		{/if}
 	{/snippet}
 </Popup>

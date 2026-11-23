@@ -9,6 +9,7 @@
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
+	import FormActions from './FormActions.svelte';
 	import MainPicture from './MainPicture.svelte';
 	import PictureInput from './PictureInput.svelte';
 	import Popup from './Popup.svelte';
@@ -130,17 +131,18 @@
 				<Select label="Kit Type" bind:value={kitType} options={labelOptions(kitTypeLabels)} />
 			</div>
 			<PictureInput label="Main picture" bind:file={mainPicture} bind:url={mainPictureUrl} />
-			<Button intent="success" type="submit" loading={busy}>Save</Button>
+			<FormActions {busy}>
+				{#snippet remove()}
+					{#if editing}
+						{@const row = editing}
+						<DeleteAction
+							what={label(row)}
+							text="This deletes the kit with its main picture and pictures. A kit that jerseys or a wishlist item use cannot be deleted."
+							onDelete={() => deleteRow('?/deleteKit', row.id, () => (open = false))}
+						/>
+					{/if}
+				{/snippet}
+			</FormActions>
 		</form>
-	{/snippet}
-	{#snippet actions()}
-		{#if editing}
-			{@const row = editing}
-			<DeleteAction
-				what={label(row)}
-				text="This deletes the kit with its main picture and pictures. A kit that jerseys or a wishlist item use cannot be deleted."
-				onDelete={() => deleteRow('?/deleteKit', row.id, () => (open = false))}
-			/>
-		{/if}
 	{/snippet}
 </Popup>

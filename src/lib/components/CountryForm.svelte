@@ -1,14 +1,18 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { continents, seasonFormats } from '#lib/countries';
 	import { postAction } from '#lib/forms';
 	import type { Continent, Country, SeasonFormat } from '#lib/server/catalog/types';
-	import Button from './Button.svelte';
 	import Field from './Field.svelte';
+	import FormActions from './FormActions.svelte';
 	import Select from './Select.svelte';
 
 	/** `country` set: edits it and its League. Unset: adds a Country with its League. */
-	let { country = null, onSuccess }: { country?: Country | null; onSuccess: () => void } = $props();
+	let {
+		country = null,
+		onSuccess,
+		remove
+	}: { country?: Country | null; onSuccess: () => void; remove?: Snippet } = $props();
 
 	// The form starts from the Country; the caller re-creates it for another Country.
 	const start = untrack(() => country);
@@ -54,5 +58,5 @@
 			}))}
 		/>
 	</div>
-	<Button intent="success" type="submit" loading={busy}>Save</Button>
+	<FormActions {busy} {remove} />
 </form>
