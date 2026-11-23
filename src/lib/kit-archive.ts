@@ -3,12 +3,26 @@ import type { KitType } from './server/catalog/types';
 /** Kit Types with a page of their own on Football Kit Archive. */
 const ARCHIVE_TYPES: KitType[] = ['home', 'away', 'third', 'fourth'];
 
+/** Letters that accent stripping (NFD) does not decompose. */
+const TRANSLITERATIONS: Record<string, string> = {
+	ø: 'o',
+	æ: 'ae',
+	œ: 'oe',
+	ß: 'ss',
+	ł: 'l',
+	đ: 'd',
+	ð: 'd',
+	þ: 'th',
+	ı: 'i'
+};
+
 const slug = (...words: string[]) =>
 	words
 		.join(' ')
 		.normalize('NFD')
 		.replace(/\p{M}/gu, '')
 		.toLowerCase()
+		.replace(/[øæœßłđðþı]/g, (letter) => TRANSLITERATIONS[letter])
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-|-$/g, '');
 

@@ -14,6 +14,15 @@ describe('kitArchiveUrl', () => {
 		);
 	});
 
+	it('transliterates letters that have no accent to strip', () => {
+		expect(kitArchiveUrl('Brøndby IF', '2024-25', 'away')).toBe(
+			'https://www.footballkitarchive.com/brondby-if-2024-25-away-kit'
+		);
+		expect(kitArchiveUrl('Łódź Æ Œ ß Đ', '2024-25', 'home')).toBe(
+			'https://www.footballkitarchive.com/lodz-ae-oe-ss-d-2024-25-home-kit'
+		);
+	});
+
 	it('links a Cup or Special Kit to the Team page', () => {
 		expect(kitArchiveUrl('Japan', '2024', 'special')).toBe(
 			'https://www.footballkitarchive.com/japan-kits/'
