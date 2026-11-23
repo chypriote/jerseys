@@ -228,6 +228,17 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 				.sort((a, b) => compareDates(b, a) || b.id - a.id);
 		},
 
+		async listCoverage() {
+			// A Club plays in its Country's League, so both kinds cover the Team's Country.
+			const covered = await db
+				.selectDistinct({ id: teams.countryId })
+				.from(jerseys)
+				.innerJoin(kits, eq(jerseys.kitId, kits.id))
+				.innerJoin(teams, eq(kits.teamId, teams.id));
+			const ids = new Set(covered.map((row) => row.id));
+			return (await readCountries()).map(({ id, name }) => ({ id, name, covered: ids.has(id) }));
+		},
+
 		async listWishlist() {
 			const rows = await db
 				.select({ item: wishlistItems, kit: kits, team: teams, country: countries })
