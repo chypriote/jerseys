@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { deleteRow, mainPictureUpload, postAction } from '#lib/forms';
+	import { mainPictureUrl as pictureUrlOf } from '#lib/pictures';
 	import { matchesSearch } from '#lib/search';
 	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
+	import MainPicture from './MainPicture.svelte';
 	import PictureInput from './PictureInput.svelte';
 	import Popup from './Popup.svelte';
 	import SearchField from './SearchField.svelte';
@@ -94,11 +96,13 @@
 			<ul class="flex flex-col gap-2">
 				{#each group.kits as kit (kit.id)}
 					<li class="flex items-center justify-between gap-3 rounded-xl bg-card px-4 py-2">
-						<div class="flex min-w-0 flex-col">
+						<div class="flex min-w-0 items-center gap-3">
+							<div
+								class="flex size-12 shrink-0 items-center justify-center rounded-lg bg-background"
+							>
+								<MainPicture url={pictureUrlOf(kit)} />
+							</div>
 							<span class="font-medium">{kit.season} · {kitTypeLabels[kit.kitType]}</span>
-							<span class="text-sm text-muted-foreground">
-								{kit.mainPictureKey ? 'Main picture' : 'No main picture'}
-							</span>
 						</div>
 						<Button size="sm" onclick={() => show(kit)}>
 							Edit<span class="sr-only"> {label(kit)}</span>
