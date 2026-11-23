@@ -201,7 +201,7 @@
 		{@const jersey = selected}
 		<DeleteAction
 			what={`${jersey.kit.team.name} ${caption(jersey)}`}
-			text="This removes the jersey from the collection. Its Kit stays."
+			text="This deletes the jersey from the collection. Its Kit stays."
 			onDelete={() => deleteRow('?/deleteJersey', jersey.id, () => (open = false))}
 		/>
 		<AddPictures kitId={jersey.kit.id} onAdded={pictures.reload} />
@@ -212,7 +212,7 @@
 	<DeleteAction
 		what="this picture"
 		text="Every Jersey and the Wishlist Item of this Kit lose it."
-		onDelete={() => pictures.remove(index)}
+		onDelete={() => pictures.delete(index)}
 	/>
 {/snippet}
 
@@ -234,7 +234,7 @@
 				<JerseyForm jersey={selected} {...data.form} onDone={() => (editing = false)} />
 			{:else}
 				<dl
-					class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[15px] [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
+					class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-md [&_dd]:font-bold [&_dd]:[overflow-wrap:anywhere]"
 				>
 					{@render row('Version', versionLabels[selected.version])}
 					{@render row('Print', selected.print)}

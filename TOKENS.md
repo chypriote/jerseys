@@ -148,6 +148,7 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | tile.hover.lift | -3px (translateY) | Tile, motion allowed only |
 | tile.hover.tilt | -1.5deg (rotate) | Tile, motion allowed only |
 | desire.count | 5 | Desire dots |
+| desire.gap | 3px | Desire dots |
 | popup.radius | radius.xl | Popup |
 | popup.width.max | 420px | Popup |
 | popup.width.wide | 672px | Form Popup |
@@ -157,6 +158,7 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | map.country.covered | icon.accent | CoverageMap |
 | map.country.empty | border.subtle | CoverageMap |
 | map.country.border | bg.surface | CoverageMap |
+| map.country.border.width | 0.5px | CoverageMap |
 | map.width.min | 900px | CoverageMap drawing |
 
 Tabs, search, selects, chips and buttons use `radius.control`. Chips and buttons use `shadow.raised`.

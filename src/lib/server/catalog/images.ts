@@ -3,12 +3,20 @@ export const UPLOAD_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 /** Images must be under this size. */
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
-/** Throws a readable error for an image of another type, empty, or of 2 MB or more. */
-export function checkImage(body: ArrayBuffer, contentType: string) {
-	if (!UPLOAD_TYPES.includes(contentType)) throw new Error('Use a JPEG, PNG or WebP image');
-	if (body.byteLength === 0 || body.byteLength >= MAX_UPLOAD_BYTES) {
-		throw new Error('The image must be under 2 MB');
+/** An image the image rules refuse: another type, empty, or of 2 MB or more. */
+export class ImageError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'ImageError';
 	}
+}
+
+export const tooBig = () => new ImageError('The image must be under 2 MB');
+
+/** Throws a readable ImageError for an image of another type, empty, or of 2 MB or more. */
+export function checkImage(body: ArrayBuffer, contentType: string) {
+	if (!UPLOAD_TYPES.includes(contentType)) throw new ImageError('Use a JPEG, PNG or WebP image');
+	if (body.byteLength === 0 || body.byteLength >= MAX_UPLOAD_BYTES) throw tooBig();
 }
 
 /** The body of a response, or null once it passes `max` bytes: the read stops there. */

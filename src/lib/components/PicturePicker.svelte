@@ -209,7 +209,7 @@
 							onerror={() => (failed = [...failed, candidate.id])}
 							class="aspect-square w-full rounded-sm bg-muted object-contain"
 						/>
-						<span class="block truncate text-[11px] leading-tight text-muted-foreground">
+						<span class="block truncate text-2xs leading-snug text-muted-foreground">
 							{candidate.season ?? '?'} · {kitTypeLabel(candidate.kitType)}
 						</span>
 					</button>

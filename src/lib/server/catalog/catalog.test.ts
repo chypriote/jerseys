@@ -491,7 +491,7 @@ describe('Kit Main Pictures', () => {
 			'The image must be under 2 MB'
 		);
 		await expect(upload({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
-		await expect(upload({ kitId: 99999 })).rejects.toThrow('Kit not found');
+		await expect(upload({ kitId: 99999 })).rejects.toThrow('Unknown kit');
 		expect(await mainPictureOf(kit)).toEqual({
 			main_picture_key: null,
 			main_picture_version: 0,
@@ -580,9 +580,7 @@ describe('Kit Main Pictures', () => {
 			await expect(paste(kit, 'https://images.example/missing.png')).rejects.toThrow(
 				'The address answered 404'
 			);
-			await expect(paste(99999, 'https://images.example/kit.webp')).rejects.toThrow(
-				'Kit not found'
-			);
+			await expect(paste(99999, 'https://images.example/kit.webp')).rejects.toThrow('Unknown kit');
 			expect(await mainPictureOf(kit)).toEqual({
 				main_picture_key: null,
 				main_picture_version: 0,
@@ -857,7 +855,7 @@ describe('Picture candidates', () => {
 		await expect(pick(equipmentUrl('page'))).rejects.toThrow('Use a JPEG, PNG or WebP image');
 		await expect(pick(equipmentUrl('big'))).rejects.toThrow('The image must be under 2 MB');
 		await expect(pick(equipmentUrl('missing'))).rejects.toThrow('TheSportsDB answered 404');
-		await expect(pick(equipmentUrl('ok'), 99999)).rejects.toThrow('Kit not found');
+		await expect(pick(equipmentUrl('ok'), 99999)).rejects.toThrow('Unknown kit');
 		expect(await mainPictureOf(kit)).toEqual({
 			main_picture_key: null,
 			main_picture_version: 0,
@@ -871,7 +869,7 @@ describe('Picture candidates', () => {
 		await expect(catalog.listPictureCandidates(token, kit)).rejects.toThrow(
 			'TheSportsDB answered 429'
 		);
-		await expect(catalog.listPictureCandidates(token, 99999)).rejects.toThrow('Kit not found');
+		await expect(catalog.listPictureCandidates(token, 99999)).rejects.toThrow('Unknown kit');
 		failing = false;
 		expect((await catalog.listPictureCandidates(token, kit)).sourceTeamId).toBe('133713');
 	});
@@ -887,7 +885,33 @@ describe('Picture candidates', () => {
 		expect(times[2] - times[1]).toBeGreaterThanOrEqual(55);
 	});
 
+	it('waits for the TheSportsDB interval for a pasted TheSportsDB image address', async () => {
+		const slow = createCatalog(env, { lookupIntervalMs: 60 });
+		const kit = await lyon();
+		await slow.listPictureCandidates(token, kit);
+		await slow.uploadMainPictureFromUrl(token, { kitId: kit, url: equipmentUrl('pasted') });
+		const times = calls.map((c) => c.at);
+		expect(times).toHaveLength(3);
+		expect(times[2] - times[1]).toBeGreaterThanOrEqual(55);
+		expect((await mainPictureOf(kit))?.main_picture_chosen).toBe(1);
+	});
+
 	describe('lookup in batches', () => {
+		it('marks a Kit looked up with no Main Picture when the matching image is refused', async () => {
+			equipment['133713'] = {
+				equipment: [
+					{ strSeason: '2023-2024', strType: '1st', strEquipment: equipmentUrl('big') },
+					{ strSeason: '2023-2024', strType: '2nd', strEquipment: equipmentUrl('page') }
+				]
+			};
+			const home = await lyon();
+			const away = await lyon({ kitType: 'away' });
+			expect(await catalog.lookupNext(token, { size: 10 })).toEqual({ total: 2, done: 2 });
+			for (const kit of [home, away]) {
+				expect((await mainPictureOf(kit))?.main_picture_key).toBe(null);
+			}
+		});
+
 		it('stores the matching picture as a Main Picture the Owner did not choose', async () => {
 			const kit = await lyon();
 			expect(await catalog.lookupNext(token, { size: 5 })).toEqual({ total: 1, done: 1 });
@@ -1705,7 +1729,7 @@ describe('Add and edit a Jersey', () => {
 				season: '2023-24',
 				kitType: 'home'
 			})
-		).rejects.toThrow('Jersey not found');
+		).rejects.toThrow('Unknown jersey');
 		expect(await catalog.listTeams()).toEqual([]);
 	});
 
@@ -1955,7 +1979,7 @@ describe('Got it and Drop', () => {
 					acquisition: { kind: 'gift', date: '2024' }
 				}
 			})
-		).rejects.toThrow('Wishlist Item not found');
+		).rejects.toThrow('Unknown wishlist item');
 		expect(await catalog.listCollection()).toEqual([]);
 	});
 
@@ -2252,7 +2276,7 @@ describe('Kit Pictures', () => {
 			'The image must be under 2 MB'
 		);
 		await expect(add({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
-		await expect(add({ kitId: 99999 })).rejects.toThrow('Kit not found');
+		await expect(add({ kitId: 99999 })).rejects.toThrow('Unknown kit');
 		expect(await catalog.listPictures(kit)).toEqual([]);
 		expect((await env.COVERS.list()).objects).toEqual([]);
 	});
@@ -2441,6 +2465,41 @@ describe('Teams and Kits admin', () => {
 		expect(await teamNamed('Lyon')).toEqual(lyon);
 	});
 
+	it('refuses a Country Season Format that a Kit Season of one of its Clubs does not fit', async () => {
+		const league = 'Ligue 1';
+		await insertKit({
+			team: 'Lyon',
+			start: 2023,
+			end: 2024,
+			kitType: 'home',
+			country: 'France',
+			league
+		});
+		await insertKit({
+			team: 'France',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home',
+			country: 'France',
+			league
+		});
+		const france = (await teamNamed('Lyon')).country;
+		const edit = (seasonFormat: 'split' | 'calendar') =>
+			catalog.editCountry(token, {
+				id: france.id,
+				name: 'France',
+				continent: 'europe',
+				leagueName: league,
+				seasonFormat
+			});
+		await expect(edit('calendar')).rejects.toThrow(
+			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+		);
+		expect((await catalog.listCountries())[0].league.seasonFormat).toBe('split');
+		// A National Team keeps the Calendar format, so its Kits never block the League.
+		expect((await edit('split')).league.seasonFormat).toBe('split');
+	});
+
 	it('changes a Kit Season and Kit Type, and its Jerseys and Wishlist Item follow', async () => {
 		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
 		const jersey = await insertJersey(kitId, { date: '2024', storeId: 1 });
@@ -2484,7 +2543,7 @@ describe('Teams and Kits admin', () => {
 		).rejects.toThrow('Kit Type must be Home, Away, Third, Fourth, Cup or Special');
 		await expect(
 			catalog.editKit(token, { kitId: 999999, season: '2023-24', kitType: 'home' })
-		).rejects.toThrow('Kit not found');
+		).rejects.toThrow('Unknown kit');
 		expect((await catalog.listKits()).map((k) => k.season)).toEqual(['2024', '2023-24']);
 	});
 });
@@ -2737,6 +2796,20 @@ describe('Import the sheet rows', () => {
 		expect(jersey.acquisition).toMatchObject({ kind: 'purchase', store: null, priceCents: null });
 	});
 
+	it('refuses a Purchase with a price and no Store, naming the row', async () => {
+		const input = rows();
+		input.jerseys[1].acquisition = {
+			kind: 'purchase',
+			store: null,
+			priceCents: 2500,
+			bought: '2024'
+		};
+		await expect(catalog.importRows(token, input)).rejects.toThrow(
+			'jerseys[1]: A Purchase with a price needs a Store'
+		);
+		expect(await catalog.listCountries()).toEqual([]);
+	});
+
 	it('is refused when the Collection already has a Jersey', async () => {
 		await catalog.importRows(token, { ...rows(), wishlist: [] });
 		await expect(catalog.importRows(token, rows())).rejects.toThrow('already has entries');
@@ -2796,7 +2869,7 @@ describe('Delete', () => {
 		await catalog.deleteJersey(token, kept);
 		expect(await catalog.listCollection()).toEqual([]);
 		expect((await catalog.listKits()).map((k) => k.id)).toEqual([kitId]);
-		await expect(catalog.deleteJersey(token, kept)).rejects.toThrow('Jersey not found');
+		await expect(catalog.deleteJersey(token, kept)).rejects.toThrow('Unknown jersey');
 	});
 
 	it('deletes a Store no Purchase uses', async () => {
@@ -2895,7 +2968,7 @@ describe('Delete', () => {
 		expect(left).toHaveLength(1);
 		expect(left[0]).toMatch(`pictures/${other}/`);
 		expect(await catalog.listPictures(other)).toEqual([kept]);
-		await expect(catalog.deleteKit(token, kitId)).rejects.toThrow('Kit not found');
+		await expect(catalog.deleteKit(token, kitId)).rejects.toThrow('Unknown kit');
 	});
 
 	it('refuses to delete a Kit that Jerseys or its Wishlist Item use', async () => {
@@ -2931,7 +3004,7 @@ describe('Delete', () => {
 		expect(await catalog.getPicture(wrong.id)).toBeNull();
 		expect(await r2Keys()).toHaveLength(1);
 		expect(await catalog.getPicture(kept.id)).not.toBeNull();
-		await expect(catalog.deletePicture(token, wrong.id)).rejects.toThrow('Picture not found');
+		await expect(catalog.deletePicture(token, wrong.id)).rejects.toThrow('Unknown picture');
 	});
 
 	it('refuses every delete without a valid token, and deletes nothing', async () => {

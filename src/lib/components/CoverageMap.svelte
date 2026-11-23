@@ -47,7 +47,7 @@
 				viewBox="{x} {y} {width} {height}"
 				role="img"
 				aria-label="Countries covered: {coveredNames.join(', ')}"
-				class="block h-auto w-full [&_path]:stroke-(--map-country-border) [&_path]:stroke-[0.5px] [&_path]:[stroke-linejoin:round] [&_path]:[vector-effect:non-scaling-stroke]"
+				class="block h-auto w-full [&_path]:stroke-(--map-country-border) [&_path]:stroke-(length:--map-country-border-width) [&_path]:[stroke-linejoin:round] [&_path]:[vector-effect:non-scaling-stroke]"
 			>
 				{#each drawn as country (country.name)}
 					<path

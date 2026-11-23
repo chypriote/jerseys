@@ -59,7 +59,7 @@
 			{@const row = editing}
 			<DeleteAction
 				what={row.name}
-				text="This removes the country and its league. A country that teams use cannot be deleted."
+				text="This deletes the country and its league. A country that teams use cannot be deleted."
 				onDelete={() => deleteRow('?/deleteCountry', row.id, () => (open = false))}
 			/>
 		{/if}

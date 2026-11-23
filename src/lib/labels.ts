@@ -10,6 +10,10 @@ export const kitTypeLabels: Record<KitType, string> = {
 	special: 'Special'
 };
 
+/** "Lyon 2023-24 Home": a Kit as its Team, Season and Kit Type. */
+export const kitLabel = (team: string, season: string, kitType: KitType) =>
+	`${team} ${season} ${kitTypeLabels[kitType]}`;
+
 export const versionLabels: Record<Version, string> = {
 	fan: 'Fan',
 	player: 'Player',

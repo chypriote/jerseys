@@ -13,7 +13,7 @@
 	bind:ref
 	data-slot="alert-dialog-title"
 	class={cn(
-		'font-display text-[24px] leading-[1.1] font-extrabold text-balance uppercase italic [overflow-wrap:anywhere]',
+		'font-display text-lg leading-tight font-extrabold text-balance uppercase italic [overflow-wrap:anywhere]',
 		className
 	)}
 	{...restProps}

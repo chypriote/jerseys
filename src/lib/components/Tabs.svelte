@@ -16,7 +16,7 @@
 			href={resolve(link.href)}
 			aria-current={current === link.key ? 'page' : undefined}
 			class={cn(
-				'inline-flex min-h-11 items-center rounded-control px-5 font-display text-sm leading-[1.1] font-bold tracking-[0.03em] uppercase shadow-(--shadow-raised) outline-ring focus-visible:outline-3 focus-visible:outline-solid',
+				'inline-flex min-h-11 items-center rounded-control px-5 font-display text-sm leading-tight font-bold tracking-label uppercase shadow-(--shadow-raised) outline-ring focus-visible:outline-3 focus-visible:outline-solid',
 				current === link.key ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground'
 			)}
 		>

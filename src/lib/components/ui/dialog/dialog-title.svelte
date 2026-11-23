@@ -13,7 +13,7 @@
 	bind:ref
 	data-slot="dialog-title"
 	class={cn(
-		'pe-11 font-display text-[24px] leading-[1.1] font-extrabold text-balance uppercase italic',
+		'pe-11 font-display text-lg leading-tight font-extrabold text-balance uppercase italic',
 		className
 	)}
 	{...restProps}

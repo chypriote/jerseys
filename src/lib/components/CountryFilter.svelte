@@ -23,7 +23,7 @@
 		{#each groups as group (group.continent)}
 			<fieldset>
 				<legend
-					class="mb-1 font-display text-sm leading-[1.1] font-bold tracking-[0.03em] text-muted-foreground uppercase"
+					class="mb-1 font-display text-sm leading-tight font-bold tracking-label text-muted-foreground uppercase"
 				>
 					{group.continent}
 				</legend>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { deleteRow, postAction } from '#lib/forms';
-	import { kitTypeLabels, labelOptions } from '#lib/labels';
+	import { kitLabel, kitTypeLabels, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
@@ -27,7 +27,7 @@
 	let error = $state<string | null>(null);
 	let busy = $state(false);
 
-	const label = (kit: KitView) => `${kit.team.name} ${kit.season} ${kitTypeLabels[kit.kitType]}`;
+	const label = (kit: KitView) => kitLabel(kit.team.name, kit.season, kit.kitType);
 
 	// The Season follows the Team's Season Format.
 	const seasonPlaceholder = $derived(
@@ -96,7 +96,7 @@
 			{@const row = editing}
 			<DeleteAction
 				what={label(row)}
-				text="This removes the kit with its main picture and pictures. A kit that jerseys or a wishlist item use cannot be deleted."
+				text="This deletes the kit with its main picture and pictures. A kit that jerseys or a wishlist item use cannot be deleted."
 				onDelete={() => deleteRow('?/deleteKit', row.id, () => (open = false))}
 			/>
 		{/if}

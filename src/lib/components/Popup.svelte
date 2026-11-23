@@ -90,7 +90,7 @@
 				</div>
 				<div class="min-w-0">
 					<Dialog.Title class="[overflow-wrap:anywhere]">{title}</Dialog.Title>
-					<p class="mt-1 mb-3 text-[15px] text-muted-foreground">{subtitle}</p>
+					<p class="mt-1 mb-3 text-md text-muted-foreground">{subtitle}</p>
 					{@render details?.()}
 				</div>
 			</div>

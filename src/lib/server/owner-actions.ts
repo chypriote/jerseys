@@ -1,4 +1,4 @@
-import { fail, type RequestEvent } from '@sveltejs/kit';
+import { fail, type Cookies, type RequestEvent } from '@sveltejs/kit';
 import { catalogFromPlatform, UnauthorizedError } from '#lib/server/catalog';
 import type {
 	AddWishlistItemInput,
@@ -109,8 +109,22 @@ function deleteAction(
 		});
 }
 
-/** The JSON error answer of an Owner endpoint (for bodies a form action cannot carry, like an image). */
-export function endpointError(error: unknown): Response {
+/**
+ * Runs an Owner endpoint (for bodies a form action cannot carry, like an image) with the Catalog
+ * and the Owner cookie token, and answers its errors as JSON.
+ */
+export async function ownerEndpoint(
+	cookies: Cookies,
+	work: (catalog: Catalog, token: string) => Promise<Response>
+): Promise<Response> {
+	try {
+		return await work(catalogFromPlatform(), ownerToken(cookies));
+	} catch (error) {
+		return endpointError(error);
+	}
+}
+
+function endpointError(error: unknown): Response {
 	if (error instanceof UnauthorizedError)
 		return Response.json({ error: 'Please log in again' }, { status: 401 });
 	if (error instanceof Error) return Response.json({ error: error.message }, { status: 400 });

@@ -35,11 +35,11 @@
 	</span>
 	<span class="grid min-w-0 px-0.5 pt-2">
 		<span
-			class="truncate font-display text-sm leading-[1.25] font-extrabold tracking-[0.02em] uppercase italic"
+			class="truncate font-display text-sm leading-snug font-extrabold tracking-caption uppercase italic"
 		>
 			{team}
 		</span>
-		<span class="truncate text-[11px] leading-[1.25] font-medium text-muted-foreground">
+		<span class="truncate text-2xs leading-snug font-medium text-muted-foreground">
 			{season} · {kitType}
 		</span>
 		{#if desire}

@@ -10,7 +10,7 @@
 	}: {
 		/** Names the row: "Delete {what}?" and the Button's hidden label. */
 		what: string;
-		/** What the delete removes. */
+		/** The confirm text: what goes with the row. */
 		text: string;
 		label?: string;
 		/** Runs after the confirmation. Answers the error to show, or null. */

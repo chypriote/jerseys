@@ -3,6 +3,8 @@
  * Types only. Domain names follow GLOSSARY.md.
  */
 
+import type { KIT_TYPES, VERSIONS } from '../db/schema';
+
 export interface Store {
 	id: number;
 	name: string;
@@ -35,7 +37,7 @@ export interface CountryInput {
 
 // --- Kit Main Pictures ---------------------------------------------------------------
 
-export type KitType = 'home' | 'away' | 'third' | 'fourth' | 'cup' | 'special';
+export type KitType = (typeof KIT_TYPES)[number];
 
 /** A Kit as the admin lists it. */
 export interface KitSummary {
@@ -87,7 +89,7 @@ export interface SourceTeam {
 
 // --- Collection --------------------------------------------------------------
 
-export type Version = 'fan' | 'player' | 'tracksuit';
+export type Version = (typeof VERSIONS)[number];
 export type Size = 'S' | 'M' | 'L';
 export type Fit = 'too-small' | 'good' | 'too-big';
 export type TeamKind = 'club' | 'national';
