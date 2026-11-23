@@ -3,14 +3,16 @@
 	import LinkIcon from '@lucide/svelte/icons/link';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import { Button as IconButton } from './ui/button/index.js';
+	import FindPicturesLink from './FindPicturesLink.svelte';
 	import { Input } from './ui/input/index.js';
 
 	/** A picture for a form: an uploaded file or an image address, never both. */
 	let {
 		label,
 		file = $bindable(null),
-		url = $bindable('')
-	}: { label: string; file?: File | null; url?: string } = $props();
+		url = $bindable(''),
+		findUrl = null
+	}: { label: string; file?: File | null; url?: string; findUrl?: string | null } = $props();
 
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let urlInput = $state<HTMLInputElement | null>(null);
@@ -64,6 +66,9 @@
 			<span class="min-w-0 truncate text-sm text-muted-foreground">{file.name}</span>
 		{/if}
 	</div>
+	{#if findUrl}
+		<FindPicturesLink url={findUrl} />
+	{/if}
 	{#if urlOpen}
 		<Input
 			type="url"
