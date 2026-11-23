@@ -11,7 +11,7 @@ Stack: same as Vinyles, SvelteKit (Svelte 5) with shadcn-svelte and Tailwind CSS
 | Level | Components |
 |---|---|
 | Primitive | Chip, Button, DesireDots, SearchField, Select, Field, ToggleGroup |
-| Component | Tile, Tabs, Popup, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, EmptyState |
+| Component | Tile, Tabs, Popup, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, TeamLookup, EmptyState |
 | Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm, ImportReview |
 
 ## Shared rules
@@ -143,6 +143,24 @@ Same as Vinyles.
 
 Same as Vinyles: native Select over the Stores and a last option "Add a store…".
 
+### TeamLookup
+
+**Purpose:** Pick a known Team, or add a new Team on the fly, in JerseyForm and WishlistItemForm.
+
+- A text Field "Team" with the ARIA combobox pattern (`role="combobox"`, `aria-autocomplete="list"`, a `role="listbox"` under it).
+- Typing filters the known Teams by name (contains, any case), up to 8 options, each with its Country in `color.text.muted`.
+- When the text matches no Team exactly, the last option is "Add “{name}” as a new team", in `color.icon.accent`.
+- Keys: Up and Down move, Enter picks, Esc closes the list (not the Popup). A click picks.
+- Picking the new option opens a block under the Field: kind (ToggleGroup Club / National Team, default Club) and Country (Select, grouped by Continent, required). Text under it: "The League follows the Country." Save creates the Team with the Jersey or Wishlist Item.
+- Typing again after a pick closes the block until a new pick.
+- The list is a `color.bg.surface` card, `tile.radius`, `shadow.raised`. Options are 44px pills; the active one has `color.bg.page`.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| value | `{ teamId: string } \| { name: string; kind: 'club' \| 'national'; countryId: string }` | — | Bindable. A known Team or a new one |
+| teams | `{ id: string; name: string; country: string }[]` | — | Known Teams |
+| countries | same as CountryFilter `groups` | — | For the new Team's Country |
+
 ### EmptyState
 
 Same as Vinyles. Messages: "No jerseys yet", "Nothing on the wishlist", "No match" with a "Clear filters" Button. No illustration.
@@ -212,7 +230,7 @@ Like Vinyles, plus dates:
 
 Add and edit a Jersey. Fields, in order:
 
-1. Team: Field with the known Teams as `<datalist>`. A new Team name shows: kind (ToggleGroup Club / National Team) and Country (Select). The League follows the Country.
+1. Team: TeamLookup.
 2. Season: Field. Placeholder from the Team's Season Format: "2024-25" (Split) or "2024" (Calendar).
 3. Kit Type: Select (Home, Away, Third, Fourth, Cup, Special).
 4. Cover: file input "Cover picture", shown when the Kit has no Cover yet. One Cover per Kit.

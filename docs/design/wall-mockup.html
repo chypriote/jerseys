@@ -160,6 +160,17 @@ dd .dots { margin-top: 7px; }
 .field input:not([type=radio]), .field select { min-height: 44px; border: 0; border-radius: 999px; padding: 0 16px; background: var(--bg-page); color: var(--text-primary); }
 .field select { appearance: none; padding-right: 36px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%235a6a8e' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
 .field .err { color: var(--text-error); font-size: 14px; }
+/* TeamLookup */
+.lookup { position: relative; }
+.lookup input { width: 100%; }
+.lookup ul { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 2; margin: 0; padding: 8px; list-style: none; background: var(--bg-surface); border-radius: 14px; box-shadow: var(--raised), 0 0 0 1px var(--border-subtle); max-height: 280px; overflow: auto; }
+.lookup li { min-height: 44px; padding: 0 12px; border-radius: 999px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.lookup li small { color: var(--text-muted); font-size: 14px; white-space: nowrap; }
+.lookup li[aria-selected="true"] { background: var(--bg-page); }
+.lookup li.new { font-weight: 800; color: var(--icon-accent); }
+.newteam { display: grid; gap: 12px; padding: 12px 16px; border-radius: 14px; background: var(--bg-page); }
+.newteam .tg span, .newteam .field select { background-color: var(--bg-surface); }
+.newteam p { margin: 0; color: var(--text-muted); }
 fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
 .tg { display: flex; flex-wrap: wrap; gap: 8px; }
 .tg label { position: relative; }
@@ -170,7 +181,7 @@ fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 4px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
 @media (min-width: 640px) {
   .fields { grid-template-columns: 1fr 1fr; column-gap: 16px; }
-  .fields > .two { grid-column: 1 / -1; }
+  .fields > .two, .fields > .full { grid-column: 1 / -1; }
 }
 footer { margin-top: 24px; color: var(--text-muted); }
 </style>
@@ -484,6 +495,39 @@ function openPopup(html, el, wide = false) {
   popup.innerHTML = html + `<button class="pill icon x" type="button" data-close><span class="sr">Close</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
   popup.showModal(); place();
 }
+// TeamLookup: type to filter known Teams; the last option adds the typed name as a new Team.
+let teamActive = -1;
+function teamOptions(q) {
+  const t = q.trim().toLowerCase();
+  const known = Object.keys(TEAMS).filter(n => !t || n.toLowerCase().includes(t)).sort((a, b) => a.localeCompare(b)).slice(0, 8);
+  const exact = Object.keys(TEAMS).some(n => n.toLowerCase() === t);
+  return known.map(n => ({ name:n, country:label(TEAMS[n][0]) })).concat(t && !exact ? [{ name:q.trim(), isNew:true }] : []);
+}
+function renderTeamList(open) {
+  const input = $("team"), ul = $("team-list"), opts = teamOptions(input.value);
+  ul.hidden = !open || !opts.length; input.setAttribute("aria-expanded", String(!ul.hidden));
+  teamActive = Math.min(teamActive, opts.length - 1);
+  ul.innerHTML = opts.map((o, i) => `<li role="option" id="team-opt-${i}" data-i="${i}" aria-selected="${i === teamActive}" class="${o.isNew ? "new" : ""}">${o.isNew ? `Add “${esc(o.name)}” as a new team` : `<span>${esc(o.name)}</span><small>${esc(o.country)}</small>`}</li>`).join("");
+  input.setAttribute("aria-activedescendant", teamActive >= 0 ? "team-opt-" + teamActive : "");
+  ul.opts = opts;
+}
+function pickTeam(o) {
+  $("team").value = o.name; $("team-list").hidden = true; $("team").setAttribute("aria-expanded", "false");
+  $("newteam").hidden = !o.isNew;
+  if (o.isNew) $("newteam-name").textContent = `“${o.name}” is a new team. Tell where it plays.`;
+  teamActive = -1;
+}
+popup.addEventListener("input", e => { if (e.target.id === "team") { teamActive = -1; $("newteam").hidden = true; renderTeamList(true); } });
+popup.addEventListener("focusin", e => { if (e.target.id === "team") renderTeamList(true); });
+popup.addEventListener("keydown", e => {
+  if (e.target.id !== "team") return;
+  const ul = $("team-list"), n = (ul.opts || []).length;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (ul.hidden) renderTeamList(true); teamActive = (teamActive + (e.key === "ArrowDown" ? 1 : n - 1)) % n; renderTeamList(true); }
+  else if (e.key === "Enter" && !ul.hidden && teamActive >= 0) { e.preventDefault(); pickTeam(ul.opts[teamActive]); }
+  else if (e.key === "Escape" && !ul.hidden) { e.preventDefault(); renderTeamList(false); }
+});
+popup.addEventListener("mousedown", e => { const li = e.target.closest("#team-list li"); if (li) { e.preventDefault(); pickTeam($("team-list").opts[+li.dataset.i]); } });
+popup.addEventListener("focusout", e => { if (e.target.id === "team") setTimeout(() => $("team-list") && renderTeamList(false), 0); });
 popup.addEventListener("close", () => { if (anchor && anchor.isConnected) anchor.focus(); });
 popup.addEventListener("click", e => {
   if (e.target === popup) { const r = popup.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) popup.close(); }
@@ -521,8 +565,15 @@ function acquisition(k) {
      <div class="two">${field("Price", `type="number" step="0.01" inputmode="decimal" value="${k && k.price != null ? k.price : ""}"`)}${field("Bought", `type="text" inputmode="numeric" placeholder="2024 or 2024-05-12" value="${k ? k.bought : ""}"`, k ? "" : "Enter a year or a full date")}</div>
      <div class="two">${field("Sent", `type="text" inputmode="numeric" placeholder="2024 or 2024-05-12"`)}${field("Received", `type="text" inputmode="numeric" placeholder="2024 or 2024-05-12"`)}</div>`;
 }
-const kitFields = k => field("Team", `list="teams" value="${k ? esc(k.team) : ""}"`) +
-  `<datalist id="teams">${Object.keys(TEAMS).map(t => `<option value="${esc(t)}">`).join("")}</datalist>` +
+const teamLookup = k => `<div class="full fields" style="grid-template-columns:minmax(0,1fr)">
+  <label class="field"><span>Team</span><div class="lookup"><input id="team" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="team-list" autocomplete="off" placeholder="Type a team" value="${k ? esc(k.team) : ""}"><ul id="team-list" role="listbox" aria-label="Teams" hidden></ul></div></label>
+  <div class="newteam" id="newteam" hidden>
+    <p id="newteam-name"></p>
+    ${tg("Kind", ["Club","National Team"], "Club")}
+    <label class="field"><span>Country</span><select id="newteam-country"><option value="">Choose a country</option>${Object.entries(CONTINENTS).map(([c, l]) => `<optgroup label="${c}">${[...l].sort((a, b) => label(a).localeCompare(label(b))).map(n => `<option>${esc(label(n))}</option>`).join("")}</optgroup>`).join("")}</select></label>
+    <p>The League follows the Country.</p>
+  </div></div>`;
+const kitFields = k => teamLookup(k) +
   `<div class="two">${field("Season", `placeholder="2024-25" value="${k ? k.season : ""}"`)}<label class="field"><span>Kit Type</span><select>${["Home","Away","Third","Fourth","Cup","Special"].map(t => `<option ${k && k.kitType === t ? "selected" : ""}>${t}</option>`).join("")}</select></label></div>`;
 const coverField = k => (!k || NO_COVER.has(k.team)) ? field("Cover picture", `type="file" accept="image/*"`) : "";
 function openForm(kind, k) {
