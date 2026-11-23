@@ -10,7 +10,7 @@
 	let message = $state<string | null>(null);
 
 	/**
-	 * Removes the flat light background of every Main Picture, one after the other, in the browser.
+	 * Removes the flat background of every Main Picture, one after the other, in the browser.
 	 * A picture already without one is left as it is, so the button can be pressed again.
 	 */
 	async function run() {
