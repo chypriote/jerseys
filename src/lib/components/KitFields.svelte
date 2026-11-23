@@ -3,6 +3,7 @@
 	import { kitTypeLabels, labelOptions } from '#lib/labels';
 	import { kitArchiveUrl } from '#lib/kit-archive';
 	import { kitHasMainPicture } from '#lib/pictures';
+	import { fitsSeasonFormat, seasonChoices } from '#lib/seasons';
 	import type {
 		Country,
 		KitKey,
@@ -91,14 +92,16 @@
 			? kits.filter((k) => k.team.id === (team as { teamId: number }).teamId)
 			: []
 	);
-	// An example of the format, not a suggestion.
-	const seasonPlaceholder = $derived(
-		seasonFormat === 'split'
-			? 'e.g. 2024-25'
-			: seasonFormat === 'calendar'
-				? 'e.g. 2024'
-				: 'e.g. 2024-25 or 2024'
-	);
+	// The Season is chosen from the Team's Season Format; a Season of the other format is cleared.
+	const seasonOptions = $derived([
+		{ value: '', label: seasonFormat ? 'Choose a season' : 'Choose a team first' },
+		...(seasonFormat
+			? seasonChoices(seasonFormat, new Date(), season).map((s) => ({ value: s, label: s }))
+			: [])
+	]);
+	$effect(() => {
+		if (seasonFormat && season && !fitsSeasonFormat(season.trim(), seasonFormat)) season = '';
+	});
 </script>
 
 <!-- No wrapper: the fields are grid items of the form (two columns from `sm`). -->
@@ -110,7 +113,12 @@
 		<ExistingKits kits={teamKits} bind:season bind:kitType bind:comment />
 	</div>
 {/if}
-<Field label="Season" required placeholder={seasonPlaceholder} bind:value={season} />
+<div class="flex flex-col gap-1.5">
+	<span class="text-sm font-bold">Season</span>
+	<div class="flex">
+		<Select label="Season" bind:value={season} options={seasonOptions} disabled={!seasonFormat} />
+	</div>
+</div>
 <div class="flex flex-col gap-1.5">
 	<span class="text-sm font-bold">Kit Type</span>
 	<div class="flex">
