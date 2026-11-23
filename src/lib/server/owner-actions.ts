@@ -1,0 +1,39 @@
+import { fail, type RequestEvent } from '@sveltejs/kit';
+import { catalogFromPlatform, UnauthorizedError } from '#lib/server/catalog';
+import type { Catalog } from '#lib/server/catalog';
+import { ownerToken } from '#lib/server/owner';
+
+/**
+ * Thin form actions over the Catalog. The forms send one JSON `payload` field.
+ * Each action passes the Owner cookie token, so a write without login is refused by the Catalog.
+ */
+async function run<T>(
+	event: RequestEvent,
+	work: (catalog: Catalog, token: string, payload: T) => Promise<Record<string, unknown> | void>
+) {
+	let payload: T;
+	try {
+		payload = JSON.parse(String((await event.request.formData()).get('payload') ?? ''));
+	} catch {
+		return fail(400, { error: 'Unreadable form' });
+	}
+	try {
+		const extra = await work(catalogFromPlatform(), ownerToken(event.cookies), payload);
+		return { ok: true, ...extra };
+	} catch (error) {
+		if (error instanceof UnauthorizedError) return fail(401, { error: 'Please log in again' });
+		if (error instanceof Error) return fail(400, { error: error.message });
+		throw error;
+	}
+}
+
+export const ownerActions = {
+	addStore: (event: RequestEvent) =>
+		run<{ name: string }>(event, async (catalog, token, { name }) => {
+			await catalog.addStore(token, String(name ?? ''));
+		}),
+	renameStore: (event: RequestEvent) =>
+		run<{ id: number; name: string }>(event, async (catalog, token, { id, name }) => {
+			await catalog.renameStore(token, Number(id), String(name ?? ''));
+		})
+};
