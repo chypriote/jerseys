@@ -54,6 +54,9 @@ Native `<select>`, styled as a pill. Used for sort.
 
 ### Field
 
+SearchField, Select and Field share one look: fill `color.bg.field`, a 2px `color.border.field` border, a pill with `shadow.raised`. They stand out from the page and from the Popup in light and dark (contrast ratios in TOKENS.md).
+
+
 Same as Vinyles: visible label, native input, `error` text in `color.text.error`, linked with `aria-describedby`. Types: `text`, `password`, `number`.
 
 Dates in this app can be a year only (GLOSSARY: Purchase). So a date Field is `type="text"` with no `inputmode` (the iOS number pad has no "-"), placeholder "2024 or 2024-05-12", and the form checks the pattern `YYYY` or `YYYY-MM-DD`. Native `type="date"` cannot hold a year only.

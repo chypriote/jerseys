@@ -78,6 +78,8 @@
 	--destructive-foreground: light-dark(var(--white), var(--navy-950)); /* color.text.on-danger */
 	--border: light-dark(var(--sky-100), var(--navy-700)); /* color.border.subtle */
 	--input: var(--border);
+	--field: light-dark(var(--sky-50), var(--navy-950)); /* color.bg.field */
+	--field-border: light-dark(var(--navy-600), var(--navy-300)); /* color.border.field */
 	--ring: light-dark(var(--sky-600), var(--sky-400)); /* color.outline.focus */
 	--radius: var(--radius-md-px);
 
@@ -148,6 +150,8 @@
 	--color-destructive-foreground: var(--destructive-foreground);
 	--color-border: var(--border);
 	--color-input: var(--input);
+	--color-field: var(--field);
+	--color-field-border: var(--field-border);
 	--color-ring: var(--ring);
 	--color-success: var(--success);
 	--color-success-foreground: var(--success-foreground);
