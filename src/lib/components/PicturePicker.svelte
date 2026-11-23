@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { tick } from 'svelte';
+	import { shrinkImage } from '#lib/pictures';
 	import type { PictureCandidates, SourceTeam } from '#lib/server/catalog/types';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import LinkIcon from '@lucide/svelte/icons/link';
@@ -103,20 +104,6 @@
 	let urlText = $state('');
 	let urlInput = $state<HTMLInputElement | null>(null);
 
-	/** Scales the image down to 1000 px on its long side and re-encodes it as JPEG. */
-	async function shrink(file: File): Promise<Blob> {
-		const bitmap = await createImageBitmap(file);
-		const scale = Math.min(1, 1000 / Math.max(bitmap.width, bitmap.height));
-		const canvas = document.createElement('canvas');
-		canvas.width = Math.round(bitmap.width * scale);
-		canvas.height = Math.round(bitmap.height * scale);
-		canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-		bitmap.close();
-		const blob = await new Promise<Blob | null>((done) => canvas.toBlob(done, 'image/jpeg', 0.85));
-		if (!blob) throw new Error('shrink failed');
-		return blob;
-	}
-
 	async function save(request: () => Promise<Response>) {
 		busy = true;
 		error = null;
@@ -141,7 +128,7 @@
 		if (!file) return;
 		let upload: Blob;
 		try {
-			upload = await shrink(file);
+			upload = await shrinkImage(file);
 		} catch {
 			error = 'Could not read this image';
 			return;

@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { continents } from '#lib/countries';
 	import { kitTypeLabels, labelOptions } from '#lib/labels';
+	import { kitHasMainPicture } from '#lib/pictures';
 	import type {
 		Country,
+		KitKey,
 		KitType,
 		SeasonFormat,
 		TeamChoice,
@@ -11,22 +13,37 @@
 	import Field from './Field.svelte';
 	import Select from './Select.svelte';
 	import TeamLookup from './TeamLookup.svelte';
+	import { Input } from './ui/input/index.js';
+	import { Label } from './ui/label/index.js';
 
 	let {
 		team = $bindable(),
 		season = $bindable(),
 		kitType = $bindable(),
+		mainPicture = $bindable(null),
 		teams,
 		countries,
+		pictured,
 		teamError = null
 	}: {
 		team: TeamChoice | null;
 		season: string;
 		kitType: KitType;
+		/** The "Main picture" file, null when the Kit already has a Main Picture. */
+		mainPicture?: FileList | null;
 		teams: TeamView[];
 		countries: Country[];
+		/** Kits that have a Main Picture: no "Main picture" input for them. */
+		pictured: KitKey[];
 		teamError?: string | null;
 	} = $props();
+
+	const hasMainPicture = $derived(kitHasMainPicture(pictured, team, season, kitType));
+	// A file chosen before the fields moved to a pictured Kit is not sent.
+	$effect(() => {
+		if (hasMainPicture) mainPicture = null;
+	});
+	const pictureId = $props.id();
 
 	const countryGroups = $derived(
 		continents
@@ -66,3 +83,14 @@
 		<Select label="Kit Type" bind:value={kitType} options={labelOptions(kitTypeLabels)} />
 	</div>
 </div>
+{#if !hasMainPicture}
+	<div class="flex flex-col gap-1.5">
+		<Label for={pictureId}>Main picture</Label>
+		<Input
+			id={pictureId}
+			type="file"
+			accept="image/jpeg,image/png,image/webp"
+			bind:files={mainPicture}
+		/>
+	</div>
+{/if}

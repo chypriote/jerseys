@@ -10,13 +10,18 @@ export const load: PageServerLoad = async ({ parent }) => {
 		catalog.listCollection(),
 		catalog.listCoverage(),
 		isOwner
-			? Promise.all([catalog.listTeams(), catalog.listCountries(), catalog.listStores()])
+			? Promise.all([
+					catalog.listTeams(),
+					catalog.listCountries(),
+					catalog.listStores(),
+					catalog.listPicturedKits()
+				])
 			: null
 	]);
 	return {
 		jerseys,
 		coverage,
-		form: form && { teams: form[0], countries: form[1], stores: form[2] }
+		form: form && { teams: form[0], countries: form[1], stores: form[2], pictured: form[3] }
 	};
 };
 

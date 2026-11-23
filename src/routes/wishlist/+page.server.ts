@@ -8,9 +8,11 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// The WishlistItemForm lists: Owner only.
 	const [items, form] = await Promise.all([
 		catalog.listWishlist(),
-		isOwner ? Promise.all([catalog.listTeams(), catalog.listCountries()]) : null
+		isOwner
+			? Promise.all([catalog.listTeams(), catalog.listCountries(), catalog.listPicturedKits()])
+			: null
 	]);
-	return { items, form: form && { teams: form[0], countries: form[1] } };
+	return { items, form: form && { teams: form[0], countries: form[1], pictured: form[2] } };
 };
 
 export const actions: Actions = {

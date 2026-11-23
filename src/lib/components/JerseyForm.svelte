@@ -4,6 +4,7 @@
 		acquisitionState,
 		addStore,
 		emptyAcquisition,
+		mainPictureUpload,
 		postAction,
 		teamProblem,
 		toAcquisitionInput
@@ -12,6 +13,7 @@
 	import type {
 		CollectionJersey,
 		Country,
+		KitKey,
 		Fit,
 		KitType,
 		Size,
@@ -30,6 +32,7 @@
 		jersey = null,
 		teams,
 		countries,
+		pictured,
 		stores,
 		onDone
 	}: {
@@ -37,6 +40,7 @@
 		jersey?: CollectionJersey | null;
 		teams: TeamView[];
 		countries: Country[];
+		pictured: KitKey[];
 		stores: Store[];
 		/** Save succeeded, or Cancel. */
 		onDone: () => void;
@@ -53,6 +57,7 @@
 	let fit = $state<Fit>(start?.fit ?? 'good');
 	let print = $state(start?.print ?? '');
 	let acquisition = $state(start ? acquisitionState(start.acquisition) : emptyAcquisition());
+	let mainPicture = $state<FileList | null>(null);
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
 	let busy = $state(false);
@@ -67,6 +72,12 @@
 			return;
 		}
 		busy = true;
+		const upload = await mainPictureUpload(mainPicture);
+		if (typeof upload === 'string') {
+			busy = false;
+			error = upload;
+			return;
+		}
 		const input = {
 			team,
 			season,
@@ -78,8 +89,8 @@
 			acquisition: acquisitionInput
 		};
 		const outcome = jersey
-			? await postAction('?/editJersey', { ...input, id: jersey.id })
-			: await postAction('?/addJersey', input);
+			? await postAction('?/editJersey', { ...input, id: jersey.id }, upload)
+			: await postAction('?/addJersey', input, upload);
 		busy = false;
 		if (outcome.ok) onDone();
 		else error = outcome.error;
@@ -88,7 +99,16 @@
 
 <!-- Two columns from `sm` (Popup `wide`). -->
 <form class="grid grid-cols-1 gap-4 sm:grid-cols-2" onsubmit={submit}>
-	<KitFields bind:team bind:season bind:kitType {teams} {countries} {teamError} />
+	<KitFields
+		bind:team
+		bind:season
+		bind:kitType
+		bind:mainPicture
+		{teams}
+		{countries}
+		{pictured}
+		{teamError}
+	/>
 	<ToggleGroup label="Version" bind:value={version} options={labelOptions(versionLabels)} />
 	<ToggleGroup
 		label="Size"

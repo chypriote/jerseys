@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { postAction, teamProblem } from '#lib/forms';
+	import { mainPictureUpload, postAction, teamProblem } from '#lib/forms';
 	import { labelOptions, versionLabels } from '#lib/labels';
 	import type {
 		AddWishlistItemInput,
 		Country,
+		KitKey,
 		Desire,
 		KitType,
 		TeamChoice,
@@ -18,10 +19,12 @@
 	let {
 		teams,
 		countries,
+		pictured,
 		onDone
 	}: {
 		teams: TeamView[];
 		countries: Country[];
+		pictured: KitKey[];
 		/** Save succeeded, or Cancel. */
 		onDone: () => void;
 	} = $props();
@@ -32,6 +35,7 @@
 	// "any" is the ToggleGroup value of no Version.
 	let version = $state<Version | 'any'>('any');
 	let desire = $state<Desire>(3);
+	let mainPicture = $state<FileList | null>(null);
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
 	let alreadyOwned = $state(false);
@@ -53,7 +57,11 @@
 		};
 		busy = true;
 		addingAnyway = addAnyway;
-		const outcome = await postAction('?/addWishlistItem', input);
+		const upload = await mainPictureUpload(mainPicture);
+		const outcome =
+			typeof upload === 'string'
+				? ({ ok: false, error: upload } as const)
+				: await postAction('?/addWishlistItem', input, upload);
 		busy = false;
 		if (!outcome.ok) error = outcome.error;
 		else if (outcome.alreadyOwned) alreadyOwned = true;
@@ -70,7 +78,16 @@
 
 <!-- Two columns from `sm` (Popup `wide`). -->
 <form class="grid grid-cols-1 gap-4 sm:grid-cols-2" onsubmit={submit}>
-	<KitFields bind:team bind:season bind:kitType {teams} {countries} {teamError} />
+	<KitFields
+		bind:team
+		bind:season
+		bind:kitType
+		bind:mainPicture
+		{teams}
+		{countries}
+		{pictured}
+		{teamError}
+	/>
 	<ToggleGroup label="Version" bind:value={version} options={versionOptions} />
 	<div class="flex flex-col gap-1.5">
 		<span class="text-sm font-bold">Desire</span>
