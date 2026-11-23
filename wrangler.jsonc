@@ -2,20 +2,32 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "jerseys",
 	"compatibility_date": "2026-11-01",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "jerseys",
-			// Placeholder: replace with the id from `npx wrangler d1 create jerseys` (see README).
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			"database_id": "4d824f55-f2ea-4107-9b7b-e37d362b61cb",
 			"migrations_dir": "drizzle"
+		},
+		{
+			"binding": "jerseys",
+			"database_name": "jerseys",
+			"database_id": "4d824f55-f2ea-4107-9b7b-e37d362b61cb",
+			"remote": true
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "COVERS",
 			"bucket_name": "jerseys-covers"
+		},
+		{
+			"bucket_name": "jerseys-covers",
+			"binding": "jerseys_covers",
+			"remote": true
 		}
 	]
 	// Secrets (not in this file): OWNER_PASSWORD and JWT_SECRET. See README.
