@@ -2294,6 +2294,16 @@ describe('Kit Pictures', () => {
 			expect(picture?.contentType).toBe('image/png');
 		});
 
+		it('asks for JPEG, PNG or WebP and drops an `fmt` parameter', async () => {
+			await catalog.addPictureFromUrl(token, {
+				kitId: kit,
+				url: 'https://images.example/back.jpg?fmt=avif&w=500'
+			});
+			const [input, init] = vi.mocked(globalThis.fetch).mock.calls[0];
+			expect(new URL(String(input)).search).toBe('?w=500');
+			expect(new Headers(init?.headers).get('accept')).toBe('image/jpeg,image/png,image/webp');
+		});
+
 		it('refuses an address that is not an image, and adds nothing', async () => {
 			await expect(
 				catalog.addPictureFromUrl(token, { kitId: kit, url: 'https://images.example/page.html' })
