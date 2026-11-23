@@ -14,7 +14,7 @@
 		<h1>Admin</h1>
 		<UiButton variant="neutral" href="/">Back home</UiButton>
 	</div>
-	<!-- One section per kind of reference data (Countries, Kits without a Cover come next). -->
+	<!-- One section per kind of reference data (Countries, Kits without a main picture come next). -->
 	<div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
 		<CountriesSection countries={data.countries} />
 		<StoresSection stores={data.stores} />

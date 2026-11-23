@@ -34,9 +34,9 @@ _Avoid_: Region, confederation
 One design of a Team: a Team, a Season and a Kit Type. Jerseys are of a Kit.
 _Avoid_: Maillot, shirt, model
 
-**Cover**:
-The main picture of a Kit. All Jerseys and Wishlist Items of the Kit show it. A Kit can also have more Pictures.
-_Avoid_: Artwork, photo
+**Main Picture**:
+The picture of a Kit that all its Jerseys and its Wishlist Item show. A Kit can also have more Pictures.
+_Avoid_: Cover, artwork, photo
 
 **Season**:
 When a Kit is worn. A National Team's Season is one year (2024). A Club's Season follows its League's Season Format.
