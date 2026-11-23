@@ -131,6 +131,14 @@ describe('Owner login', () => {
 					size: null,
 					fit: null,
 					acquisition: { kind: 'gift', date: '2024' }
+				}),
+			() =>
+				catalog.addWishlistItem(bad, {
+					team: { teamId: 1 },
+					season: '2024',
+					kitType: 'home',
+					version: null,
+					desire: 3
 				})
 		];
 		for (const call of calls) {
@@ -1689,5 +1697,124 @@ describe('Add and edit a Jersey', () => {
 			['France', 'calendar'],
 			['Vissel Kobe', 'calendar']
 		]);
+	});
+});
+
+describe('Add a Wishlist Item', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+	let france: number;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+		france = (
+			await catalog.addCountry(token, {
+				name: 'France',
+				continent: 'europe',
+				leagueName: 'Ligue 1',
+				seasonFormat: 'split'
+			})
+		).id;
+	});
+
+	const lyon = () => ({ name: 'Lyon', kind: 'club' as const, countryId: france });
+
+	it('adds a Wishlist Item of a new Club, with its Team and Kit', async () => {
+		const result = await catalog.addWishlistItem(token, {
+			team: { name: ' Lyon ', kind: 'club', countryId: france },
+			season: '2023-24',
+			kitType: 'away',
+			version: null,
+			desire: 4
+		});
+
+		expect(result).toMatchObject({
+			status: 'added',
+			item: {
+				version: null,
+				desire: 4,
+				kit: {
+					season: '2023-24',
+					kitType: 'away',
+					team: { name: 'Lyon', kind: 'club', country: { id: france, name: 'France' } }
+				}
+			}
+		});
+		if (result.status !== 'added') throw new Error('not added');
+		expect(await catalog.listWishlist()).toEqual([result.item]);
+		expect((await catalog.listTeams()).map((t) => t.name)).toEqual(['Lyon']);
+	});
+
+	it('refuses a second Wishlist Item for one Kit, and writes nothing', async () => {
+		const first = await catalog.addWishlistItem(token, {
+			team: lyon(),
+			season: '2023-24',
+			kitType: 'home',
+			version: 'fan',
+			desire: 3
+		});
+		if (first.status !== 'added') throw new Error('not added');
+
+		await expect(
+			catalog.addWishlistItem(token, {
+				team: { teamId: first.item.kit.team.id },
+				season: '2023-24',
+				kitType: 'home',
+				version: 'player',
+				desire: 5
+			})
+		).rejects.toThrow('Lyon 2023-24 Home is already on the Wishlist');
+		expect(await catalog.listWishlist()).toEqual([first.item]);
+	});
+
+	it('answers Already owned for a Kit with a Jersey, and saves with Add anyway', async () => {
+		const owned = await catalog.addJersey(token, {
+			team: lyon(),
+			season: '2023-24',
+			kitType: 'home',
+			version: 'fan',
+			size: 'M',
+			fit: 'good',
+			acquisition: { kind: 'gift', date: '2024' }
+		});
+		const input = {
+			team: { teamId: owned.kit.team.id },
+			season: '2023-24',
+			kitType: 'home',
+			version: 'player',
+			desire: 2
+		} as const;
+
+		expect(await catalog.addWishlistItem(token, input)).toEqual({ status: 'already-owned' });
+		expect(await catalog.listWishlist()).toEqual([]);
+
+		const result = await catalog.addWishlistItem(token, { ...input, addAnyway: true });
+		expect(result).toMatchObject({ status: 'added', item: { version: 'player', desire: 2 } });
+		if (result.status !== 'added') throw new Error('not added');
+		expect(result.item.kit).toEqual(owned.kit);
+	});
+
+	it('requires a Desire from 1 to 5 and a known Version, and writes nothing', async () => {
+		const input = { team: lyon(), season: '2023-24', kitType: 'home', version: null } as const;
+		for (const desire of [undefined, 0, 6, 2.5, '']) {
+			await expect(catalog.addWishlistItem(token, { ...input, desire } as never)).rejects.toThrow(
+				'Desire must be 1 to 5'
+			);
+		}
+		await expect(
+			catalog.addWishlistItem(token, { ...input, version: 'retro', desire: 3 } as never)
+		).rejects.toThrow('Version must be Any, Fan, Player or Tracksuit');
+		expect(await catalog.listTeams()).toEqual([]);
+		expect(await catalog.listWishlist()).toEqual([]);
 	});
 });

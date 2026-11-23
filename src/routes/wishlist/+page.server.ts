@@ -1,6 +1,18 @@
 import { catalogFromPlatform } from '#lib/server/catalog';
-import type { PageServerLoad } from './$types';
+import { ownerActions } from '#lib/server/owner-actions';
+import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
-	return { items: await catalogFromPlatform().listWishlist() };
+export const load: PageServerLoad = async ({ parent }) => {
+	const catalog = catalogFromPlatform();
+	const { isOwner } = await parent();
+	// The WishlistItemForm lists: Owner only.
+	const [items, form] = await Promise.all([
+		catalog.listWishlist(),
+		isOwner ? Promise.all([catalog.listTeams(), catalog.listCountries()]) : null
+	]);
+	return { items, form: form && { teams: form[0], countries: form[1] } };
+};
+
+export const actions: Actions = {
+	addWishlistItem: ownerActions.addWishlistItem
 };

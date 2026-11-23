@@ -195,17 +195,34 @@ export type AcquisitionInput =
 	  }
 	| { kind: 'gift'; date: string; giver?: string | null };
 
-export interface JerseyInput {
+/** Finds the Kit by Team + Season + Kit Type, or creates it. */
+export interface KitInput {
 	team: TeamChoice;
 	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
 	season: string;
 	kitType: KitType;
+}
+
+export interface JerseyInput extends KitInput {
 	version: Version;
 	size: Size | null;
 	fit: Fit | null;
 	print?: string | null;
 	acquisition: AcquisitionInput;
 }
+
+// --- Wishlist Item form ------------------------------------------------------
+
+export interface AddWishlistItemInput extends KitInput {
+	/** null = any Version. */
+	version: Version | null;
+	desire: Desire;
+	/** Set to true after the "Already owned" notice. */
+	addAnyway?: boolean;
+}
+
+export type AddWishlistItemResult =
+	{ status: 'added'; item: WishlistItem } | { status: 'already-owned' };
 
 // --- Owner login -------------------------------------------------------------
 
@@ -264,6 +281,10 @@ export interface Catalog {
 	addJersey(token: string, input: JerseyInput): Promise<CollectionJersey>;
 	/** Changing the Team, Season or Kit Type moves the Jersey to that Kit. */
 	editJersey(token: string, input: JerseyInput & { id: number }): Promise<CollectionJersey>;
+
+	// Wishlist (Owner). The Kit is found or created as for a Jersey. One Wishlist Item per Kit.
+	/** Without `addAnyway`, saves nothing and answers `already-owned` when Nico owns a Jersey of the Kit. */
+	addWishlistItem(token: string, input: AddWishlistItemInput): Promise<AddWishlistItemResult>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;

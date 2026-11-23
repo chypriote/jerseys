@@ -21,3 +21,7 @@ export const fitLabels: Record<Fit, string> = {
 	good: 'Good',
 	'too-big': 'Too big'
 };
+
+/** Select and ToggleGroup options from a labels record, in its order. */
+export const labelOptions = <T extends string>(labels: Record<T, string>) =>
+	(Object.entries(labels) as [T, string][]).map(([value, label]) => ({ value, label }));

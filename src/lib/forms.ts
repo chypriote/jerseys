@@ -1,9 +1,9 @@
 import { deserialize } from '$app/forms';
 import { invalidateAll } from '$app/navigation';
-import type { Acquisition, AcquisitionInput, Store } from '#lib/server/catalog/types';
+import type { Acquisition, AcquisitionInput, Store, TeamChoice } from '#lib/server/catalog/types';
 import { centsToEuros, eurosToCents } from '#lib/money';
 
-export type Outcome = { ok: true } | { ok: false; error: string };
+export type Outcome = { ok: true; alreadyOwned: boolean } | { ok: false; error: string };
 
 /** Posts one JSON payload to a form action of the current page and reloads the page data on success. */
 export async function postAction(action: string, payload: unknown): Promise<Outcome> {
@@ -17,14 +17,22 @@ export async function postAction(action: string, payload: unknown): Promise<Outc
 		});
 		const result = deserialize(await response.text());
 		if (result.type === 'success') {
-			await invalidateAll();
-			return { ok: true };
+			const alreadyOwned = result.data?.alreadyOwned === true;
+			if (!alreadyOwned) await invalidateAll();
+			return { ok: true, alreadyOwned };
 		}
 		const message = result.type === 'failure' ? result.data?.error : undefined;
 		return { ok: false, error: typeof message === 'string' ? message : 'Something went wrong' };
 	} catch {
 		return { ok: false, error: 'Network error' };
 	}
+}
+
+/** Why the TeamLookup value cannot be saved yet, or null. */
+export function teamProblem(team: TeamChoice | null): string | null {
+	if (!team) return 'Pick a team, or add it as a new team';
+	if (!('teamId' in team) && !team.countryId) return 'Choose the Country of the new team';
+	return null;
 }
 
 /** Adds a Store at once and returns it. */
