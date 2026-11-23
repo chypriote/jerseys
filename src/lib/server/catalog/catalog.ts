@@ -27,7 +27,6 @@ import {
 } from '../db/schema';
 import {
 	checkCut,
-	checkDesire,
 	checkKitType,
 	checkWishVersion,
 	compare,
@@ -67,7 +66,6 @@ import type {
 	CollectionJersey,
 	Country,
 	JerseyInput,
-	Desire,
 	GotItInput,
 	KitInput,
 	KitType,
@@ -435,14 +433,19 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			.innerJoin(teams, eq(kits.teamId, teams.id))
 			.innerJoin(countries, eq(teams.countryId, countries.id))
 			.where(id === undefined ? undefined : eq(wishlistItems.id, id));
+		// Newest Season first, then Team name.
 		return rows
+			.sort(
+				(a, b) =>
+					b.kit.seasonStartYear - a.kit.seasonStartYear ||
+					compare(a.team.name, b.team.name) ||
+					b.item.id - a.item.id
+			)
 			.map(({ item, kit, team, country }): WishlistItem => ({
 				id: item.id,
 				version: item.version,
-				desire: item.desire as Desire,
 				kit: kitView(kit, team, country)
-			}))
-			.sort((a, b) => b.desire - a.desire || b.id - a.id);
+			}));
 	}
 
 	async function readCollection(id?: number): Promise<CollectionJersey[]> {
@@ -537,7 +540,6 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			await requireOwner(token);
 			const kit = await checkKit(input);
 			const version = checkWishVersion(input.version);
-			const desire = checkDesire(input.desire);
 			if (kit.existingId !== null) {
 				const [listed] = await db
 					.select({ id: wishlistItems.id })
@@ -559,7 +561,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			const kitId = await writeKit(kit);
 			const [{ id }] = await db
 				.insert(wishlistItems)
-				.values({ kitId, version, desire })
+				.values({ kitId, version })
 				.returning({ id: wishlistItems.id });
 			return { status: 'added', item: (await readWishlist(id))[0] };
 		},

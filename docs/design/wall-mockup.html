@@ -123,9 +123,6 @@ circle.empty, circle.covered { stroke: var(--bg-surface); stroke-width: 1px; vec
 .cap { padding: 8px 2px 0; display: grid; min-width: 0; }
 .team { font: italic 800 14px/1.25 var(--font-display); text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kit { font: 500 11px/1.25 var(--font-base); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dots { display: flex; gap: 3px; margin-top: 4px; }
-.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--border-subtle); }
-.dots i.on { background: var(--icon-accent); }
 @media (prefers-reduced-motion: no-preference) {
   .box { transition: transform 150ms var(--ease); }
   .tile:hover .box, .tile:focus-visible .box { transform: translateY(-3px) rotate(-1.5deg); }
@@ -150,7 +147,6 @@ dialog.popup.wide { width: min(672px, calc(100vw - 24px)); }
 dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; font-size: 15px; }
 dt { color: var(--text-muted); }
 dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
-dd .dots { margin-top: 7px; }
 .actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Forms */
@@ -211,9 +207,6 @@ footer { margin-top: 24px; color: var(--text-muted); }
     </div>
     <div class="controls collapsible" id="filter-row">
       <details class="cf" id="cf"><summary class="pill" id="cf-sum"></summary><div class="cf-panel" id="cf-panel"></div></details>
-      <select class="pill" id="desire" aria-label="Filter by desire" hidden>
-        <option value="">Any desire</option><option value="5">5 (most wanted)</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1 (least wanted)</option>
-      </select>
       <select class="pill" id="sort" aria-label="Sort"></select>
       <button class="pill icon" id="dir" type="button"><span class="sr" id="dir-label"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path id="dir-path" d="M12 5v14M6 13l6 6 6-6"/></svg></button>
     </div>
@@ -225,7 +218,7 @@ footer { margin-top: 24px; color: var(--text-muted); }
   <div class="map-scroll" id="map-scroll"></div>
 </section>
 
-<p class="note">Mockup. Collection rows come from the sheet; Desire values and the Country list are examples. Main Pictures are drawn shirts, the app shows each Kit's Main Picture. Four Kits have no Main Picture, to show the outline.</p>
+<p class="note">Mockup. Collection rows come from the sheet; the Country list is an example. Main Pictures are drawn shirts, the app shows each Kit's Main Picture. Four Kits have no Main Picture, to show the outline.</p>
 <main class="grid" id="grid"></main>
 <footer>Tap a tile for details. The lock button shows the Owner view.</footer>
 
@@ -338,14 +331,14 @@ const J = [
 ["AIK Stockholm","2026","Home","NICØLAS 4","S","2026-07-28","Mi",14,"Fan",""],
 ["CD Olimpia","2026","Away","Nicolas 4","S","2026-07-28","Mi",14,"Fan",""]
 ];
-// Wishlist examples from the sheet's WL tab: Team, Season, Kit Type, Version, Desire (example values)
+// Wishlist examples from the sheet's WL tab: Team, Season, Kit Type, Version
 const W = [
-["Lazio","2023-24","Home","",4], ["Monterrey","2023-24","Cup","",3], ["Monterrey","2023-24","Away","",2],
-["Boca Juniors","2023-24","Away","",3], ["APOEL Nicosia","2023-24","Home","",5], ["APOEL Nicosia","2023-24","Away","",2],
-["Hansa Rostock","2023-24","Away","",1], ["Heidenheim","2023-24","Away","",1], ["Guangzhou","2023-24","Home","",3],
-["Barcelona","2024-25","Home","Player",4], ["Barcelona","2024-25","Away","",2], ["Roma","2023-24","Third","",4],
-["Japan","2023","Third","",5], ["Sagan Tosu","2024-25","Home","",2], ["Red Star Belgrade","2026-27","Home","",5],
-["Partizan","2026-27","Home","",3], ["Shandong Taishan","2022","Home","",1], ["Inter Milan","2023-24","Home","Player",3]
+["Lazio","2023-24","Home",""], ["Monterrey","2023-24","Cup",""], ["Monterrey","2023-24","Away",""],
+["Boca Juniors","2023-24","Away",""], ["APOEL Nicosia","2023-24","Home",""], ["APOEL Nicosia","2023-24","Away",""],
+["Hansa Rostock","2023-24","Away",""], ["Heidenheim","2023-24","Away",""], ["Guangzhou","2023-24","Home",""],
+["Barcelona","2024-25","Home","Player"], ["Barcelona","2024-25","Away",""], ["Roma","2023-24","Third",""],
+["Japan","2023","Third",""], ["Sagan Tosu","2024-25","Home",""], ["Red Star Belgrade","2026-27","Home",""],
+["Partizan","2026-27","Home",""], ["Shandong Taishan","2022","Home",""], ["Inter Milan","2023-24","Home","Player"]
 ];
 // Countries in the app (example list), grouped by Continent
 const CONTINENTS = {
@@ -360,7 +353,7 @@ const continentOf = {}; for (const [c, list] of Object.entries(CONTINENTS)) for 
 const ALL_COUNTRIES = Object.values(CONTINENTS).flat();
 
 const jerseys = J.map((r, i) => ({ id:"j"+i, team:r[0], season:r[1], kitType:r[2], print:r[3], size:r[4], bought:r[5], store:r[6], price:r[7], version:r[8], fit:r[9], country:TEAMS[r[0]][0] }));
-const items = W.map((r, i) => ({ id:"w"+i, team:r[0], season:r[1], kitType:r[2], version:r[3], desire:r[4], country:TEAMS[r[0]][0] }));
+const items = W.map((r, i) => ({ id:"w"+i, team:r[0], season:r[1], kitType:r[2], version:r[3], country:TEAMS[r[0]][0] }));
 
 // Drawn shirt Main Picture: the shirt keeps its colours, the tile stays neutral.
 const SHIRT = "M30 12 L42 8 Q50 15 58 8 L70 12 L91 29 L80 42 L72 35 L72 92 L28 92 L28 35 L20 42 L9 29 Z";
@@ -386,14 +379,13 @@ const eur = n => new Intl.NumberFormat("fr-FR", { style:"currency", currency:"EU
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const fmtDate = d => d.length === 4 ? d : `${+d.slice(8)} ${MONTHS[+d.slice(5,7)-1]} ${d.slice(0,4)}`;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
-const dots = n => `<span class="dots" aria-hidden="true">${[1,2,3,4,5].map(i => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span><span class="sr">Desire ${n} of 5</span>`;
 const startYear = s => +s.slice(0, 4);
 
 const SORTS = {
   collection: [["acquired","Sort: acquired","desc"],["team","Sort: team","asc"],["season","Sort: season","desc"]],
-  wishlist: [["desire","Sort: desire","desc"],["team","Sort: team","asc"],["season","Sort: season","desc"]]
+  wishlist: [["season","Sort: season","desc"],["team","Sort: team","asc"]]
 };
-const state = { tab:"collection", q:"", countries:[], desire:"", sort:"acquired", dir:"desc", owner:false };
+const state = { tab:"collection", q:"", countries:[], sort:"acquired", dir:"desc", owner:false };
 const $ = id => document.getElementById(id);
 
 function list() {
@@ -401,9 +393,8 @@ function list() {
   const q = state.q.trim().toLowerCase();
   let out = src.filter(k =>
     (!q || (k.team + " " + (k.print || "")).toLowerCase().includes(q)) &&
-    (!state.countries.length || state.countries.includes(k.country)) &&
-    (state.tab !== "wishlist" || !state.desire || k.desire === +state.desire));
-  const key = { acquired:k => k.bought, team:k => k.team.toLowerCase(), season:k => startYear(k.season), desire:k => k.desire }[state.sort];
+    (!state.countries.length || state.countries.includes(k.country)));
+  const key = { acquired:k => k.bought, team:k => k.team.toLowerCase(), season:k => startYear(k.season) }[state.sort];
   const m = state.dir === "asc" ? 1 : -1;
   return out.sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : 0) * m || a.team.localeCompare(b.team); });
 }
@@ -418,8 +409,6 @@ function renderChips() {
 function renderControls() {
   $("sort").innerHTML = SORTS[state.tab].map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
   $("sort").value = state.sort;
-  $("desire").hidden = state.tab !== "wishlist";
-  $("desire").value = state.desire;
   $("add").hidden = !state.owner;
   renderDir();
   const src = state.tab === "collection" ? jerseys : items;
@@ -445,7 +434,7 @@ function renderGrid() {
   const rows = list();
   $("grid").innerHTML = rows.length ? rows.map(k => `<button class="tile" type="button" data-id="${k.id}">
       <span class="box">${mainPicture(k)}</span>
-      <span class="cap"><span class="team">${esc(k.team)}</span><span class="kit">${esc(k.season)} · ${esc(k.kitType)}</span>${k.desire ? dots(k.desire) : ""}</span>
+      <span class="cap"><span class="team">${esc(k.team)}</span><span class="kit">${esc(k.season)} · ${esc(k.kitType)}</span></span>
     </button>`).join("")
     : `<div class="empty-state"><span>No match</span><button class="pill btn-neutral" type="button" id="clear">Clear filters</button></div>`;
 }
@@ -548,7 +537,7 @@ function openTile(id, el) {
     rows += k.store === "GIFT" ? row("Gift", fmtDate(k.bought)) : row("Store", k.store && esc(k.store)) + row("Price", k.price != null && eur(k.price)) + row("Bought", fmtDate(k.bought));
     if (state.owner) actions = `<button class="pill btn-neutral" type="button" data-action="edit" data-id="${k.id}">Edit</button>`;
   } else {
-    rows = row("Version", k.version || "Any version") + row("Desire", dots(k.desire));
+    rows = row("Version", k.version || "Any version");
     if (state.owner) actions = `<button class="pill btn-success" type="button" data-action="gotit" data-id="${k.id}">Got it</button><button class="pill btn-neutral" type="button" data-close>Drop</button>`;
   }
   openPopup(`<div class="pop"><span class="box">${mainPicture(k)}</span><div><h2 id="pop-title">${esc(k.team)}</h2><p class="sub">${esc(k.season)} · ${esc(k.kitType)}</p><dl>${rows}</dl></div>${actions ? `<div class="actions">${actions}</div>` : ""}</div>`, el);
@@ -584,8 +573,7 @@ function openForm(kind, k) {
       tg("Fit", ["Too small","Good","Too big"], k?.fit) + field("Print", `value="${k ? esc(k.print) : ""}" placeholder="NICOLAS 4"`) + acquisition(k);
   } else if (kind === "item") {
     title = "Add to wishlist";
-    body = kitFields(null) + mainPictureField(null) + tg("Version", ["Any","Fan","Player","Tracksuit"], "Any") +
-      `<label class="field"><span>Desire</span><select>${[5,4,3,2,1].map(n => `<option>${n === 5 ? "5 (most wanted)" : n === 1 ? "1 (least wanted)" : n}</option>`).join("")}</select></label>`;
+    body = kitFields(null) + mainPictureField(null) + tg("Version", ["Any","Fan","Player","Tracksuit"], "Any");
   } else {
     title = "Got it: " + k.team;
     body = tg("Version", ["Fan","Player","Tracksuit"], k.version || "") + tg("Size", ["S","M","L"]) + tg("Fit", ["Too small","Good","Too big"]) + field("Print", `placeholder="NICOLAS 4"`) + acquisition(null);
@@ -595,16 +583,15 @@ function openForm(kind, k) {
 
 // Wiring
 $("grid").addEventListener("click", e => {
-  if (e.target.id === "clear") { state.q = ""; $("q").value = ""; state.countries = []; state.desire = ""; return render(); }
+  if (e.target.id === "clear") { state.q = ""; $("q").value = ""; state.countries = []; return render(); }
   const t = e.target.closest(".tile"); if (t) openTile(t.dataset.id, t);
 });
 document.querySelectorAll(".tab").forEach(a => a.addEventListener("click", e => {
   e.preventDefault(); if (state.tab === a.dataset.tab) return;
-  Object.assign(state, { tab:a.dataset.tab, q:"", countries:[], desire:"", sort:SORTS[a.dataset.tab][0][0], dir:SORTS[a.dataset.tab][0][2] });
+  Object.assign(state, { tab:a.dataset.tab, q:"", countries:[], sort:SORTS[a.dataset.tab][0][0], dir:SORTS[a.dataset.tab][0][2] });
   $("q").value = ""; $("cf").open = false; render();
 }));
 $("q").addEventListener("input", e => { state.q = e.target.value; renderGrid(); });
-$("desire").addEventListener("change", e => { state.desire = e.target.value; renderGrid(); });
 $("sort").addEventListener("change", e => { state.sort = e.target.value; state.dir = SORTS[state.tab].find(s => s[0] === state.sort)[2]; renderDir(); renderGrid(); });
 $("dir").addEventListener("click", () => { state.dir = state.dir === "asc" ? "desc" : "asc"; renderDir(); renderGrid(); });
 $("cf-panel").addEventListener("change", () => { state.countries = [...$("cf-panel").querySelectorAll("input:checked")].map(i => i.value); renderCfSummary(); renderGrid(); });

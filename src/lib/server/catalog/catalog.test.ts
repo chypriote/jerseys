@@ -138,8 +138,7 @@ describe('Owner login', () => {
 					team: { teamId: 1 },
 					season: '2024',
 					kitType: 'home',
-					version: null,
-					desire: 3
+					version: null
 				}),
 			() =>
 				catalog.gotIt(bad, {
@@ -1230,11 +1229,11 @@ describe('Collection', () => {
 	});
 });
 
-async function insertWishlistItem(kitId: number, item: { version?: string; desire: number }) {
+async function insertWishlistItem(kitId: number, item: { version?: string }) {
 	const row = await env.DB.prepare(
-		'INSERT INTO wishlist_item (kit_id, version, desire) VALUES (?1, ?2, ?3) RETURNING id'
+		'INSERT INTO wishlist_item (kit_id, version) VALUES (?1, ?2) RETURNING id'
 	)
-		.bind(kitId, item.version ?? null, item.desire)
+		.bind(kitId, item.version ?? null)
 		.first<{ id: number }>();
 	return row!.id;
 }
@@ -1257,7 +1256,7 @@ describe('Wishlist', () => {
 		expect(await catalog.listWishlist()).toEqual([]);
 	});
 
-	it('lists Wishlist Items with their Kit, Team, Country and Desire, most wanted first', async () => {
+	it('lists Wishlist Items with their Kit, Team, Country, newest Season first', async () => {
 		const milan = await insertKit({
 			team: 'Milan',
 			start: 1988,
@@ -1271,17 +1270,16 @@ describe('Wishlist', () => {
 			start: 1970,
 			kitType: 'away'
 		});
-		const any = await insertWishlistItem(milan, { desire: 3 });
-		const player = await insertWishlistItem(brazil, { version: 'player', desire: 5 });
+		const any = await insertWishlistItem(milan, {});
+		const player = await insertWishlistItem(brazil, { version: 'player' });
 
 		const wishlist = await catalog.listWishlist();
 
-		expect(wishlist.map((item) => item.id)).toEqual([player, any]);
+		expect(wishlist.map((item) => item.id)).toEqual([any, player]);
 		const country = (await catalog.listCountries()).find((c) => c.name === 'Country of Milan')!;
-		expect(wishlist[1]).toEqual({
+		expect(wishlist[0]).toEqual({
 			id: any,
 			version: null,
-			desire: 3,
 			kit: {
 				id: milan,
 				season: '1988-89',
@@ -1296,9 +1294,8 @@ describe('Wishlist', () => {
 				}
 			}
 		});
-		expect(wishlist[0]).toMatchObject({
+		expect(wishlist[1]).toMatchObject({
 			version: 'player',
-			desire: 5,
 			kit: { season: '1970', kitType: 'away', mainPictureKey: null, team: { kind: 'national' } }
 		});
 	});
@@ -1794,15 +1791,13 @@ describe('Add a Wishlist Item', () => {
 			team: { name: ' Lyon ', kind: 'club', countryId: france },
 			season: '2023-24',
 			kitType: 'away',
-			version: null,
-			desire: 4
+			version: null
 		});
 
 		expect(result).toMatchObject({
 			status: 'added',
 			item: {
 				version: null,
-				desire: 4,
 				kit: {
 					season: '2023-24',
 					kitType: 'away',
@@ -1820,8 +1815,7 @@ describe('Add a Wishlist Item', () => {
 			team: lyon(),
 			season: '2023-24',
 			kitType: 'home',
-			version: 'fan',
-			desire: 3
+			version: 'fan'
 		});
 		if (first.status !== 'added') throw new Error('not added');
 
@@ -1830,8 +1824,7 @@ describe('Add a Wishlist Item', () => {
 				team: { teamId: first.item.kit.team.id },
 				season: '2023-24',
 				kitType: 'home',
-				version: 'player',
-				desire: 5
+				version: 'player'
 			})
 		).rejects.toThrow('Lyon 2023-24 Home is already on the Wishlist');
 		expect(await catalog.listWishlist()).toEqual([first.item]);
@@ -1851,28 +1844,22 @@ describe('Add a Wishlist Item', () => {
 			team: { teamId: owned.kit.team.id },
 			season: '2023-24',
 			kitType: 'home',
-			version: 'player',
-			desire: 2
+			version: 'player'
 		} as const;
 
 		expect(await catalog.addWishlistItem(token, input)).toEqual({ status: 'already-owned' });
 		expect(await catalog.listWishlist()).toEqual([]);
 
 		const result = await catalog.addWishlistItem(token, { ...input, addAnyway: true });
-		expect(result).toMatchObject({ status: 'added', item: { version: 'player', desire: 2 } });
+		expect(result).toMatchObject({ status: 'added', item: { version: 'player' } });
 		if (result.status !== 'added') throw new Error('not added');
 		expect(result.item.kit).toEqual(owned.kit);
 	});
 
-	it('requires a Desire from 1 to 5 and a known Version, and writes nothing', async () => {
+	it('requires a known Version, and writes nothing', async () => {
 		const input = { team: lyon(), season: '2023-24', kitType: 'home', version: null } as const;
-		for (const desire of [undefined, 0, 6, 2.5, '']) {
-			await expect(catalog.addWishlistItem(token, { ...input, desire } as never)).rejects.toThrow(
-				'Desire must be 1 to 5'
-			);
-		}
 		await expect(
-			catalog.addWishlistItem(token, { ...input, version: 'retro', desire: 3 } as never)
+			catalog.addWishlistItem(token, { ...input, version: 'retro' } as never)
 		).rejects.toThrow('Version must be Any, Fan, Player or Tracksuit');
 		expect(await catalog.listTeams()).toEqual([]);
 		expect(await catalog.listWishlist()).toEqual([]);
@@ -1916,8 +1903,7 @@ describe('Got it and Drop', () => {
 			team: { name: 'Lyon', kind: 'club', countryId: france },
 			season: '2023-24',
 			kitType: 'away',
-			version: 'player',
-			desire: 4
+			version: 'player'
 		});
 		if (result.status !== 'added') throw new Error('not added');
 		return result.item;
@@ -2017,7 +2003,7 @@ describe('Main Picture of a new Kit', () => {
 			season: '2023-24',
 			kitType: 'home'
 		}) as const;
-	const wish = { version: null, desire: 3 } as const;
+	const wish = { version: null } as const;
 
 	beforeEach(async () => {
 		await env.DB.batch([
@@ -2501,7 +2487,7 @@ describe('Teams and Kits admin', () => {
 	it('changes a Kit Season and Kit Type, and its Jerseys and Wishlist Item follow', async () => {
 		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
 		const jersey = await insertJersey(kitId, { date: '2024', storeId: 1 });
-		const item = await insertWishlistItem(kitId, { desire: 3 });
+		const item = await insertWishlistItem(kitId, {});
 		const edited = await catalog.editKit(token, { kitId, season: ' 2022-23 ', kitType: 'away' });
 		expect(edited).toMatchObject({ id: kitId, season: '2022-23', kitType: 'away' });
 		expect((await catalog.listKits())[0]).toEqual(edited);
@@ -2628,13 +2614,12 @@ describe('Import the sheet rows', () => {
 				}
 			],
 			wishlist: [
-				{ team: japan, season: '2026', kitType: 'home', version: null, desire: 3 },
+				{ team: japan, season: '2026', kitType: 'home', version: null },
 				{
 					team: { name: 'Marseille', kind: 'club', country: 'France' },
 					season: '2026-27',
 					kitType: 'home',
-					version: 'player',
-					desire: 3
+					version: 'player'
 				}
 			]
 		};
@@ -2701,15 +2686,10 @@ describe('Import the sheet rows', () => {
 		expect(gift.kit).toMatchObject({ season: '2018', kitType: 'away' });
 
 		expect(
-			(await catalog.listWishlist()).map((i) => [
-				i.kit.team.name,
-				i.kit.season,
-				i.version,
-				i.desire
-			])
+			(await catalog.listWishlist()).map((i) => [i.kit.team.name, i.kit.season, i.version])
 		).toEqual([
-			['Marseille', '2026-27', 'player', 3],
-			['Japan', '2026', null, 3]
+			['Japan', '2026', null],
+			['Marseille', '2026-27', 'player']
 		]);
 	});
 
@@ -2763,7 +2743,6 @@ describe('Import the sheet rows', () => {
 				(r) => (r.jerseys[1].version = 'retro' as never),
 				'jerseys[1]: Version must be Fan, Player or Tracksuit'
 			],
-			[(r) => (r.wishlist[0].desire = 6 as never), 'wishlist[0]: Desire must be 1 to 5'],
 			[
 				(r) => (r.wishlist[1].team = { name: 'Nippon', kind: 'national', country: 'Japan' }),
 				'wishlist[1]: Japan already has a National Team: Japan'
@@ -2979,7 +2958,7 @@ describe('Delete', () => {
 		);
 		const wanted = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'away' });
 		await insertJersey(wanted, { date: '2024', storeId: 1 });
-		await insertWishlistItem(wanted, { desire: 3 });
+		await insertWishlistItem(wanted, {});
 		await expect(catalog.deleteKit(token, wanted)).rejects.toThrow(
 			'Lyon 2023-24 Away is still used by 1 Jersey and 1 Wishlist Item'
 		);

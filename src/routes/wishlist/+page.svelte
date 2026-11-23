@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
-	import type { Desire, WishlistItem } from '#lib/server/catalog/types';
+	import type { WishlistItem } from '#lib/server/catalog/types';
 	import { continents } from '#lib/countries';
 	import { kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
@@ -12,8 +12,6 @@
 	import DeleteAction from '#lib/components/DeleteAction.svelte';
 	import Chip from '#lib/components/Chip.svelte';
 	import CountryFilter from '#lib/components/CountryFilter.svelte';
-	import DesireDots from '#lib/components/DesireDots.svelte';
-	import DesireSelect from '#lib/components/DesireSelect.svelte';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import GotItForm from '#lib/components/GotItForm.svelte';
 	import LoginAction from '#lib/components/LoginAction.svelte';
@@ -29,25 +27,22 @@
 	let { data }: PageProps = $props();
 
 	const sorts = [
-		{ value: 'desire', label: 'Sort: desire' },
 		{ value: 'team', label: 'Sort: team' },
 		{ value: 'season', label: 'Sort: season' }
 	];
 
-	// The usual direction of each sort: the most wanted and the latest first.
-	const usualDirection: Record<string, string> = { desire: 'desc', team: 'asc', season: 'desc' };
+	// The usual direction of each sort: the latest Season first.
+	const usualDirection: Record<string, string> = { team: 'asc', season: 'desc' };
 
 	// Filters are page state, not in the URL. They run here, over the loaded list.
 	let search = $state('');
 	let selectedCountries = $state<string[]>([]);
-	let desire = $state<Desire | null>(null);
-	let sort = $state('desire');
+	let sort = $state('season');
 	let direction = $derived(usualDirection[sort]);
 
 	const compareText = (a: string, b: string) =>
 		a.localeCompare(b, undefined, { sensitivity: 'base' });
 	const sortKeys: Record<string, (a: WishlistItem, b: WishlistItem) => number> = {
-		desire: (a, b) => a.desire - b.desire,
 		team: (a, b) => compareText(a.kit.team.name, b.kit.team.name),
 		season: (a, b) => parseInt(a.kit.season) - parseInt(b.kit.season)
 	};
@@ -68,7 +63,7 @@
 
 	// A Wishlist Item has no Print: search covers the Team name.
 	const query = $derived(search.trim().toLocaleLowerCase());
-	const isFiltering = $derived(query !== '' || selectedCountries.length > 0 || desire !== null);
+	const isFiltering = $derived(query !== '' || selectedCountries.length > 0);
 	const items = $derived.by(() => {
 		const order = direction === 'asc' ? 1 : -1;
 		return data.items
@@ -76,8 +71,7 @@
 				(i) =>
 					(!query || i.kit.team.name.toLocaleLowerCase().includes(query)) &&
 					(selectedCountries.length === 0 ||
-						selectedCountries.includes(String(i.kit.team.country.id))) &&
-					(desire === null || i.desire === desire)
+						selectedCountries.includes(String(i.kit.team.country.id)))
 			)
 			.sort(
 				(a, b) =>
@@ -90,7 +84,6 @@
 	function clearFilters() {
 		search = '';
 		selectedCountries = [];
-		desire = null;
 	}
 
 	const caption = (i: WishlistItem) => `${i.kit.season} · ${kitTypeLabels[i.kit.kitType]}`;
@@ -128,7 +121,7 @@
 <StickyBar
 	current="wishlist"
 	searchActive={query !== ''}
-	filtersActive={selectedCountries.length > 0 || desire !== null}
+	filtersActive={selectedCountries.length > 0}
 >
 	{#snippet chips()}
 		<Chip tone="info" label="wanted" value={String(data.items.length)} />
@@ -156,12 +149,6 @@
 	{/snippet}
 	{#snippet controls()}
 		<CountryFilter bind:value={selectedCountries} groups={countryGroups} />
-		<DesireSelect
-			label="Filter by desire"
-			placeholder="Any desire"
-			value={desire}
-			onPick={(level) => (desire = level)}
-		/>
 		<Select bind:value={sort} label="Sort by" options={sorts} />
 		<SortDirection bind:value={direction} />
 	{/snippet}
@@ -187,7 +174,6 @@
 						season={item.kit.season}
 						kitType={kitTypeLabels[item.kit.kitType]}
 						mainPictureUrl={mainPictureUrl(item.kit)}
-						desire={item.desire}
 						onSelect={(el) => select(item, el)}
 					/>
 				</li>
@@ -240,8 +226,6 @@
 				>
 					<dt class="text-muted-foreground">Version</dt>
 					<dd>{selected.version ? versionLabels[selected.version] : 'Any version'}</dd>
-					<dt class="text-muted-foreground">Desire</dt>
-					<dd><DesireDots value={selected.desire} /></dd>
 				</dl>
 				{#if actionError}
 					<p class="text-sm font-bold text-destructive" role="alert">! {actionError}</p>

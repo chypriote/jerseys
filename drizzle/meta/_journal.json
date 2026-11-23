@@ -43,6 +43,13 @@
       "when": 1795404594571,
       "tag": "0005_kit_main_picture_looked_up",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795425157291,
+      "tag": "0006_drop_wishlist_desire",
+      "breakpoints": true
     }
   ]
 }

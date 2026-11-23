@@ -3,7 +3,6 @@ import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { countries, jerseys, kits, leagues, stores, teams, wishlistItems } from '../db/schema';
 import {
 	checkCut,
-	checkDesire,
 	checkKitType,
 	checkWishVersion,
 	cleanOrNull,
@@ -166,13 +165,12 @@ async function checkImport(db: DrizzleD1Database, rows: ImportRows, reads: Impor
 		row('wishlist', i, () => {
 			const kit = kitOf(input);
 			const version = checkWishVersion(input.version);
-			const desire = checkDesire(input.desire);
 			if (wished.has(kit)) {
 				const label = kitLabel(kit.team, formatSeason(kit.start, kit.end), kit.kitType);
 				throw new Error(`${label} is twice on the Wishlist`);
 			}
 			wished.add(kit);
-			return { kit, version, desire };
+			return { kit, version };
 		})
 	);
 
@@ -237,8 +235,8 @@ export async function importRows(
 				storeId: store === null ? null : storeIdNamed(store)
 			})
 		),
-		...checked.wishlist.map(({ kit, version, desire }) =>
-			db.insert(wishlistItems).values({ kitId: kitIdOf(kit), version, desire })
+		...checked.wishlist.map(({ kit, version }) =>
+			db.insert(wishlistItems).values({ kitId: kitIdOf(kit), version })
 		)
 	];
 	if (statements.length) await db.batch(statements as unknown as BatchStatements);

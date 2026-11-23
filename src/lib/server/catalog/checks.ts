@@ -108,13 +108,6 @@ export function checkCut(input: Pick<JerseyInput, 'version' | 'size' | 'fit' | '
 export const checkWishVersion = (value: unknown) =>
 	nullableOneOf(value, VERSIONS, `Version must be ${orList(['Any', ...versionNames])}`);
 
-export function checkDesire(value: unknown) {
-	const desire = Number(value);
-	if (!Number.isInteger(desire) || desire < 1 || desire > 5)
-		throw new Error('Desire must be 1 to 5');
-	return desire;
-}
-
 /** The Purchase dates, from the form or the import. */
 export const purchaseDates = (input: { bought: unknown; sent?: unknown; received?: unknown }) => ({
 	acquisitionKind: 'purchase' as const,

@@ -5,14 +5,12 @@
 		AddWishlistItemInput,
 		Country,
 		KitKey,
-		Desire,
 		KitType,
 		TeamChoice,
 		TeamView,
 		Version
 	} from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
-	import DesireSelect from './DesireSelect.svelte';
 	import KitFields from './KitFields.svelte';
 	import ToggleGroup from './ToggleGroup.svelte';
 
@@ -34,7 +32,6 @@
 	let kitType = $state<KitType>('home');
 	// "any" is the ToggleGroup value of no Version.
 	let version = $state<Version | 'any'>('any');
-	let desire = $state<Desire>(3);
 	let mainPicture = $state<FileList | null>(null);
 	let error = $state<string | null>(null);
 	let teamError = $state<string | null>(null);
@@ -52,7 +49,6 @@
 			season,
 			kitType,
 			version: version === 'any' ? null : version,
-			desire,
 			addAnyway
 		};
 		busy = true;
@@ -89,12 +85,6 @@
 		{teamError}
 	/>
 	<ToggleGroup label="Version" bind:value={version} options={versionOptions} />
-	<div class="flex flex-col gap-1.5">
-		<span class="text-sm font-bold">Desire</span>
-		<div class="flex">
-			<DesireSelect label="Desire" value={desire} onPick={(level) => level && (desire = level)} />
-		</div>
-	</div>
 	{#if alreadyOwned}
 		<div class="flex flex-col gap-2 rounded-xl bg-muted p-3 sm:col-span-2" role="status">
 			<p class="text-sm font-bold">Already owned</p>

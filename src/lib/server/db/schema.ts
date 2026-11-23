@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 /** The Kit Types and Versions, in display order. Types, labels and checks derive from them. */
 export const KIT_TYPES = ['home', 'away', 'third', 'fourth', 'cup', 'special'] as const;
@@ -112,17 +112,12 @@ export const jerseys = sqliteTable('jersey', {
 	giver: text('giver')
 });
 
-export const wishlistItems = sqliteTable(
-	'wishlist_item',
-	{
-		id: integer('id').primaryKey({ autoIncrement: true }),
-		/** One Wishlist Item per Kit. */
-		kitId: integer('kit_id')
-			.notNull()
-			.unique()
-			.references(() => kits.id),
-		version: text('version', { enum: VERSIONS }),
-		desire: integer('desire').notNull()
-	},
-	(t) => [check('wishlist_item_desire_range', sql`${t.desire} BETWEEN 1 AND 5`)]
-);
+export const wishlistItems = sqliteTable('wishlist_item', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	/** One Wishlist Item per Kit. */
+	kitId: integer('kit_id')
+		.notNull()
+		.unique()
+		.references(() => kits.id),
+	version: text('version', { enum: VERSIONS })
+});
