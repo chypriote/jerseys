@@ -150,7 +150,9 @@ describe('Owner login', () => {
 						acquisition: { kind: 'gift', date: '2024' }
 					}
 				}),
-			() => catalog.drop(bad, 1)
+			() => catalog.drop(bad, 1),
+			() =>
+				catalog.addPicture(bad, { kitId: 1, body: new ArrayBuffer(1), contentType: 'image/png' })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -2165,5 +2167,96 @@ describe('Main Picture of a new Kit', () => {
 		await catalog.addWishlistItem(token, { ...kit, ...wish, addAnyway: true });
 		expect(second.kit.id).toBe(first.kit.id);
 		expect(calls).toEqual([]);
+	});
+});
+
+describe('Kit Pictures', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+	let kit: number;
+
+	const image = (size: number) => new Uint8Array(size).fill(7).buffer;
+
+	async function clear() {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM picture'),
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const listed = await env.COVERS.list();
+		await Promise.all(listed.objects.map((o) => env.COVERS.delete(o.key)));
+	}
+
+	beforeEach(async () => {
+		await clear();
+		kit = await insertKit({ team: 'Japan', kind: 'national', start: 2024, kitType: 'home' });
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	// Other describes delete Kits, which a Picture row would block.
+	afterEach(clear);
+
+	it('adds Pictures to a Kit with the next position and lists them in that order', async () => {
+		expect(await catalog.listPictures(kit)).toEqual([]);
+		const back = await catalog.addPicture(token, {
+			kitId: kit,
+			body: image(10),
+			contentType: 'image/png'
+		});
+		const crest = await catalog.addPicture(token, {
+			kitId: kit,
+			body: image(20),
+			contentType: 'image/webp'
+		});
+		expect(back.position).toBe(1);
+		expect(crest.position).toBe(2);
+		expect(await catalog.listPictures(kit)).toEqual([back, crest]);
+		const other = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2022,
+			kitType: 'away'
+		});
+		expect(await catalog.listPictures(other)).toEqual([]);
+	});
+
+	it('serves a Picture image by its id', async () => {
+		const added = await catalog.addPicture(token, {
+			kitId: kit,
+			body: image(10),
+			contentType: 'image/webp'
+		});
+		const picture = await catalog.getPicture(added.id);
+		expect(picture?.contentType).toBe('image/webp');
+		expect((await new Response(picture!.body).arrayBuffer()).byteLength).toBe(10);
+		expect(await catalog.getPicture(99999)).toBeNull();
+	});
+
+	it('refuses a Picture of another type, of 2 MB or more, empty, or for an unknown Kit', async () => {
+		const add = (over: object) =>
+			catalog.addPicture(token, { kitId: kit, body: image(10), contentType: 'image/png', ...over });
+		await expect(add({ contentType: 'image/svg+xml' })).rejects.toThrow(
+			'Use a JPEG, PNG or WebP image'
+		);
+		await expect(add({ body: image(2 * 1024 * 1024) })).rejects.toThrow(
+			'The image must be under 2 MB'
+		);
+		await expect(add({ body: image(0) })).rejects.toThrow('The image must be under 2 MB');
+		await expect(add({ kitId: 99999 })).rejects.toThrow('Kit not found');
+		expect(await catalog.listPictures(kit)).toEqual([]);
+		expect((await env.COVERS.list()).objects).toEqual([]);
+	});
+
+	it('refuses to add a Picture without a valid token', async () => {
+		await expect(
+			catalog.addPicture('not-a-token', { kitId: kit, body: image(10), contentType: 'image/png' })
+		).rejects.toMatchObject({ name: 'UnauthorizedError' });
+		expect(await catalog.listPictures(kit)).toEqual([]);
 	});
 });
