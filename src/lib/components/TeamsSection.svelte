@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { deleteRow, postAction } from '#lib/forms';
 	import { kitLabel, kitTypeLabels } from '#lib/labels';
 	import { jerseyCount } from '#lib/format-count';
@@ -31,7 +32,8 @@
 		{ value: 'national', label: 'National Team' }
 	];
 
-	let search = $state('');
+	// A link from the Edit kit dialog arrives with the Team in `?search=`.
+	let search = $state(page.url.searchParams.get('search') ?? '');
 
 	// Grouped by Country so that a long list stays readable.
 	const groups = $derived(

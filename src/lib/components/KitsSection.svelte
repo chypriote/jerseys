@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { deleteRow, mainPictureUpload, postAction } from '#lib/forms';
 	import { mainPictureUrl as pictureUrlOf } from '#lib/pictures';
@@ -156,5 +157,13 @@
 				{/snippet}
 			</FormActions>
 		</form>
+		{#if editing}
+			<a
+				class="self-start font-bold underline"
+				href="{resolve('/admin/teams')}?search={encodeURIComponent(editing.team.name)}"
+			>
+				Edit {editing.team.name}
+			</a>
+		{/if}
 	{/snippet}
 </Popup>
