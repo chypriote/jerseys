@@ -152,7 +152,9 @@ describe('Owner login', () => {
 				}),
 			() => catalog.drop(bad, 1),
 			() =>
-				catalog.addPicture(bad, { kitId: 1, body: new ArrayBuffer(1), contentType: 'image/png' })
+				catalog.addPicture(bad, { kitId: 1, body: new ArrayBuffer(1), contentType: 'image/png' }),
+			() => catalog.editTeam(bad, { teamId: 1, name: 'Lyon', kind: 'club', countryId: 1 }),
+			() => catalog.editKit(bad, { kitId: 1, season: '2024', kitType: 'home' })
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -2258,5 +2260,229 @@ describe('Kit Pictures', () => {
 			catalog.addPicture('not-a-token', { kitId: kit, body: image(10), contentType: 'image/png' })
 		).rejects.toMatchObject({ name: 'UnauthorizedError' });
 		expect(await catalog.listPictures(kit)).toEqual([]);
+	});
+});
+
+// --- Teams and Kits admin -------------------------------------------------------------
+
+describe('Teams and Kits admin', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM picture'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	it('lists every Kit by Team, Season and Kit Type, with its Main Picture', async () => {
+		const lyonAway = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'away' });
+		const japan = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2022,
+			kitType: 'home',
+			mainPictureKey: 'main-pictures/x'
+		});
+		const lyonHome = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const lyonOld = await insertKit({ team: 'Lyon', start: 2021, end: 2022, kitType: 'third' });
+		const kits = await catalog.listKits();
+		expect(kits.map((k) => [k.id, k.team.name, k.season, k.kitType])).toEqual([
+			[japan, 'Japan', '2022', 'home'],
+			[lyonOld, 'Lyon', '2021-22', 'third'],
+			[lyonHome, 'Lyon', '2023-24', 'home'],
+			[lyonAway, 'Lyon', '2023-24', 'away']
+		]);
+		expect(kits[0].mainPictureKey).toBe('main-pictures/x');
+		expect(kits[1].mainPictureKey).toBeNull();
+		expect(kits[0].team).toMatchObject({ kind: 'national', country: { name: 'Country of Japan' } });
+	});
+
+	const country = (name: string, seasonFormat: 'split' | 'calendar') =>
+		catalog.addCountry(token, {
+			name,
+			continent: 'europe',
+			leagueName: `League of ${name}`,
+			seasonFormat
+		});
+
+	const teamNamed = async (name: string) =>
+		(await catalog.listTeams()).find((t) => t.name === name)!;
+
+	it('renames a Team and changes its kind and Country', async () => {
+		await insertKit({ team: 'Lyonn', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		const spain = await country('Spain', 'split');
+		const lyon = await teamNamed('Lyonn');
+		const edited = await catalog.editTeam(token, {
+			teamId: lyon.id,
+			name: ' Lyon ',
+			kind: 'club',
+			countryId: spain.id
+		});
+		expect(edited).toEqual({
+			id: lyon.id,
+			name: 'Lyon',
+			kind: 'club',
+			seasonFormat: 'split',
+			country: { id: spain.id, name: 'Spain', continent: 'europe' }
+		});
+		expect(await teamNamed('Lyon')).toEqual(edited);
+		await insertKit({ team: 'La Roja', start: 2024, kitType: 'home' });
+		const roja = await teamNamed('La Roja');
+		const national = await catalog.editTeam(token, {
+			teamId: roja.id,
+			name: 'Spain',
+			kind: 'national',
+			countryId: spain.id
+		});
+		expect(national).toMatchObject({ kind: 'national', seasonFormat: 'calendar' });
+	});
+
+	it('refuses a Team name another Team has, in any case', async () => {
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		await insertKit({ team: 'Paris', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		const paris = await teamNamed('Paris');
+		const edit = (name: string) =>
+			catalog.editTeam(token, {
+				teamId: paris.id,
+				name,
+				kind: 'club',
+				countryId: paris.country.id
+			});
+		await expect(edit('lyon')).rejects.toThrow('A team named “lyon” already exists');
+		await expect(edit('  ')).rejects.toThrow('Team name is required');
+		expect((await edit('PARIS')).name).toBe('PARIS');
+	});
+
+	it('refuses a second National Team for a Country', async () => {
+		await insertKit({
+			team: 'France',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home',
+			country: 'France'
+		});
+		await insertKit({ team: 'Les Bleus', start: 2024, kitType: 'home', country: 'Elsewhere' });
+		const france = await teamNamed('France');
+		const bleus = await teamNamed('Les Bleus');
+		await expect(
+			catalog.editTeam(token, {
+				teamId: bleus.id,
+				name: 'Les Bleus',
+				kind: 'national',
+				countryId: france.country.id
+			})
+		).rejects.toThrow('France already has a National Team: France');
+		expect(
+			await catalog.editTeam(token, {
+				teamId: france.id,
+				name: 'France',
+				kind: 'national',
+				countryId: france.country.id
+			})
+		).toMatchObject({ kind: 'national' });
+		expect(await teamNamed('Les Bleus')).toMatchObject({ kind: 'club' });
+	});
+
+	it('refuses an unknown Team, Country or kind', async () => {
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		const lyon = await teamNamed('Lyon');
+		const input = {
+			teamId: lyon.id,
+			name: 'Lyon',
+			kind: 'club',
+			countryId: lyon.country.id
+		} as const;
+		await expect(catalog.editTeam(token, { ...input, teamId: 999999 })).rejects.toThrow(
+			'Unknown team'
+		);
+		await expect(catalog.editTeam(token, { ...input, countryId: 999999 })).rejects.toThrow(
+			'Unknown country'
+		);
+		await expect(catalog.editTeam(token, { ...input, kind: 'b-team' as never })).rejects.toThrow(
+			'A team is a Club or a National Team'
+		);
+	});
+
+	it('refuses a change while a Kit Season does not fit the new Season Format', async () => {
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		await insertKit({ team: 'Kobe', start: 2024, kitType: 'home', country: 'Japan' });
+		const japan = (await teamNamed('Kobe')).country;
+		const lyon = await teamNamed('Lyon');
+		const move = { teamId: lyon.id, name: 'Lyon', kind: 'club', countryId: japan.id } as const;
+		await expect(catalog.editTeam(token, move)).rejects.toThrow(
+			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+		);
+		await expect(
+			catalog.editTeam(token, { ...move, kind: 'national', countryId: lyon.country.id })
+		).rejects.toThrow(
+			'Lyon has a Kit of Season 2023-24, which does not fit a Calendar Season Format'
+		);
+		const kobe = await teamNamed('Kobe');
+		await expect(
+			catalog.editTeam(token, {
+				...move,
+				teamId: kobe.id,
+				name: 'Kobe',
+				countryId: lyon.country.id
+			})
+		).rejects.toThrow('Kobe has a Kit of Season 2024, which does not fit a Split Season Format');
+		expect(await teamNamed('Lyon')).toEqual(lyon);
+	});
+
+	it('changes a Kit Season and Kit Type, and its Jerseys and Wishlist Item follow', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const jersey = await insertJersey(kitId, { date: '2024', storeId: 1 });
+		const item = await insertWishlistItem(kitId, { desire: 3 });
+		const edited = await catalog.editKit(token, { kitId, season: ' 2022-23 ', kitType: 'away' });
+		expect(edited).toMatchObject({ id: kitId, season: '2022-23', kitType: 'away' });
+		expect((await catalog.listKits())[0]).toEqual(edited);
+		const [owned] = await catalog.listCollection();
+		expect(owned).toMatchObject({ id: jersey, kit: { id: kitId, season: '2022-23' } });
+		const [wanted] = await catalog.listWishlist();
+		expect(wanted).toMatchObject({ id: item, kit: { id: kitId, kitType: 'away' } });
+	});
+
+	it('refuses a Kit change that would make two Kits with one Team, Season and Kit Type', async () => {
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const away = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'away' });
+		await expect(
+			catalog.editKit(token, { kitId: away, season: '2023-24', kitType: 'home' })
+		).rejects.toThrow('The Kit Lyon 2023-24 Home already exists');
+		expect(
+			await catalog.editKit(token, { kitId: away, season: '2023-24', kitType: 'away' })
+		).toMatchObject({ id: away, kitType: 'away' });
+	});
+
+	it('refuses a Season out of the Team Season Format, a bad Kit Type or an unknown Kit', async () => {
+		const lyon = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const japan = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home'
+		});
+		await expect(
+			catalog.editKit(token, { kitId: lyon, season: '2024', kitType: 'home' })
+		).rejects.toThrow('Season must be two years in a row, like 2024-25');
+		await expect(
+			catalog.editKit(token, { kitId: japan, season: '2024-25', kitType: 'home' })
+		).rejects.toThrow('Season must be one year, like 2024');
+		await expect(
+			catalog.editKit(token, { kitId: lyon, season: '2023-24', kitType: 'goalkeeper' as never })
+		).rejects.toThrow('Kit Type must be Home, Away, Third, Fourth, Cup or Special');
+		await expect(
+			catalog.editKit(token, { kitId: 999999, season: '2023-24', kitType: 'home' })
+		).rejects.toThrow('Kit not found');
+		expect((await catalog.listKits()).map((k) => k.season)).toEqual(['2024', '2023-24']);
 	});
 });
