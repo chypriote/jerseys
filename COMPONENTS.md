@@ -11,8 +11,8 @@ Stack: same as Vinyles, SvelteKit (Svelte 5) with shadcn-svelte and Tailwind CSS
 | Level | Components |
 |---|---|
 | Primitive | Chip, Button, DesireDots, SearchField, Select, Field, ToggleGroup |
-| Component | Tile, Tabs, Popup, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, TeamLookup, EmptyState |
-| Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm |
+| Component | Tile, Tabs, Popup, ConfirmDialog, DesireSelect, CountryFilter, SortDirection, ThemeToggle, StoreSelect, TeamLookup, EmptyState |
+| Pattern | StickyBar, TileGrid, CoverageMap, LoginAction, AddAction, DeleteAction, AcquisitionFields, JerseyForm, WishlistItemForm, GotItForm |
 
 ## Shared rules
 
@@ -40,7 +40,7 @@ Same as Vinyles. Tones: `highlight` (jersey count), `success` (total spent), `in
 
 ### Button
 
-Same as Vinyles. Intents `success` (Got it, Save, Log in) and `neutral` (Drop, Cancel). Also `size="icon"` for the icon pills (search toggle, filter toggle, sort order, lock, theme): a visually hidden label is required.
+Same as Vinyles. Intents `success` (Got it, Save, Log in) and `neutral` (Drop, Cancel, Delete). Also `size="icon"` for the icon pills (search toggle, filter toggle, sort order, lock, theme): a visually hidden label is required.
 
 States: default, hover (8% state layer of the text color), focus, pressed (shadow to 0, move down 3px), disabled (50% opacity, no shadow).
 
@@ -114,12 +114,25 @@ Same as Vinyles: native `<dialog>` with `showModal()`, centred on the screen. Fo
 | pictureUrls | string[] | `[]` | The Kit's extra Pictures, in the order they were added (see "Popup content") |
 | wide | boolean | false | Form Popup: width `popup.width.wide`, no Main Picture. From `breakpoint.sm` the fields sit in two columns |
 | onDismiss | `() => void` | — | X button, Esc, tap on the backdrop |
+| pictureAction | Snippet (index) | — | Owner only: under the thumbnails while a Picture (not the Main Picture) is shown. Gets the Picture's index in `pictureUrls` |
 
 Vinyles names the title prop `album`. Here it is `title`, because a Popup also holds forms.
 
 Slots:
 - `details`: a `<dl>` of rows. The page fills it (see "Popup content").
 - `actions`: optional, Owner only.
+
+### ConfirmDialog
+
+Same as Vinyles: the shadcn-svelte alert dialog, over the Popup. Title "Delete {what}?", a line of `text.body.detail` in `color.text.muted` on what goes, then Buttons `neutral` "Cancel" and `neutral` "Delete". Esc and "Cancel" close it and change nothing. "Delete" closes it and runs the delete.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| open | boolean | false | Bindable |
+| title | string | — | "Delete Lyon 2023-24 · Home?" |
+| text | string | — | What the delete removes |
+| actionLabel | string | — | "Delete" |
+| onConfirm | `() => void` | — | |
 
 ### DesireSelect
 
@@ -213,13 +226,24 @@ Rows are `<dt>` label, `<dd>` value, `text.body.detail`. A row with no value is 
 
 - **Jersey:** Version, Print, Size, Fit, then the Acquisition. Purchase: Store, Price, Bought, Sent, Received. Gift: "Gift", Date, From. Dates show as stored: "2024" or "12 May 2024".
 - **Wishlist Item:** Version (or "Any version"), Desire (DesireDots). Owner `actions`: Button `success` "Got it", Button `neutral` "Drop". Drop acts at once, with no confirmation, as in Vinyles.
-- Owner on a Jersey: a `neutral` Button "Edit" in `actions`. It opens JerseyForm in the same Popup.
+- Owner on a Jersey: `neutral` Buttons "Edit" and "Delete" in `actions`. "Edit" opens JerseyForm in the same Popup. "Delete" (DeleteAction) removes the Jersey and closes the Popup; the Kit stays, even with no Jersey left.
 - **Pictures** (Jersey and Wishlist Item): when the Kit has extra Pictures, a row of small contained thumbnails (`control.size.min` square, `color.bg.page` tile) sits under the Main Picture: the Main Picture first, then the Pictures in the order they were added. A tap shows that Picture in place of the Main Picture; the shown thumbnail has the focus outline (`aria-pressed`). Every Jersey and the Wishlist Item of a Kit show the same Pictures.
+- Owner, while a Picture is shown: a `neutral` Button "Delete" under the thumbnails (DeleteAction, "Delete this picture?"). It removes the Picture and its image for every Jersey and the Wishlist Item of the Kit.
 - Owner on a Jersey or a Wishlist Item: a file input "Add pictures" (multiple, JPEG, PNG or WebP) after the Buttons in `actions`. Each file is shrunk like the Main Picture and added at once, in the order picked; a refused file shows its error under the input.
 
 ### LoginAction, AddAction
 
 Same as Vinyles. LoginAction: lock icon Button (Viewer) or nothing extra (Owner). AddAction: `success` Button "Add" next to the Tabs, Owner only. It opens JerseyForm (Collection) or WishlistItemForm (Wishlist) in the Popup.
+
+### DeleteAction
+
+A `neutral` Button "Delete" (visually hidden: the row's name) that opens ConfirmDialog. After "Delete" it runs the delete. A refused delete shows its error under the Buttons, in `color.text.error`, and the row stays: "Kitbag is still used by 2 Purchases", "France is still used by 3 Teams", "Lyon is still used by 4 Kits", "Lyon 2023-24 Home is still used by 1 Jersey and 1 Wishlist Item", "The Official Store cannot be deleted".
+
+Delete fixes a mistake (Nico, 2026-11-23). It refuses, never cascades: a Store with Purchases, a Country with Teams, a Team with Kits, a Kit with Jerseys or a Wishlist Item stay. Deleting a Country deletes its League. Deleting a Kit deletes its Pictures and its Main Picture and Picture images. No undo, no trash.
+
+### Admin sections
+
+Owner only, route `/admin`: Countries, Stores, Teams, Kits, Kits without a Main Picture. Each row has a Button that opens its form in a Popup ("Edit", or "Rename" for a Store). The Popup of an existing Country, Store, Team or Kit has a DeleteAction in `actions`, under "Save". A delete closes the Popup.
 
 ### AcquisitionFields
 
@@ -243,7 +267,7 @@ Add and edit a Jersey. Fields, in order:
 8. Print: Field, optional, any script.
 9. AcquisitionFields.
 
-Buttons: `success` "Save", `neutral` "Cancel". No delete: Jerseys never leave the Collection in v1.
+Buttons: `success` "Save", `neutral` "Cancel". Delete is in the Jersey Popup (see "Popup content"), not in the form.
 
 ### WishlistItemForm
 

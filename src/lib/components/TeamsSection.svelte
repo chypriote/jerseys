@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { postAction } from '#lib/forms';
+	import { deleteRow, postAction } from '#lib/forms';
 	import type { Country, TeamKind, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
+	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
 	import Popup from './Popup.svelte';
 	import Select from './Select.svelte';
@@ -98,5 +99,15 @@
 			</div>
 			<Button intent="success" type="submit" loading={busy}>Save</Button>
 		</form>
+	{/snippet}
+	{#snippet actions()}
+		{#if editing}
+			{@const row = editing}
+			<DeleteAction
+				what={row.name}
+				text="This removes the team. A team with kits cannot be deleted."
+				onDelete={() => deleteRow('?/deleteTeam', row.id, () => (open = false))}
+			/>
+		{/if}
 	{/snippet}
 </Popup>

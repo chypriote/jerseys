@@ -13,7 +13,8 @@
 		wide = false,
 		onDismiss,
 		details,
-		actions
+		actions,
+		pictureAction
 	}: {
 		open?: boolean;
 		/** The Tile that opened the Popup. Focus goes back to it on close. */
@@ -31,6 +32,8 @@
 		details?: Snippet;
 		/** Owner only. */
 		actions?: Snippet;
+		/** Owner only: under the thumbnails while a Picture is shown, with its index in `pictureUrls`. */
+		pictureAction?: Snippet<[number]>;
 	} = $props();
 
 	/** The thumbnail shown in place of the Main Picture: 0 is the Main Picture. */
@@ -39,6 +42,7 @@
 	$effect(() => {
 		void mainPictureUrl;
 		void open;
+		void pictureUrls.length;
 		shown = 0;
 	});
 
@@ -79,6 +83,9 @@
 								</button>
 							{/each}
 						</div>
+						{#if pictureAction && shown > 0}
+							{@render pictureAction(shown - 1)}
+						{/if}
 					{/if}
 				</div>
 				<div class="min-w-0">

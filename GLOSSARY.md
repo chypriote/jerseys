@@ -116,3 +116,7 @@ _Avoid_: Buy, convert, move
 **Drop**:
 Nico no longer wants a Wishlist Item: it leaves the Wishlist and does not become a Jersey.
 _Avoid_: Delete, remove
+
+**Delete**:
+Nico removes a Jersey, Kit, Team, Country, Store or Picture entered by mistake. It is refused while other rows use it. A Wishlist Item is never deleted: it is dropped.
+_Avoid_: Remove, drop

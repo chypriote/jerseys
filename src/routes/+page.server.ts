@@ -27,5 +27,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 export const actions: Actions = {
 	addJersey: ownerActions.addJersey,
-	editJersey: ownerActions.editJersey
+	editJersey: ownerActions.editJersey,
+	deleteJersey: ownerActions.deleteJersey
 };

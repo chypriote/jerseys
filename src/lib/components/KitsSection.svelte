@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { postAction } from '#lib/forms';
+	import { deleteRow, postAction } from '#lib/forms';
 	import { kitTypeLabels, labelOptions } from '#lib/labels';
 	import type { KitType, KitView, TeamView } from '#lib/server/catalog/types';
 	import Button from './Button.svelte';
+	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
 	import Popup from './Popup.svelte';
 	import Select from './Select.svelte';
@@ -89,5 +90,15 @@
 			</div>
 			<Button intent="success" type="submit" loading={busy}>Save</Button>
 		</form>
+	{/snippet}
+	{#snippet actions()}
+		{#if editing}
+			{@const row = editing}
+			<DeleteAction
+				what={label(row)}
+				text="This removes the kit with its main picture and pictures. A kit that jerseys or a wishlist item use cannot be deleted."
+				onDelete={() => deleteRow('?/deleteKit', row.id, () => (open = false))}
+			/>
+		{/if}
 	{/snippet}
 </Popup>

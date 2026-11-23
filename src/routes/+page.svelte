@@ -5,10 +5,12 @@
 	import { formatCents, formatDate } from '#lib/format';
 	import { fitLabels, kitTypeLabels, versionLabels } from '#lib/labels';
 	import { mainPictureUrl } from '#lib/pictures';
+	import { deleteRow } from '#lib/forms';
 	import { kitPictures } from '#lib/kit-pictures.svelte';
 	import AddPictures from '#lib/components/AddPictures.svelte';
 	import AddAction from '#lib/components/AddAction.svelte';
 	import Button from '#lib/components/Button.svelte';
+	import DeleteAction from '#lib/components/DeleteAction.svelte';
 	import JerseyForm from '#lib/components/JerseyForm.svelte';
 	import Chip from '#lib/components/Chip.svelte';
 	import CoverageMap from '#lib/components/CoverageMap.svelte';
@@ -104,7 +106,7 @@
 	let open = $state(false);
 	const pictures = kitPictures(() => selected?.kit.id ?? null);
 
-	// Owner: "Edit" turns the Jersey Popup into the JerseyForm.
+	// Owner: "Edit" turns the Jersey Popup into the JerseyForm. "Delete" asks first.
 	let editing = $state(false);
 
 	function select(jersey: CollectionJersey, el: HTMLElement) {
@@ -196,8 +198,22 @@
 {#snippet editAction()}
 	<Button onclick={() => (editing = true)}>Edit</Button>
 	{#if selected}
-		<AddPictures kitId={selected.kit.id} onAdded={pictures.reload} />
+		{@const jersey = selected}
+		<DeleteAction
+			what={`${jersey.kit.team.name} ${caption(jersey)}`}
+			text="This removes the jersey from the collection. Its Kit stays."
+			onDelete={() => deleteRow('?/deleteJersey', jersey.id, () => (open = false))}
+		/>
+		<AddPictures kitId={jersey.kit.id} onAdded={pictures.reload} />
 	{/if}
+{/snippet}
+
+{#snippet pictureAction(index: number)}
+	<DeleteAction
+		what="this picture"
+		text="Every Jersey and the Wishlist Item of this Kit lose it."
+		onDelete={() => pictures.remove(index)}
+	/>
 {/snippet}
 
 {#if selected}
@@ -210,6 +226,7 @@
 		pictureUrls={pictures.urls}
 		wide={editing}
 		actions={data.form && !editing ? editAction : undefined}
+		pictureAction={data.form && !editing ? pictureAction : undefined}
 	>
 		{#snippet details()}
 			{@const a = selected.acquisition}

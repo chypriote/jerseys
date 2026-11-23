@@ -2756,3 +2756,208 @@ describe('Import the sheet rows', () => {
 		expect(await catalog.listCountries()).toEqual([]);
 	});
 });
+
+// --- Delete ---------------------------------------------------------------------------
+
+describe('Delete', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+
+	async function clear() {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM picture'),
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league'),
+			env.DB.prepare("DELETE FROM store WHERE name != 'Official Store'")
+		]);
+		const listed = await env.COVERS.list();
+		await Promise.all(listed.objects.map((o) => env.COVERS.delete(o.key)));
+	}
+
+	beforeEach(async () => {
+		await clear();
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+	});
+
+	afterEach(clear);
+
+	it('deletes a Jersey and keeps its Kit', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const twice = await insertJersey(kitId, { date: '2024', storeId: 1 });
+		const kept = await insertJersey(kitId, { date: '2023', storeId: 1 });
+		await catalog.deleteJersey(token, twice);
+		expect((await catalog.listCollection()).map((j) => j.id)).toEqual([kept]);
+		await catalog.deleteJersey(token, kept);
+		expect(await catalog.listCollection()).toEqual([]);
+		expect((await catalog.listKits()).map((k) => k.id)).toEqual([kitId]);
+		await expect(catalog.deleteJersey(token, kept)).rejects.toThrow('Jersey not found');
+	});
+
+	it('deletes a Store no Purchase uses', async () => {
+		const shop = await catalog.addStore(token, 'Kitbag');
+		await catalog.deleteStore(token, shop.id);
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Official Store']);
+		await expect(catalog.deleteStore(token, shop.id)).rejects.toThrow('Unknown store');
+	});
+
+	it('refuses to delete a Store that Purchases use, or the Official Store', async () => {
+		const shop = await catalog.addStore(token, 'Kitbag');
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		await insertJersey(kitId, { date: '2024', storeId: shop.id });
+		await expect(catalog.deleteStore(token, shop.id)).rejects.toThrow(
+			'Kitbag is still used by 1 Purchase'
+		);
+		await insertJersey(kitId, { date: '2023', storeId: shop.id });
+		await expect(catalog.deleteStore(token, shop.id)).rejects.toThrow(
+			'Kitbag is still used by 2 Purchases'
+		);
+		await expect(catalog.deleteStore(token, 1)).rejects.toThrow(
+			'The Official Store cannot be deleted'
+		);
+		expect((await catalog.listStores()).map((s) => s.name)).toEqual(['Kitbag', 'Official Store']);
+	});
+
+	const leagueCount = async () =>
+		(await env.DB.prepare('SELECT count(*) AS n FROM league').first<{ n: number }>())!.n;
+
+	it('deletes a Country no Team uses, with its League', async () => {
+		const wales = await catalog.addCountry(token, {
+			name: 'Wales',
+			continent: 'europe',
+			leagueName: 'Cymru Premier',
+			seasonFormat: 'split'
+		});
+		await catalog.deleteCountry(token, wales.id);
+		expect(await catalog.listCountries()).toEqual([]);
+		expect(await leagueCount()).toBe(0);
+		await expect(catalog.deleteCountry(token, wales.id)).rejects.toThrow('Unknown country');
+	});
+
+	it('refuses to delete a Country that Teams use', async () => {
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		await insertKit({ team: 'Paris', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		const [france] = await catalog.listCountries();
+		await expect(catalog.deleteCountry(token, france.id)).rejects.toThrow(
+			'France is still used by 2 Teams'
+		);
+		expect(await catalog.listCountries()).toEqual([france]);
+	});
+
+	it('deletes a Team with no Kit, and refuses one with Kits', async () => {
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home', country: 'France' });
+		await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'away', country: 'France' });
+		const [lyon] = await catalog.listTeams();
+		await expect(catalog.deleteTeam(token, lyon.id)).rejects.toThrow(
+			'Lyon is still used by 2 Kits'
+		);
+		await env.DB.prepare('DELETE FROM kit').run();
+		await catalog.deleteTeam(token, lyon.id);
+		expect(await catalog.listTeams()).toEqual([]);
+		expect((await catalog.listCountries()).map((c) => c.name)).toEqual(['France']);
+		await expect(catalog.deleteTeam(token, lyon.id)).rejects.toThrow('Unknown team');
+	});
+
+	const image = new Uint8Array(10).fill(7).buffer;
+	const r2Keys = async () => (await env.COVERS.list()).objects.map((o) => o.key).sort();
+
+	it('deletes a Kit with its Pictures and its Main Picture and Pictures in R2', async () => {
+		const kitId = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home'
+		});
+		const other = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2022,
+			kitType: 'home'
+		});
+		await catalog.uploadMainPicture(token, { kitId, body: image, contentType: 'image/png' });
+		await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
+		await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
+		const kept = await catalog.addPicture(token, {
+			kitId: other,
+			body: image,
+			contentType: 'image/png'
+		});
+		await catalog.deleteKit(token, kitId);
+		expect((await catalog.listKits()).map((k) => k.id)).toEqual([other]);
+		expect(await catalog.listPictures(kitId)).toEqual([]);
+		expect(await catalog.getMainPicture(kitId)).toBeNull();
+		const left = await r2Keys();
+		expect(left).toHaveLength(1);
+		expect(left[0]).toMatch(`pictures/${other}/`);
+		expect(await catalog.listPictures(other)).toEqual([kept]);
+		await expect(catalog.deleteKit(token, kitId)).rejects.toThrow('Kit not found');
+	});
+
+	it('refuses to delete a Kit that Jerseys or its Wishlist Item use', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		await catalog.uploadMainPicture(token, { kitId, body: image, contentType: 'image/png' });
+		await insertJersey(kitId, { date: '2024', storeId: 1 });
+		await insertJersey(kitId, { date: '2023', storeId: 1 });
+		await expect(catalog.deleteKit(token, kitId)).rejects.toThrow(
+			'Lyon 2023-24 Home is still used by 2 Jerseys'
+		);
+		const wanted = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'away' });
+		await insertJersey(wanted, { date: '2024', storeId: 1 });
+		await insertWishlistItem(wanted, { desire: 3 });
+		await expect(catalog.deleteKit(token, wanted)).rejects.toThrow(
+			'Lyon 2023-24 Away is still used by 1 Jersey and 1 Wishlist Item'
+		);
+		expect((await catalog.listKits()).map((k) => k.id)).toEqual([kitId, wanted]);
+		expect(await r2Keys()).toEqual([`main-pictures/${kitId}`]);
+	});
+
+	it('deletes a Picture and its image in R2', async () => {
+		const kitId = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			start: 2024,
+			kitType: 'home'
+		});
+		const wrong = await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
+		const kept = await catalog.addPicture(token, { kitId, body: image, contentType: 'image/png' });
+		expect(await r2Keys()).toHaveLength(2);
+		await catalog.deletePicture(token, wrong.id);
+		expect(await catalog.listPictures(kitId)).toEqual([kept]);
+		expect(await catalog.getPicture(wrong.id)).toBeNull();
+		expect(await r2Keys()).toHaveLength(1);
+		expect(await catalog.getPicture(kept.id)).not.toBeNull();
+		await expect(catalog.deletePicture(token, wrong.id)).rejects.toThrow('Picture not found');
+	});
+
+	it('refuses every delete without a valid token, and deletes nothing', async () => {
+		const kitId = await insertKit({ team: 'Lyon', start: 2023, end: 2024, kitType: 'home' });
+		const jersey = await insertJersey(kitId, { date: '2024', storeId: 1 });
+		const picture = await catalog.addPicture(token, {
+			kitId,
+			body: image,
+			contentType: 'image/png'
+		});
+		const shop = await catalog.addStore(token, 'Kitbag');
+		const [team] = await catalog.listTeams();
+		const bad = 'not-a-token';
+		const calls = [
+			() => catalog.deleteJersey(bad, jersey),
+			() => catalog.deleteKit(bad, kitId),
+			() => catalog.deleteTeam(bad, team.id),
+			() => catalog.deleteCountry(bad, team.country.id),
+			() => catalog.deleteStore(bad, shop.id),
+			() => catalog.deletePicture(bad, picture.id)
+		];
+		for (const call of calls) {
+			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
+		}
+		expect(await catalog.listCollection()).toHaveLength(1);
+		expect(await catalog.listPictures(kitId)).toEqual([picture]);
+		expect(await catalog.listStores()).toHaveLength(2);
+	});
+});

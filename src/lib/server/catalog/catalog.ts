@@ -179,6 +179,19 @@ const checkKitType = (value: unknown) =>
 		'Kit Type must be Home, Away, Third, Fourth, Cup or Special'
 	);
 
+// --- Delete ---
+
+const OFFICIAL_STORE = 'Official Store';
+
+/** "1 Purchase", "2 Purchases". */
+const counted = (n: number, what: string) => `${n} ${what}${n === 1 ? '' : 's'}`;
+
+/** Refuses a delete while other rows use the row, naming them. `uses` are [count, singular name]. */
+function refuseWhileUsed(name: string, uses: [number, string][]) {
+	const used = uses.filter(([n]) => n > 0).map(([n, what]) => counted(n, what));
+	if (used.length) throw new Error(`${name} is still used by ${used.join(' and ')}`);
+}
+
 const isCents = (value: unknown): value is number =>
 	Number.isInteger(value) && (value as number) >= 0;
 
@@ -1093,6 +1106,100 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 					season: formatSeason(r.start, r.end),
 					kitType: r.kitType
 				}));
+		},
+
+		// --- Delete ---
+
+		async deleteJersey(token, jerseyId) {
+			await owner(token);
+			const [deleted] = await db
+				.delete(jerseys)
+				.where(eq(jerseys.id, Number(jerseyId)))
+				.returning({ id: jerseys.id });
+			if (!deleted) throw new Error('Jersey not found');
+		},
+
+		async deleteStore(token, storeId) {
+			await owner(token);
+			const [store] = await db
+				.select()
+				.from(stores)
+				.where(eq(stores.id, Number(storeId)));
+			if (!store) throw new Error('Unknown store');
+			if (compare(store.name, OFFICIAL_STORE) === 0)
+				throw new Error('The Official Store cannot be deleted');
+			const [{ purchases }] = await db
+				.select({ purchases: count() })
+				.from(jerseys)
+				.where(eq(jerseys.storeId, store.id));
+			refuseWhileUsed(store.name, [[purchases, 'Purchase']]);
+			await db.delete(stores).where(eq(stores.id, store.id));
+		},
+
+		async deleteCountry(token, countryId) {
+			await owner(token);
+			const [country] = await db
+				.select()
+				.from(countries)
+				.where(eq(countries.id, Number(countryId)));
+			if (!country) throw new Error('Unknown country');
+			const [{ used }] = await db
+				.select({ used: count() })
+				.from(teams)
+				.where(eq(teams.countryId, country.id));
+			refuseWhileUsed(country.name, [[used, 'Team']]);
+			// One League per Country: it goes with it.
+			await db.batch([
+				db.delete(countries).where(eq(countries.id, country.id)),
+				db.delete(leagues).where(eq(leagues.id, country.leagueId))
+			]);
+		},
+
+		async deleteTeam(token, teamId) {
+			await owner(token);
+			const [team] = await db
+				.select()
+				.from(teams)
+				.where(eq(teams.id, Number(teamId)));
+			if (!team) throw new Error('Unknown team');
+			const [{ used }] = await db
+				.select({ used: count() })
+				.from(kits)
+				.where(eq(kits.teamId, team.id));
+			refuseWhileUsed(team.name, [[used, 'Kit']]);
+			await db.delete(teams).where(eq(teams.id, team.id));
+		},
+
+		async deleteKit(token, kitId) {
+			await owner(token);
+			const [kit] = await readKits(Number(kitId));
+			if (!kit) throw new Error('Kit not found');
+			const [[{ owned }], [{ wanted }]] = await db.batch([
+				db.select({ owned: count() }).from(jerseys).where(eq(jerseys.kitId, kit.id)),
+				db.select({ wanted: count() }).from(wishlistItems).where(eq(wishlistItems.kitId, kit.id))
+			]);
+			refuseWhileUsed(`${kit.team.name} ${kit.season} ${kitTypeLabels[kit.kitType]}`, [
+				[owned, 'Jersey'],
+				[wanted, 'Wishlist Item']
+			]);
+			// The rows go first: a failed R2 delete leaves an orphan image, never a row without one.
+			const [gone] = await db.batch([
+				db.delete(pictures).where(eq(pictures.kitId, kit.id)).returning({ key: pictures.key }),
+				db.delete(kits).where(eq(kits.id, kit.id))
+			]);
+			const keys = gone.map((p) => p.key);
+			if (kit.mainPictureKey) keys.push(kit.mainPictureKey);
+			if (keys.length) await env.COVERS.delete(keys);
+		},
+
+		async deletePicture(token, pictureId) {
+			await owner(token);
+			const [deleted] = await db
+				.delete(pictures)
+				.where(eq(pictures.id, Number(pictureId)))
+				.returning({ key: pictures.key });
+			if (!deleted) throw new Error('Picture not found');
+			await env.COVERS.delete(deleted.key);
 		},
 
 		// --- Import (once) ---
