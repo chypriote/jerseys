@@ -64,7 +64,7 @@ Native `<select>`, styled as a pill. Used for sort and DesireSelect.
 
 ### Field
 
-Same as Vinyles: visible label, native input, `error` text linked with `aria-describedby`. Types: `text`, `password`, `number`.
+Same as Vinyles: visible label, native input, `error` text in `color.text.error`, linked with `aria-describedby`. Types: `text`, `password`, `number`.
 
 Dates in this app can be a year only (GLOSSARY: Purchase). So a date Field is `type="text"`, `inputmode="numeric"`, placeholder "2024 or 2024-05-12", and the form checks the pattern `YYYY` or `YYYY-MM-DD`. Native `type="date"` cannot hold a year only.
 
