@@ -9,6 +9,7 @@
 	import Button from '#lib/components/Button.svelte';
 	import JerseyForm from '#lib/components/JerseyForm.svelte';
 	import Chip from '#lib/components/Chip.svelte';
+	import CoverageMap from '#lib/components/CoverageMap.svelte';
 	import CountryFilter from '#lib/components/CountryFilter.svelte';
 	import EmptyState from '#lib/components/EmptyState.svelte';
 	import LoginAction from '#lib/components/LoginAction.svelte';
@@ -150,6 +151,11 @@
 </StickyBar>
 
 <main>
+	<div
+		class="ps-[max(1rem,env(safe-area-inset-left))] pe-[max(1rem,env(safe-area-inset-right))] pb-4"
+	>
+		<CoverageMap countries={data.coverage} />
+	</div>
 	{#if data.jerseys.length === 0}
 		<EmptyState message="No jerseys yet" />
 	{:else if jerseys.length === 0}

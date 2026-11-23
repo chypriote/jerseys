@@ -1,7 +1,7 @@
 import { and, count, eq, gt, isNull, lte, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 import { continents, seasonFormats } from '../../countries';
-import { countries, jerseys, kits, leagues, stores, teams } from '../db/schema';
+import { countries, jerseys, kits, leagues, stores, teams, wishlistItems } from '../db/schema';
 import { kitSeasonFirst } from './matching';
 import {
 	fetchKitPicture,
@@ -26,11 +26,14 @@ import type {
 	CollectionJersey,
 	Country,
 	CountryInput,
+	Desire,
 	JerseyInput,
+	KitView,
 	LookupProgress,
 	SeasonFormat,
 	TeamChoice,
-	TeamView
+	TeamView,
+	WishlistItem
 } from './types';
 
 export interface CatalogEnv {
@@ -71,6 +74,26 @@ const compare = (a: string, b: string) => a.localeCompare(b, undefined, { sensit
 /** "2023-24" for a Split Season, "2024" for a Calendar Season. */
 function formatSeason(start: number, end: number | null) {
 	return end === null ? String(start) : `${start}-${String(end % 100).padStart(2, '0')}`;
+}
+
+function kitView(
+	kit: typeof kits.$inferSelect,
+	team: typeof teams.$inferSelect,
+	country: typeof countries.$inferSelect
+): KitView {
+	return {
+		id: kit.id,
+		season: formatSeason(kit.seasonStartYear, kit.seasonEndYear),
+		kitType: kit.kitType,
+		mainPictureKey: kit.mainPictureKey,
+		mainPictureVersion: kit.mainPictureVersion,
+		team: {
+			id: team.id,
+			name: team.name,
+			kind: team.kind,
+			country: { id: country.id, name: country.name, continent: country.continent }
+		}
+	};
 }
 
 const acquiredOn = (j: CollectionJersey) =>
@@ -374,19 +397,7 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 					size: jersey.size,
 					fit: jersey.fit,
 					print: jersey.print,
-					kit: {
-						id: kit.id,
-						season: formatSeason(kit.seasonStartYear, kit.seasonEndYear),
-						kitType: kit.kitType,
-						mainPictureKey: kit.mainPictureKey,
-						mainPictureVersion: kit.mainPictureVersion,
-						team: {
-							id: team.id,
-							name: team.name,
-							kind: team.kind,
-							country: { id: country.id, name: country.name, continent: country.continent }
-						}
-					},
+					kit: kitView(kit, team, country),
 					acquisition
 				};
 			})
@@ -414,6 +425,34 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			const row = await jerseyRow(input);
 			await db.update(jerseys).set(row).where(eq(jerseys.id, id));
 			return (await readCollection(id))[0];
+		},
+
+		async listCoverage() {
+			// A Club plays in its Country's League, so both kinds cover the Team's Country.
+			const covered = await db
+				.selectDistinct({ id: teams.countryId })
+				.from(jerseys)
+				.innerJoin(kits, eq(jerseys.kitId, kits.id))
+				.innerJoin(teams, eq(kits.teamId, teams.id));
+			const ids = new Set(covered.map((row) => row.id));
+			return (await readCountries()).map(({ id, name }) => ({ id, name, covered: ids.has(id) }));
+		},
+
+		async listWishlist() {
+			const rows = await db
+				.select({ item: wishlistItems, kit: kits, team: teams, country: countries })
+				.from(wishlistItems)
+				.innerJoin(kits, eq(wishlistItems.kitId, kits.id))
+				.innerJoin(teams, eq(kits.teamId, teams.id))
+				.innerJoin(countries, eq(teams.countryId, countries.id));
+			return rows
+				.map(({ item, kit, team, country }): WishlistItem => ({
+					id: item.id,
+					version: item.version,
+					desire: item.desire as Desire,
+					kit: kitView(kit, team, country)
+				}))
+				.sort((a, b) => b.desire - a.desire || b.id - a.id);
 		},
 
 		async addCountry(token, input) {

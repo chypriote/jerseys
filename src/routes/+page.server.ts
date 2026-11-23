@@ -6,14 +6,16 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const catalog = catalogFromPlatform();
 	const { isOwner } = await parent();
 	// The JerseyForm lists: Owner only.
-	const [jerseys, form] = await Promise.all([
+	const [jerseys, coverage, form] = await Promise.all([
 		catalog.listCollection(),
+		catalog.listCoverage(),
 		isOwner
 			? Promise.all([catalog.listTeams(), catalog.listCountries(), catalog.listStores()])
 			: null
 	]);
 	return {
 		jerseys,
+		coverage,
 		form: form && { teams: form[0], countries: form[1], stores: form[2] }
 	};
 };

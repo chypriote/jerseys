@@ -373,6 +373,7 @@ describe('Kit Main Pictures', () => {
 
 	beforeEach(async () => {
 		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
 			env.DB.prepare('DELETE FROM kit'),
 			env.DB.prepare('DELETE FROM team'),
@@ -589,6 +590,7 @@ describe('Picture candidates', () => {
 
 	beforeEach(async () => {
 		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
 			env.DB.prepare('DELETE FROM kit'),
 			env.DB.prepare('DELETE FROM team'),
@@ -1078,6 +1080,7 @@ describe('Collection', () => {
 
 	beforeEach(async () => {
 		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
 			env.DB.prepare('DELETE FROM kit'),
 			env.DB.prepare('DELETE FROM team'),
@@ -1178,6 +1181,153 @@ describe('Collection', () => {
 	});
 });
 
+async function insertWishlistItem(kitId: number, item: { version?: string; desire: number }) {
+	const row = await env.DB.prepare(
+		'INSERT INTO wishlist_item (kit_id, version, desire) VALUES (?1, ?2, ?3) RETURNING id'
+	)
+		.bind(kitId, item.version ?? null, item.desire)
+		.first<{ id: number }>();
+	return row!.id;
+}
+
+describe('Wishlist', () => {
+	const catalog = createCatalog(env);
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+	});
+
+	it('is empty with no Wishlist Items', async () => {
+		expect(await catalog.listWishlist()).toEqual([]);
+	});
+
+	it('lists Wishlist Items with their Kit, Team, Country and Desire, most wanted first', async () => {
+		const milan = await insertKit({
+			team: 'Milan',
+			start: 1988,
+			end: 1989,
+			kitType: 'home',
+			mainPictureKey: 'main-pictures/m'
+		});
+		const brazil = await insertKit({
+			team: 'Brazil',
+			kind: 'national',
+			start: 1970,
+			kitType: 'away'
+		});
+		const any = await insertWishlistItem(milan, { desire: 3 });
+		const player = await insertWishlistItem(brazil, { version: 'player', desire: 5 });
+
+		const wishlist = await catalog.listWishlist();
+
+		expect(wishlist.map((item) => item.id)).toEqual([player, any]);
+		const country = (await catalog.listCountries()).find((c) => c.name === 'Country of Milan')!;
+		expect(wishlist[1]).toEqual({
+			id: any,
+			version: null,
+			desire: 3,
+			kit: {
+				id: milan,
+				season: '1988-89',
+				kitType: 'home',
+				mainPictureKey: 'main-pictures/m',
+				mainPictureVersion: 0,
+				team: {
+					id: expect.any(Number),
+					name: 'Milan',
+					kind: 'club',
+					country: { id: country.id, name: 'Country of Milan', continent: 'europe' }
+				}
+			}
+		});
+		expect(wishlist[0]).toMatchObject({
+			version: 'player',
+			desire: 5,
+			kit: { season: '1970', kitType: 'away', mainPictureKey: null, team: { kind: 'national' } }
+		});
+	});
+});
+
+describe('Coverage', () => {
+	const catalog = createCatalog(env);
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+	});
+
+	it('lists every Country by name, none covered without Jerseys', async () => {
+		await insertKit({ team: 'Lille', country: 'France', start: 2021, end: 2022, kitType: 'home' });
+		await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			country: 'Japan',
+			start: 2024,
+			kitType: 'home'
+		});
+
+		expect(await catalog.listCoverage()).toEqual([
+			{ id: expect.any(Number), name: 'France', covered: false },
+			{ id: expect.any(Number), name: 'Japan', covered: false }
+		]);
+	});
+
+	it('covers the Country of a National Team Nico owns a Jersey of', async () => {
+		const japan = await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			country: 'Japan',
+			start: 2024,
+			kitType: 'home'
+		});
+		await insertKit({ team: 'Lille', country: 'France', start: 2021, end: 2022, kitType: 'home' });
+		await insertJersey(japan, { kind: 'gift', date: '2024' });
+
+		expect(await catalog.listCoverage()).toMatchObject([
+			{ name: 'France', covered: false },
+			{ name: 'Japan', covered: true }
+		]);
+	});
+
+	it('covers the Country of the League of a Club Nico owns a Jersey of', async () => {
+		const lille = await insertKit({
+			team: 'Lille',
+			country: 'France',
+			league: 'Ligue 1',
+			start: 2021,
+			end: 2022,
+			kitType: 'home'
+		});
+		await insertKit({
+			team: 'Japan',
+			kind: 'national',
+			country: 'Japan',
+			start: 2024,
+			kitType: 'home'
+		});
+		await insertJersey(lille, { date: '2021-10-04' });
+		await insertJersey(lille, { date: '2022-01-04' });
+
+		expect(await catalog.listCoverage()).toMatchObject([
+			{ name: 'France', covered: true },
+			{ name: 'Japan', covered: false }
+		]);
+	});
+});
+
 describe('Add and edit a Jersey', () => {
 	const catalog = createCatalog(env);
 	let token: string;
@@ -1193,6 +1343,7 @@ describe('Add and edit a Jersey', () => {
 
 	beforeEach(async () => {
 		await env.DB.batch([
+			env.DB.prepare('DELETE FROM wishlist_item'),
 			env.DB.prepare('DELETE FROM jersey'),
 			env.DB.prepare('DELETE FROM kit'),
 			env.DB.prepare('DELETE FROM team'),
