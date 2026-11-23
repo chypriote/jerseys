@@ -17,6 +17,7 @@
 	import KitAddForm from './KitAddForm.svelte';
 	import Popup from './Popup.svelte';
 	import SearchField from './SearchField.svelte';
+	import { Toggle } from './ui/toggle/index.js';
 	import Select from './Select.svelte';
 
 	let {
@@ -34,8 +35,13 @@
 
 	// A link from the Edit team dialog arrives with the Kit in `?search=`.
 	let search = $state(page.url.searchParams.get('search') ?? '');
+	let unpicturedOnly = $state(false);
 	const shown = $derived(
-		kits.filter((k) => matchesSearch(search, k.team.name, k.season, kitTypeLabels[k.kitType]))
+		kits.filter(
+			(k) =>
+				(!unpicturedOnly || !k.mainPictureKey) &&
+				matchesSearch(search, k.team.name, k.season, kitTypeLabels[k.kitType])
+		)
 	);
 
 	// Grouped by Team (the Catalog lists Kits by Team, then Season, then Kit Type).
@@ -118,12 +124,13 @@
 		</Button>
 	</div>
 	<!-- SearchField sizes itself for a row (basis-48), so a row wrapper keeps it one line tall. -->
-	<div class="flex">
+	<div class="flex flex-wrap gap-2">
 		<SearchField bind:value={search} label="Search kits" placeholder="Search kits" />
+		<Toggle bind:pressed={unpicturedOnly}>No main picture</Toggle>
 	</div>
 	{#if groups.length === 0}
 		<p class="text-sm text-muted-foreground">
-			{search.trim() ? 'No kit matches.' : 'No kits yet.'}
+			{search.trim() || unpicturedOnly ? 'No kit matches.' : 'No kits yet.'}
 		</p>
 	{/if}
 	{#each groups as group (group.team.id)}
