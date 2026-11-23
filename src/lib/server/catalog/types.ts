@@ -148,6 +148,45 @@ export interface LookupProgress {
 	rateLimited?: boolean;
 }
 
+// --- Jersey form ---------------------------------------------------------------
+
+/** A Team as the TeamLookup lists it. */
+export interface TeamView {
+	id: number;
+	name: string;
+	kind: TeamKind;
+	/** Calendar for a National Team, else its League's Season Format. */
+	seasonFormat: SeasonFormat;
+	country: { id: number; name: string; continent: Continent };
+}
+
+/** A known Team, or a new Team the save creates. */
+export type TeamChoice = { teamId: number } | { name: string; kind: TeamKind; countryId: number };
+
+/** Dates are `YYYY` or `YYYY-MM-DD`. Prices are euro cents. */
+export type AcquisitionInput =
+	| {
+			kind: 'purchase';
+			storeId: number;
+			priceCents: number;
+			bought: string;
+			sent?: string | null;
+			received?: string | null;
+	  }
+	| { kind: 'gift'; date: string; giver?: string | null };
+
+export interface JerseyInput {
+	team: TeamChoice;
+	/** "2023-24" for a Split Season, "2024" for a Calendar Season. */
+	season: string;
+	kitType: KitType;
+	version: Version;
+	size: Size | null;
+	fit: Fit | null;
+	print?: string | null;
+	acquisition: AcquisitionInput;
+}
+
 // --- Owner login -------------------------------------------------------------
 
 export type LoginResult = { ok: true; token: string } | { ok: false; error: 'wrong-password' };
@@ -194,6 +233,13 @@ export interface Catalog {
 	 * whose Main Picture the Owner did not choose). Repeat until `done` reaches `total`.
 	 */
 	lookupNext(token: string, input: LookupBatchInput): Promise<LookupProgress>;
+
+	// Jerseys (Owner). The Kit is found by Team + Season + Kit Type, or created.
+	/** Every Team by name. */
+	listTeams(): Promise<TeamView[]>;
+	addJersey(token: string, input: JerseyInput): Promise<CollectionJersey>;
+	/** Changing the Team, Season or Kit Type moves the Jersey to that Kit. */
+	editJersey(token: string, input: JerseyInput & { id: number }): Promise<CollectionJersey>;
 
 	// Owner login
 	login(password: string): Promise<LoginResult>;

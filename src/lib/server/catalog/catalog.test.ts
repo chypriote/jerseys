@@ -110,7 +110,28 @@ describe('Owner login', () => {
 			() => catalog.setTeamSource(bad, { teamId: 1, sourceTeamId: '133713' }),
 			() =>
 				catalog.pickMainPicture(bad, { kitId: 1, candidateId: 'https://r2.thesportsdb.com/a.png' }),
-			() => catalog.lookupNext(bad, { size: 1 })
+			() => catalog.lookupNext(bad, { size: 1 }),
+			() =>
+				catalog.addJersey(bad, {
+					team: { teamId: 1 },
+					season: '2024',
+					kitType: 'home',
+					version: 'fan',
+					size: null,
+					fit: null,
+					acquisition: { kind: 'gift', date: '2024' }
+				}),
+			() =>
+				catalog.editJersey(bad, {
+					id: 1,
+					team: { teamId: 1 },
+					season: '2024',
+					kitType: 'home',
+					version: 'fan',
+					size: null,
+					fit: null,
+					acquisition: { kind: 'gift', date: '2024' }
+				})
 		];
 		for (const call of calls) {
 			await expect(call()).rejects.toMatchObject({ name: 'UnauthorizedError' });
@@ -1154,5 +1175,368 @@ describe('Collection', () => {
 			store: null,
 			priceCents: null
 		});
+	});
+});
+
+describe('Add and edit a Jersey', () => {
+	const catalog = createCatalog(env);
+	let token: string;
+	let france: number;
+
+	const purchase = {
+		kind: 'purchase',
+		storeId: 1,
+		priceCents: 8990,
+		bought: '2024-05-12'
+	} as const;
+	const jersey = { version: 'fan', size: 'M', fit: 'good', acquisition: purchase } as const;
+
+	beforeEach(async () => {
+		await env.DB.batch([
+			env.DB.prepare('DELETE FROM jersey'),
+			env.DB.prepare('DELETE FROM kit'),
+			env.DB.prepare('DELETE FROM team'),
+			env.DB.prepare('DELETE FROM country'),
+			env.DB.prepare('DELETE FROM league')
+		]);
+		const result = await catalog.login('test-password');
+		if (!result.ok) throw new Error('login failed');
+		token = result.token;
+		france = (
+			await catalog.addCountry(token, {
+				name: 'France',
+				continent: 'europe',
+				leagueName: 'Ligue 1',
+				seasonFormat: 'split'
+			})
+		).id;
+	});
+
+	it('adds a Jersey of a new Club, with its Kit', async () => {
+		const added = await catalog.addJersey(token, {
+			...jersey,
+			team: { name: ' Lyon ', kind: 'club', countryId: france },
+			season: '2023-24',
+			kitType: 'home',
+			print: ' NICOLAS 4 '
+		});
+
+		expect(added).toMatchObject({
+			version: 'fan',
+			size: 'M',
+			fit: 'good',
+			print: 'NICOLAS 4',
+			kit: {
+				season: '2023-24',
+				kitType: 'home',
+				team: { name: 'Lyon', kind: 'club', country: { id: france, name: 'France' } }
+			},
+			acquisition: {
+				kind: 'purchase',
+				store: { id: 1, name: 'Official Store' },
+				priceCents: 8990,
+				bought: '2024-05-12',
+				sent: null,
+				received: null
+			}
+		});
+		expect(await catalog.listCollection()).toEqual([added]);
+		expect(await catalog.listTeams()).toEqual([
+			{
+				id: added.kit.team.id,
+				name: 'Lyon',
+				kind: 'club',
+				seasonFormat: 'split',
+				country: { id: france, name: 'France', continent: 'europe' }
+			}
+		]);
+	});
+
+	const lyon = () => ({ name: 'Lyon', kind: 'club' as const, countryId: france });
+	const kitCount = async () =>
+		(await env.DB.prepare('SELECT count(*) AS n FROM kit').first<{ n: number }>())!.n;
+
+	it('reuses the Kit for a second Jersey of the same Team, Season and Kit Type', async () => {
+		const first = await catalog.addJersey(token, {
+			...jersey,
+			team: lyon(),
+			season: '2023-24',
+			kitType: 'home'
+		});
+		const second = await catalog.addJersey(token, {
+			...jersey,
+			version: 'player',
+			team: { teamId: first.kit.team.id },
+			season: '2023-24',
+			kitType: 'home'
+		});
+		const away = await catalog.addJersey(token, {
+			...jersey,
+			team: { teamId: first.kit.team.id },
+			season: '2023-24',
+			kitType: 'away'
+		});
+
+		expect(second.kit).toEqual(first.kit);
+		expect(away.kit.id).not.toBe(first.kit.id);
+		expect(await kitCount()).toBe(2);
+		expect(await catalog.listTeams()).toHaveLength(1);
+	});
+
+	it('refuses a new Team whose name another Team has, in any case', async () => {
+		await catalog.addJersey(token, { ...jersey, team: lyon(), season: '2023-24', kitType: 'home' });
+		await expect(
+			catalog.addJersey(token, {
+				...jersey,
+				team: { ...lyon(), name: 'LYON' },
+				season: '2023-24',
+				kitType: 'away'
+			})
+		).rejects.toThrow('A team named “LYON” already exists');
+	});
+
+	it('refuses a second National Team for one Country, and an unknown Team or Country', async () => {
+		const national = { name: 'France', kind: 'national' as const, countryId: france };
+		const added = await catalog.addJersey(token, {
+			...jersey,
+			team: national,
+			season: '2024',
+			kitType: 'home'
+		});
+		expect(added.kit.team).toMatchObject({ name: 'France', kind: 'national' });
+
+		await expect(
+			catalog.addJersey(token, {
+				...jersey,
+				team: { ...national, name: 'Les Bleus' },
+				season: '2024',
+				kitType: 'away'
+			})
+		).rejects.toThrow('France already has a National Team: France');
+		await expect(
+			catalog.addJersey(token, {
+				...jersey,
+				team: { teamId: 999999 },
+				season: '2024',
+				kitType: 'home'
+			})
+		).rejects.toThrow('Unknown team');
+		await expect(
+			catalog.addJersey(token, {
+				...jersey,
+				team: { ...lyon(), countryId: 999999 },
+				season: '2024-25',
+				kitType: 'home'
+			})
+		).rejects.toThrow('Unknown country');
+		expect(await kitCount()).toBe(1);
+	});
+
+	it('checks the Season against the Season Format, and creates nothing when it fails', async () => {
+		const club = { ...jersey, team: lyon(), kitType: 'home' } as const;
+		await expect(catalog.addJersey(token, { ...club, season: '2024' })).rejects.toThrow(
+			'Season must be two years in a row, like 2024-25'
+		);
+		await expect(catalog.addJersey(token, { ...club, season: '2024-26' })).rejects.toThrow(
+			'Season must be two years in a row, like 2024-25'
+		);
+		expect(await catalog.listTeams()).toEqual([]);
+
+		const national = { ...club, team: { name: 'France', kind: 'national', countryId: france } };
+		await expect(
+			catalog.addJersey(token, { ...national, season: '2024-25' } as never)
+		).rejects.toThrow('Season must be one year, like 2024');
+
+		const split = await catalog.addJersey(token, { ...club, season: '1999-00' });
+		expect(split.kit.season).toBe('1999-00');
+		const calendar = await catalog.addJersey(token, { ...national, season: '2024' } as never);
+		expect(calendar.kit.season).toBe('2024');
+	});
+
+	it('takes Sent and Received dates on a Purchase, and year-only dates', async () => {
+		const added = await catalog.addJersey(token, {
+			...jersey,
+			team: lyon(),
+			season: '2023-24',
+			kitType: 'home',
+			acquisition: { ...purchase, bought: '2009', sent: '2009-03-01', received: ' 2009 ' }
+		});
+		expect(added.acquisition).toEqual({
+			kind: 'purchase',
+			store: { id: 1, name: 'Official Store' },
+			priceCents: 8990,
+			bought: '2009',
+			sent: '2009-03-01',
+			received: '2009'
+		});
+	});
+
+	it('keeps a Gift without Store or price, with an optional giver', async () => {
+		const gift = await catalog.addJersey(token, {
+			...jersey,
+			size: null,
+			fit: null,
+			team: lyon(),
+			season: '2023-24',
+			kitType: 'home',
+			acquisition: { kind: 'gift', date: '2015', giver: ' Mum ' }
+		});
+		expect(gift).toMatchObject({
+			size: null,
+			fit: null,
+			print: null,
+			acquisition: { kind: 'gift', date: '2015', giver: 'Mum' }
+		});
+		const anonymous = await catalog.addJersey(token, {
+			...jersey,
+			team: { teamId: gift.kit.team.id },
+			season: '2023-24',
+			kitType: 'home',
+			acquisition: { kind: 'gift', date: '2016-12-25', giver: '  ' }
+		});
+		expect(anonymous.acquisition).toEqual({ kind: 'gift', date: '2016-12-25', giver: null });
+	});
+
+	it('refuses a bad Acquisition with a readable error', async () => {
+		const add = (acquisition: unknown) =>
+			catalog.addJersey(token, {
+				...jersey,
+				team: lyon(),
+				season: '2023-24',
+				kitType: 'home',
+				acquisition: acquisition as never
+			});
+		await expect(add({ ...purchase, storeId: 999999 })).rejects.toThrow('A Purchase needs a Store');
+		await expect(add({ ...purchase, priceCents: undefined })).rejects.toThrow(
+			'A Purchase needs a price in euros'
+		);
+		await expect(add({ ...purchase, priceCents: 12.5 })).rejects.toThrow(
+			'A Purchase needs a price in euros'
+		);
+		await expect(add({ ...purchase, bought: '' })).rejects.toThrow(
+			'Bought date must be YYYY or YYYY-MM-DD'
+		);
+		await expect(add({ ...purchase, bought: '12/05/2024' })).rejects.toThrow(
+			'Bought date must be YYYY or YYYY-MM-DD'
+		);
+		await expect(add({ ...purchase, bought: '2024-05' })).rejects.toThrow(
+			'Bought date must be YYYY or YYYY-MM-DD'
+		);
+		await expect(add({ ...purchase, sent: '2024-02-31' })).rejects.toThrow(
+			'Sent date is not a real date'
+		);
+		await expect(add({ ...purchase, received: '24' })).rejects.toThrow(
+			'Received date must be YYYY or YYYY-MM-DD'
+		);
+		await expect(add({ kind: 'gift', date: '' })).rejects.toThrow(
+			'Gift date must be YYYY or YYYY-MM-DD'
+		);
+		await expect(add({ kind: 'swap', date: '2024' })).rejects.toThrow(
+			'Acquisition must be a Purchase or a Gift'
+		);
+		expect(await catalog.listTeams()).toEqual([]);
+	});
+
+	it('refuses a bad Kit Type, Version, Size or Fit', async () => {
+		const add = (extra: object) =>
+			catalog.addJersey(token, {
+				...jersey,
+				team: lyon(),
+				season: '2023-24',
+				kitType: 'home',
+				...extra
+			} as never);
+		await expect(add({ kitType: 'goalkeeper' })).rejects.toThrow('Kit Type must be');
+		await expect(add({ version: 'retro' })).rejects.toThrow(
+			'Version must be Fan, Player or Tracksuit'
+		);
+		await expect(add({ size: 'XL' })).rejects.toThrow('Size must be S, M or L');
+		await expect(add({ fit: 'tight' })).rejects.toThrow('Fit must be Too small, Good or Too big');
+	});
+
+	it('edits a Jersey, and moves it to the Kit of its new Team, Season and Kit Type', async () => {
+		const added = await catalog.addJersey(token, {
+			...jersey,
+			team: lyon(),
+			season: '2023-24',
+			kitType: 'home',
+			print: 'NICOLAS 4'
+		});
+		const other = await catalog.addJersey(token, {
+			...jersey,
+			team: { teamId: added.kit.team.id },
+			season: '2022-23',
+			kitType: 'away'
+		});
+
+		const edited = await catalog.editJersey(token, {
+			id: added.id,
+			team: { teamId: added.kit.team.id },
+			season: '2022-23',
+			kitType: 'away',
+			version: 'player',
+			size: 'L',
+			fit: 'too-big',
+			print: '',
+			acquisition: { kind: 'gift', date: '2023', giver: 'Dad' }
+		});
+
+		expect(edited).toEqual({
+			id: added.id,
+			version: 'player',
+			size: 'L',
+			fit: 'too-big',
+			print: null,
+			kit: other.kit,
+			acquisition: { kind: 'gift', date: '2023', giver: 'Dad' }
+		});
+
+		const moved = await catalog.editJersey(token, {
+			...jersey,
+			id: added.id,
+			team: { name: 'France', kind: 'national', countryId: france },
+			season: '2024',
+			kitType: 'home'
+		});
+		expect(moved.kit).toMatchObject({ season: '2024', team: { name: 'France', kind: 'national' } });
+		expect(moved.acquisition).toMatchObject({ kind: 'purchase', priceCents: 8990 });
+		expect((await catalog.listCollection()).map((j) => j.kit.team.name).sort()).toEqual([
+			'France',
+			'Lyon'
+		]);
+	});
+
+	it('refuses to edit an unknown Jersey', async () => {
+		await expect(
+			catalog.editJersey(token, {
+				...jersey,
+				id: 999999,
+				team: lyon(),
+				season: '2023-24',
+				kitType: 'home'
+			})
+		).rejects.toThrow('Jersey not found');
+		expect(await catalog.listTeams()).toEqual([]);
+	});
+
+	it('lists Teams by name, a National Team with the Calendar format', async () => {
+		await catalog.addCountry(token, {
+			name: 'Japan',
+			continent: 'asia-oceania',
+			leagueName: 'J1 League',
+			seasonFormat: 'calendar'
+		});
+		const japan = (await catalog.listCountries()).find((c) => c.name === 'Japan')!.id;
+		const add = (team: object, season: string) =>
+			catalog.addJersey(token, { ...jersey, team, season, kitType: 'home' } as never);
+		await add({ name: 'Vissel Kobe', kind: 'club', countryId: japan }, '2024');
+		await add({ name: 'France', kind: 'national', countryId: france }, '2024');
+		await add({ name: 'ajaccio', kind: 'club', countryId: france }, '2024-25');
+
+		expect((await catalog.listTeams()).map((t) => [t.name, t.seasonFormat])).toEqual([
+			['ajaccio', 'split'],
+			['France', 'calendar'],
+			['Vissel Kobe', 'calendar']
+		]);
 	});
 });
