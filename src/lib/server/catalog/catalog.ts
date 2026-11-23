@@ -786,6 +786,16 @@ export function buildCatalog(env: CatalogEnv, options: CatalogOptions = {}): Cat
 			return (await readKits(found.id))[0];
 		},
 
+		async addTeam(token, input) {
+			await requireOwner(token);
+			const { name, kind, country } = await teamFields(input, await readTeams());
+			const [{ id }] = await db
+				.insert(teams)
+				.values({ name, kind, countryId: country.id })
+				.returning({ id: teams.id });
+			return (await readTeams()).find((t) => t.id === id)!;
+		},
+
 		async editTeam(token, input) {
 			await requireOwner(token);
 			const all = await readTeams();
