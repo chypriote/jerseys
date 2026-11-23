@@ -1,12 +1,16 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { postAction } from '#lib/forms';
 	import type { Store } from '#lib/server/catalog/types';
-	import Button from './Button.svelte';
 	import Field from './Field.svelte';
+	import FormActions from './FormActions.svelte';
 
 	/** `store` set: edits it. Unset: adds a Store. */
-	let { store = null, onSuccess }: { store?: Store | null; onSuccess: () => void } = $props();
+	let {
+		store = null,
+		onSuccess,
+		remove
+	}: { store?: Store | null; onSuccess: () => void; remove?: Snippet } = $props();
 
 	// The form starts from the Store; the caller re-creates it for another Store.
 	let name = $state(untrack(() => store?.name ?? ''));
@@ -31,5 +35,5 @@
 
 <form class="flex flex-col gap-4" onsubmit={save}>
 	<Field label="Name" required bind:value={name} {error} />
-	<Button intent="success" type="submit" loading={busy}>Save</Button>
+	<FormActions {busy} {remove} />
 </form>

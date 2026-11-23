@@ -60,7 +60,7 @@
 			! {error}
 		</p>
 	{:else}
-		<!-- A full row in the flex-wrap actions of a Popup. -->
-		<p class="basis-full text-sm font-bold text-destructive" role="alert">! {error}</p>
+		<!-- A full row, last, in the flex-wrap actions of a Popup or form. -->
+		<p class="order-last basis-full text-sm font-bold text-destructive" role="alert">! {error}</p>
 	{/if}
 {/if}

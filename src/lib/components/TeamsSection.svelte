@@ -8,6 +8,7 @@
 	import Button from './Button.svelte';
 	import DeleteAction from './DeleteAction.svelte';
 	import Field from './Field.svelte';
+	import FormActions from './FormActions.svelte';
 	import Popup from './Popup.svelte';
 	import SearchField from './SearchField.svelte';
 	import Select from './Select.svelte';
@@ -125,7 +126,18 @@
 					options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
 				/>
 			</div>
-			<Button intent="success" type="submit" loading={busy}>Save</Button>
+			<FormActions {busy}>
+				{#snippet remove()}
+					{#if editing}
+						{@const row = editing}
+						<DeleteAction
+							what={row.name}
+							text="This deletes the team. A team with kits cannot be deleted."
+							onDelete={() => deleteRow('?/deleteTeam', row.id, () => (open = false))}
+						/>
+					{/if}
+				{/snippet}
+			</FormActions>
 		</form>
 		{#if editing}
 			{@const teamKits = kits.filter((k) => k.team.id === editing!.id)}
@@ -148,16 +160,6 @@
 					</ul>
 				</div>
 			{/if}
-		{/if}
-	{/snippet}
-	{#snippet actions()}
-		{#if editing}
-			{@const row = editing}
-			<DeleteAction
-				what={row.name}
-				text="This deletes the team. A team with kits cannot be deleted."
-				onDelete={() => deleteRow('?/deleteTeam', row.id, () => (open = false))}
-			/>
 		{/if}
 	{/snippet}
 </Popup>

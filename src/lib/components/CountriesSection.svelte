@@ -65,17 +65,18 @@
 <Popup bind:open title={editing ? 'Edit country' : 'Add a country'}>
 	{#snippet details()}
 		{#key editing}
-			<CountryForm country={editing} onSuccess={() => (open = false)} />
+			<CountryForm country={editing} onSuccess={() => (open = false)}>
+				{#snippet remove()}
+					{#if editing}
+						{@const row = editing}
+						<DeleteAction
+							what={row.name}
+							text="This deletes the country and its league. A country that teams use cannot be deleted."
+							onDelete={() => deleteRow('?/deleteCountry', row.id, () => (open = false))}
+						/>
+					{/if}
+				{/snippet}
+			</CountryForm>
 		{/key}
-	{/snippet}
-	{#snippet actions()}
-		{#if editing}
-			{@const row = editing}
-			<DeleteAction
-				what={row.name}
-				text="This deletes the country and its league. A country that teams use cannot be deleted."
-				onDelete={() => deleteRow('?/deleteCountry', row.id, () => (open = false))}
-			/>
-		{/if}
 	{/snippet}
 </Popup>
