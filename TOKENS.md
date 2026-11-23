@@ -148,7 +148,7 @@ Under `prefers-reduced-motion: reduce`, there is no transition: the state change
 | tile.hover.lift | -3px (translateY) | Tile, motion allowed only |
 | tile.hover.tilt | -1.5deg (rotate) | Tile, motion allowed only |
 | popup.radius | radius.xl | Popup |
-| popup.width.max | 420px | Popup |
+| popup.width.max | 560px | Popup |
 | popup.width.wide | 672px | Form Popup |
 | popup.picture.size | 150px | Popup |
 | control.size.min | 44px | All controls (touch target) |

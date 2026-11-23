@@ -58,7 +58,7 @@ The scale is ad-hoc: a size not in this table does not appear in the app.
 ## 4. Components
 
 - **Tile:** square, surface colour, 14px radius, offset shadow. It shows the Kit's Main Picture, contained. If the Kit has no Main Picture: a shirt outline in the muted colour.
-- **Popup:** opens in the centre of the screen, as in Vinyles. Max width 420px, Main Picture 150px, X button at top right. Tap outside or Esc closes it. Forms use a wide Popup (672px), with the fields in two columns from 640px.
+- **Popup:** opens in the centre of the screen, as in Vinyles. Max width 560px, Main Picture 150px, X button at top right. Tap outside or Esc closes it. Forms use a wide Popup (672px), with the fields in two columns from 640px.
 - **CoverageMap:** a surface card with a static world map, Collection page only. Two states per Country: covered (icon accent colour) and empty (line colour).
 - **StickyBar:** title, chips, tab pills, search, filters, sort.
 - **Controls:** Chip, Button, Tabs, SearchField, Select, ToggleGroup are pills.
@@ -121,7 +121,7 @@ Mobile first.
 | Tile grid | 3 columns | 5, then 7 from 900px, 8 from 1200px |
 | Sticky bar search and filters | Behind icon toggle buttons | Shown in the bar |
 | CoverageMap | Drawn 900px wide, card scrolls sideways, opens centred on Europe | Drawn at card width, 900px minimum |
-| Popup | Centred on the screen; form fields in one column | Max width 420px; form Popup 672px, fields in two columns |
+| Popup | Centred on the screen; form fields in one column | Max width 560px; form Popup 672px, fields in two columns |
 
 ## 9. Motion
 
